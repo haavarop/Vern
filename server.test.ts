@@ -7,6 +7,9 @@ import { insuranceData } from './insurance-data.ts'
 test('chat API forwards conversation and validates requests', async () => {
   const server = createChatServer(async (messages) => `Received: ${messages.at(-1)?.content}`, async () => ({
     ...insuranceData,
+    observations: insuranceData.observations.map((observation) => ({ ...observation, dataStatus: 'snapshot' as const })),
+    generatedAt: '2026-11-11T00:00:00.000Z',
+    refresh: { bi: { status: 'error' as const, sourceUrl: 'https://example.com', error: 'test' }, fremtind: { status: 'error' as const, sourceUrl: 'https://example.com', error: 'test' } },
     registry: { source: 'test', fetchedAt: '2026-11-11T00:00:00.000Z', results: [] },
   }))
   server.listen(0, '127.0.0.1')

@@ -1,6 +1,38 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { fetchRegistryData, insuranceData, insuranceObservations } from './insurance-data.ts'
+import { fetchRegistryData, getInsuranceData, insuranceData, insuranceObservations, parseBiScores, parseFremtindFigures } from './insurance-data.ts'
+
+test('BI score table is parsed with company, period and metric', () => {
+  const html = `<table><caption>Skadeforsikring</caption><thead><tr><th>Selskap</th><th>Tilfredshet</th><th>Lojalitet</th></tr></thead><tbody>
+    <tr><td>Tryg (skadeforsikring)</td><td>80,6</td><td>85,5</td></tr>
+    <tr><td>Gjensidige (skadeforsikring)</td><td>78,8</td><td>83,5</td></tr>
+    <tr><td>If</td><td>75,5</td><td>76,8</td></tr>
+    <tr><td>Fremtind</td><td>74,0</td><td>78,9</td></tr>
+  </tbody></table>`
+  const observations = parseBiScores(html)
+  assert.equal(observations.length, 8)
+  assert.deepEqual(observations[0], { company: 'Tryg', metric: 'Kundetilfredshet', value: 80.6, unit: 'indekspoeng', period: '2026', scope: 'Skadeforsikring', source: 'Norsk kundebarometer', sourceUrl: 'https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/' })
+  assert.throws(() => parseBiScores(html.replace('80,6', 'mangler')), /Ugyldig BI-verdi/)
+  assert.throws(() => parseBiScores('<table></table>'), /mangler forventede kolonner/)
+})
+
+test('Fremtind figures retain their published period and units', () => {
+  const html = `<h2>Nøkkeltall</h2><div>Fremtind per tredje kvartal 2026:</div><section><ul>
+    <li><h4>Inntekter fra forsikringstjenester</h4><p><span>18 373 MNOK</span></p></li>
+    <li><h4>Resultat fra forsikringstjenester</h4><p><span>4 280 MNOK</span></p></li>
+    <li><h4>Resultat før skatt</h4><p><span>4 933 MNOK</span></p></li>
+    <li><h4>Netto inntekt fra investeringer</h4><p><span>1 034 MNOK</span></p></li>
+    <li><h4>Combined ratio (netto etter gjenforsikring)</h4><p><span>76,7 %</span></p></li>
+    <li><h4>Solvensmargin</h4><p><span>189 %</span></p></li>
+  </ul></section>`
+  const observations = parseFremtindFigures(html)
+  assert.equal(observations.length, 6)
+  assert.equal(observations[0].value, 18373)
+  assert.equal(observations[0].period, 'Fremtind per tredje kvartal 2026')
+  assert.equal(observations[4].value, 76.7)
+  assert.throws(() => parseFremtindFigures(html.replace('tredje kvartal 2026', 'ukjent')), /rapporteringsperiode/)
+  assert.throws(() => parseFremtindFigures(html.replace('18 373 MNOK', 'ukjent')), /Ugyldig Fremtind-verdi/)
+})
 
 test('insurance observations have traceable values and scope', () => {
   assert.ok(insuranceObservations.length > 0)
@@ -36,4 +68,28 @@ test('registry API data is fetched and failures remain visible', async () => {
   assert.equal(registry.results[0].entities?.length, 1)
   assert.equal(registry.results[2].status, 'error')
   assert.equal(registry.results[2].error, 'HTTP 503')
+})
+
+test('failed sources use clearly labeled snapshot observations', async () => {
+  const data = await getInsuranceData(async () => new Response('Unavailable', { status: 503 }))
+  assert.equal(data.refresh.bi.status, 'error')
+  assert.equal(data.refresh.fremtind.status, 'error')
+  assert.ok(data.registry.results.every((result) => result.status === 'error'))
+  assert.equal(data.observations.length, insuranceObservations.length)
+  assert.ok(data.observations.every((observation) => observation.dataStatus === 'snapshot'))
+})
+
+test('refreshed BI scores replace the snapshot without duplicating it', async () => {
+  const rows = ['Tryg (skadeforsikring)', 'Gjensidige (skadeforsikring)', 'If', 'Fremtind']
+    .map((company) => `<tr><td>${company}</td><td>81,0</td><td>82,0</td></tr>`).join('')
+  const html = `<table><caption>Skadeforsikring</caption><thead><tr><th>Selskap</th><th>Tilfredshet</th><th>Lojalitet</th></tr></thead><tbody>${rows}</tbody></table>`
+  const data = await getInsuranceData(async (input) => String(input).includes('bi.no')
+    ? new Response(html)
+    : new Response('Unavailable', { status: 503 }))
+  const scores = data.observations.filter((observation) => observation.source === 'Norsk kundebarometer')
+  assert.equal(data.refresh.bi.status, 'ok')
+  assert.equal(data.refresh.fremtind.status, 'error')
+  assert.equal(scores.length, 8)
+  assert.ok(scores.every((observation) => observation.dataStatus === 'refreshed'))
+  assert.ok(scores.some((observation) => observation.company === 'Tryg' && observation.metric === 'Kundetilfredshet' && observation.value === 81))
 })
