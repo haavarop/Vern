@@ -1,8 +1,136 @@
 import assert from 'node:assert/strict'
 import { once } from 'node:events'
 import { test } from 'node:test'
-import { createChatServer } from './server.ts'
+import { buildMockCandidates, buildRecommendationPrompt, createChatServer, loadRecommendationPrompt, recommend, resolveRecommendations } from './server.ts'
 import { insuranceData } from './insurance-data.ts'
+
+test('recommendation candidates use only matching mock products and prices', async () => {
+  const { generatePolicies } = await import('./src/onboarding/mockPolicies.ts')
+  const policy = generatePolicies('gjensidige')[0]
+  const result = buildMockCandidates({ insurances: { gjensidige: [policy] } })
+  assert.equal(result.length, 1)
+  assert.equal(result[0].insurance, policy.product)
+  assert.deepEqual(result[0].candidates[0], { company: policy.insurer, price: policy.premium })
+  assert.throws(() => buildMockCandidates({ insurances: { test: [{ product: 'Bil', insurer: 'If' }] } }), /demopris/)
+  assert.throws(() => buildMockCandidates({ insurances: { test: {} } }), /Ugyldige forsikringer/)
+  assert.deepEqual(buildMockCandidates({}), [])
+})
+
+test('model selections must match one candidate per policy and cannot supply prices', () => {
+  const candidates = [{ policyIndex: 0, insurance: 'Bilforsikring', candidates: [{ company: 'If', price: 500 }, { company: 'Tryg', price: 700 }] }]
+  assert.deepEqual(resolveRecommendations(candidates, { selections: [{ policyIndex: 0, candidateIndex: 1, price: 1 }] }), [{ insurance: 'Bilforsikring', company: 'Tryg', price: 700 }])
+  assert.deepEqual(resolveRecommendations(candidates, { selections: [{ policyIndex: 0, candidateIndex: 2 }] }), [{ insurance: 'Bilforsikring', company: 'If', price: 500, fallback: true }])
+  assert.deepEqual(resolveRecommendations(candidates, { selections: [] }), [{ insurance: 'Bilforsikring', company: 'If', price: 500, fallback: true }])
+})
+
+test('every policy gets a result even when model selections are incomplete or duplicated', () => {
+  const candidates = buildMockCandidates({ insurances: {
+    first: [{ product: 'Bilforsikring', insurer: 'If', premium: 500 }, { product: 'Bilforsikring', insurer: 'If', premium: 600 }],
+    second: [{ product: 'Husforsikring', insurer: 'Tryg', premium: 700 }],
+  } })
+  const results = resolveRecommendations(candidates, { selections: [
+    { policyIndex: 2, candidateIndex: 0 },
+    { policyIndex: 2, candidateIndex: 0 },
+    { policyIndex: 0, candidateIndex: 999 },
+  ] })
+  assert.equal(results.length, 3)
+  assert.deepEqual(results.map((result) => result.insurance), ['Bilforsikring', 'Bilforsikring', 'Husforsikring'])
+  assert.deepEqual(results.map((result) => result.price), [500, 600, 700])
+  assert.equal(results[0].fallback, true)
+  assert.equal(results[1].fallback, true)
+  assert.notEqual(results[2].fallback, true)
+  const conflicting = resolveRecommendations([{ policyIndex: 0, insurance: 'Bilforsikring', candidates: [{ company: 'If', price: 500 }, { company: 'Tryg', price: 700 }] }], { selections: [{ policyIndex: 0, candidateIndex: 0 }, { policyIndex: 0, candidateIndex: 1 }] })
+  assert.equal(conflicting[0].fallback, true)
+})
+
+test('model failures keep one labeled fallback for every saved policy', async () => {
+  const { mkdtemp, writeFile, rm } = await import('node:fs/promises')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const dir = await mkdtemp(join(tmpdir(), 'vern-recommendation-fallback-'))
+  const profilePath = join(dir, 'profile.json')
+  const insurancePath = join(dir, 'insurance.json')
+  try {
+    await writeFile(profilePath, JSON.stringify({ insurances: { if: [
+      { product: 'Bilforsikring', insurer: 'If', premium: 500 },
+      { product: 'Husforsikring', insurer: 'If', premium: 700 },
+    ] } }))
+    await writeFile(insurancePath, JSON.stringify({ kategorier: {} }))
+    const results = await recommend(profilePath, insurancePath, async () => { throw new Error('test failure') })
+    assert.deepEqual(results, [
+      { insurance: 'Bilforsikring', company: 'If', price: 500, fallback: true },
+      { insurance: 'Husforsikring', company: 'If', price: 700, fallback: true },
+    ])
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('recommendation endpoint returns structured cards', async () => {
+  const server = createChatServer(undefined, undefined, undefined, undefined, async () => [{ insurance: 'Bilforsikring', company: 'If', price: 500 }])
+  server.listen(0, '127.0.0.1')
+  await once(server, 'listening')
+  const address = server.address()
+  assert.ok(address && typeof address !== 'string')
+  try {
+    const response = await fetch(`http://127.0.0.1:${address.port}/api/recommendations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    assert.equal(response.status, 200)
+    assert.deepEqual(await response.json(), { recommendations: [{ insurance: 'Bilforsikring', company: 'If', price: 500 }] })
+    const invalid = await fetch(`http://127.0.0.1:${address.port}/api/recommendations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{' })
+    assert.equal(invalid.status, 400)
+  } finally {
+    server.close()
+  }
+})
+
+test('malformed model output is an upstream failure', async () => {
+  const server = createChatServer(undefined, undefined, undefined, undefined, async () => { throw new SyntaxError('model response') })
+  server.listen(0, '127.0.0.1')
+  await once(server, 'listening')
+  const address = server.address()
+  assert.ok(address && typeof address !== 'string')
+  try {
+    const response = await fetch(`http://127.0.0.1:${address.port}/api/recommendations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    assert.equal(response.status, 502)
+  } finally {
+    server.close()
+  }
+})
+
+test('recommendation prompt includes preferences and policies without policy identifiers', () => {
+  const prompt = buildRecommendationPrompt({
+    valueProfile: { scores: { dekning: 60 }, ranked: ['dekning'] },
+    insurances: { gjensidige: [{ insurer: 'Gjensidige', product: 'Katteforsikring', premium: 228, coverage: 'Pluss', policyNumber: 'SECRET-POLICY' }] },
+  }, { kategorier: { kundetilfredshet: [{ selskap: 'Gjensidige', score: 78.8 }] } })
+  assert.match(prompt, /Katteforsikring/)
+  assert.match(prompt, /78\.8/)
+  assert.match(prompt, /"dekning":60/)
+  assert.doesNotMatch(prompt, /SECRET-POLICY/)
+  assert.match(prompt, /simulerte demodata/)
+  assert.match(buildRecommendationPrompt({}, {}), /Forsikringer: \[\]/)
+})
+
+test('recommendation prompt reads the current profile and insurance data from disk', async () => {
+  const { mkdtemp, writeFile, rm } = await import('node:fs/promises')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const dir = await mkdtemp(join(tmpdir(), 'vern-recommendation-'))
+  const profilePath = join(dir, 'profile.json')
+  const insurancePath = join(dir, 'insurance.json')
+  try {
+    await writeFile(profilePath, JSON.stringify({ insurances: { test: [{ product: 'Husforsikring' }] } }))
+    await writeFile(insurancePath, JSON.stringify({ observations: [{ company: 'If', value: 75.5 }] }))
+    assert.match(await loadRecommendationPrompt(profilePath, insurancePath), /Husforsikring/)
+    await writeFile(insurancePath, JSON.stringify({ kategorier: { lojalitet: [{ selskap: 'Tryg', score: 85.5 }] } }))
+    const updatedPrompt = await loadRecommendationPrompt(profilePath, insurancePath)
+    assert.match(updatedPrompt, /85\.5/)
+    assert.doesNotMatch(updatedPrompt, /75\.5/)
+    await writeFile(insurancePath, '{}')
+    await assert.rejects(loadRecommendationPrompt(profilePath, insurancePath), /Invalid insurance data/)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
 
 test('chat API forwards conversation and validates requests', async () => {
   const server = createChatServer(async (messages) => `Received: ${messages.at(-1)?.content}`, async () => ({

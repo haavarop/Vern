@@ -1,6 +1,44 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 import { fetchRegistryData, getInsuranceData, insuranceData, insuranceObservations, parseBiScores, parseFremtindFigures } from './insurance-data.ts'
+
+test('curated JSON has the requested categories and only documented scores', async () => {
+  const data = JSON.parse(await readFile(new URL('./insurance-data.json', import.meta.url), 'utf8')) as {
+    kategorier: Record<string, Array<{ selskap: string; score: number; enhet: string; periode: string; kilde: string; kildeUrl: string }>>
+  }
+  assert.deepEqual(Object.keys(data.kategorier), ['kundetilfredshet', 'lojalitet', 'kundeopplevelse', 'klager', 'tvister', 'utfall', 'priser', 'dekninger', 'vilkår', 'skadeoppgjør', 'drift'])
+  const containsNull = (value: unknown): boolean => value === null || (typeof value === 'object' && Object.values(value).some(containsNull))
+  assert.equal(containsNull(data), false)
+  for (const scores of Object.values(data.kategorier)) {
+    assert.ok(Array.isArray(scores))
+    for (const score of scores) {
+      assert.ok(score.selskap && score.enhet && score.periode && score.kilde)
+      assert.ok(Number.isFinite(score.score))
+      assert.equal(new URL(score.kildeUrl).protocol, 'https:')
+    }
+  }
+})
+
+test('complaint outcomes use the number of cases considered on their merits', async () => {
+  const data = JSON.parse(await readFile(new URL('./insurance-data.json', import.meta.url), 'utf8')) as {
+    kategorier: {
+      klager: Array<{ selskap: string; score: number; kildeUrl: string }>
+      utfall: Array<{ selskap: string; score: number; realitetsbehandlede: number; medhold: number; kildeUrl: string }>
+    }
+  }
+  const sourceUrl = 'https://forsikring.ai/data/klagestatistikk-selskap.csv'
+  const cases = data.kategorier.klager.filter((entry) => entry.kildeUrl === sourceUrl)
+  const outcomes = data.kategorier.utfall.filter((entry) => entry.kildeUrl === sourceUrl)
+  assert.ok(outcomes.length > 0)
+  for (const outcome of outcomes) {
+    const complaint = cases.find((entry) => entry.selskap === outcome.selskap)
+    assert.ok(complaint)
+    assert.ok(outcome.realitetsbehandlede > 0 && outcome.realitetsbehandlede <= complaint.score)
+    assert.ok(outcome.medhold >= 0 && outcome.medhold <= outcome.realitetsbehandlede)
+    assert.ok(Math.abs(outcome.score - outcome.medhold / outcome.realitetsbehandlede * 100) < 0.051)
+  }
+})
 
 test('BI score table is parsed with company, period and metric', () => {
   const html = `<table><caption>Skadeforsikring</caption><thead><tr><th>Selskap</th><th>Tilfredshet</th><th>Lojalitet</th></tr></thead><tbody>

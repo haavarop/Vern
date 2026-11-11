@@ -137,35 +137,43 @@ function DimensionBars({ dimensions }: { dimensions: Record<Dimension, number> }
   )
 }
 
-function MatchHero({ match }: { match: InsurerMatch }) {
-  const name = insurerName(match.insurerId)
+export function MatchHero({ match, recommendation }: {
+  match?: InsurerMatch
+  recommendation?: { insurance: string; company: string; price: number; insurerId?: string; fallback?: boolean }
+}) {
+  const headingId = useId()
+  const name = recommendation?.company ?? (match ? insurerName(match.insurerId) : '')
+  const insurerId = match?.insurerId ?? recommendation?.insurerId
   return (
     <Box
       as="section"
-      aria-labelledby="best-match-heading"
-      className="match-hero"
+      aria-labelledby={headingId}
+      className={`match-hero${recommendation && !match ? ' match-hero--without-score' : ''}`}
       background="raised"
       borderRadius="12"
       padding="space-20"
       borderWidth="1"
       borderColor="neutral-subtle"
-      style={{ '--match-color': scoreColor(match.score) } as CSSProperties}
+      style={{ '--match-color': match ? scoreColor(match.score) : 'var(--ax-border-neutral-subtle)' } as CSSProperties}
     >
       <VStack gap="space-16">
         <HStack gap="space-8" wrap>
-          <Tag size="small" variant="moderate" data-color="success" icon={<StarFillIcon aria-hidden />}>Beste match</Tag>
-          {match.isCurrent && <Tag size="small" variant="moderate" data-color="info">Din nåværende</Tag>}
+          <Tag size="small" variant="moderate" data-color={recommendation?.fallback ? 'info' : 'success'} icon={<StarFillIcon aria-hidden />}>{recommendation?.fallback ? 'Nåværende selskap' : recommendation ? 'Forslag' : 'Beste match'}</Tag>
+          {match?.isCurrent && !recommendation?.fallback && <Tag size="small" variant="moderate" data-color="info">Din nåværende</Tag>}
         </HStack>
         <div className="match-hero__top">
-          <ScoreRing score={match.score} />
+          {match && <ScoreRing score={match.score} />}
           <VStack gap="space-8" className="match-hero__name">
-            <Monogram id={match.insurerId} name={name} />
-            <Heading id="best-match-heading" level="2" size="medium">{name}</Heading>
-            <BodyShort weight="semibold" textColor="subtle">{scoreLabel(match.score)}</BodyShort>
+            {insurerId && <Monogram id={insurerId} name={name} />}
+            <Heading id={headingId} level="2" size="medium">{recommendation?.insurance ?? name}</Heading>
+            {recommendation && <BodyShort weight="semibold">{name}</BodyShort>}
+            {recommendation && <BodyShort>Demopris: {new Intl.NumberFormat('nb-NO').format(recommendation.price)} kr/mnd</BodyShort>}
+            {recommendation?.fallback && <BodyShort textColor="subtle">Ikke AI-vurdert. Viser eksisterende demoforsikring.</BodyShort>}
+            {match ? <BodyShort weight="semibold" textColor="subtle">{scoreLabel(match.score)}</BodyShort> : <BodyShort textColor="subtle">Matchscore er ikke tilgjengelig.</BodyShort>}
           </VStack>
         </div>
-        <BodyLong>{match.reason}</BodyLong>
-        <DimensionBars dimensions={match.dimensions} />
+        {match && <BodyLong>{match.reason}</BodyLong>}
+        {match && <DimensionBars dimensions={match.dimensions} />}
       </VStack>
     </Box>
   )
