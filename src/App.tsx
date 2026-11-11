@@ -1,11 +1,13 @@
-import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useState, type ComponentProps, type FormEvent, type KeyboardEvent, type ReactNode } from 'react'
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { ArrowUp } from 'lucide-react'
 import { Alert, HStack, Loader, Theme } from '@navikt/ds-react'
 import Onboarding from './onboarding/Onboarding.tsx'
 import ProfilePage from './profile/ProfilePage.tsx'
 import ValueProfileFlow from './profile/ValueProfileFlow.tsx'
-import type { Answers, UserProfile } from './profile/types.ts'
+import { QUESTIONS, type Answers, type UserProfile } from './profile/types.ts'
 import { buildStoredProfile, deleteProfile, fetchProfile, isNewCustomer, saveProfile } from './profile/storage.ts'
+import { clearDraft, loadDraft, parseQuestionParam, questionParam } from './profile/draft.ts'
 import MatchPage from './match/MatchPage.tsx'
 import type { ConnectionState } from './onboarding/types.ts'
 import { usePrefersDark } from './useMediaQuery.ts'
@@ -13,19 +15,29 @@ import './App.css'
 
 type Message = { role: 'user' | 'assistant'; content: string }
 
-type View = 'loading' | 'values' | 'insurers' | 'profile' | 'matches' | 'chat'
+const ONBOARDING_VALUES_PATH = '/verdiprofil'
+const EDIT_VALUES_PATH = '/profil/verdiprofil'
+// Only these paths are accepted in ?tilbake= so the URL can't send the user anywhere else.
+const RETURN_PATHS = ['/matcher', '/profil']
+
+function returnPath(value: string | null): string {
+  return value && RETURN_PATHS.includes(value) ? value : '/profil'
+}
 
 function App() {
-  // New customers see onboarding first as its own full page: verdiprofil (steg 1) → forsikringer (steg 2) → profil → matcher.
-  // Returning customers (data/profile.json is filled in) go straight to the profile.
-  const [view, setView] = useState<View>('loading')
+  // New customers see onboarding first as its own full page: /verdiprofil/:spm (steg 1) → /forsikringer (steg 2) → /profil → /matcher.
+  // Returning customers (data/profile.json is filled in) go straight to /profil. The URL only holds where the user is;
+  // the profile data lives here.
+  const [loaded, setLoaded] = useState(false)
   const [onboarded, setOnboarded] = useState(false)
   const [seenMatches, setSeenMatches] = useState(false)
-  const [valuesReturn, setValuesReturn] = useState<View | null>(null)
   const [connections, setConnections] = useState<ConnectionState>({})
   const [profile, setProfile] = useState<UserProfile>({ answers: null })
   const [saveError, setSaveError] = useState('')
   const prefersDark = usePrefersDark()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const [searchParams] = useSearchParams()
 
   useEffect(() => {
     let cancelled = false
@@ -33,50 +45,59 @@ function App() {
       .then((stored) => {
         if (cancelled) return
         if (isNewCustomer(stored)) {
-          setView('values')
-          return
+          // Keeps answers from step 1 when step 2 is refreshed.
+          setProfile({ answers: loadDraft() })
+        } else {
+          setOnboarded(true)
+          setSeenMatches(true)
+          setProfile({ answers: stored.valueProfile?.answers ?? null })
+          setConnections(stored.insurances ?? {})
         }
-        setOnboarded(true)
-        setSeenMatches(true)
-        setProfile({ answers: stored.valueProfile?.answers ?? null })
-        setConnections(stored.insurances ?? {})
-        setView('profile')
+        setLoaded(true)
       })
       .catch((error) => {
         console.warn('Could not load profile, starting onboarding:', error)
-        if (!cancelled) setView('values')
+        if (cancelled) return
+        setProfile({ answers: loadDraft() })
+        setLoaded(true)
       })
     return () => { cancelled = true }
   }, [])
 
+  if (loaded && onboarded && !seenMatches && pathname === '/matcher') setSeenMatches(true)
+
   function persist(answers: Answers | null, insurances: ConnectionState) {
     setSaveError('')
+    clearDraft()
     saveProfile(buildStoredProfile(answers, insurances))
       .catch((error: unknown) => setSaveError(error instanceof Error ? error.message : 'Kunne ikke lagre profilen.'))
   }
 
-  // During first-time onboarding, step 1 continues to step 2. Edits from the profile page return to the profile.
-  // The matches page can also send the user to step 1 and expects them back afterwards.
-  const afterValues: View = valuesReturn ?? (onboarded ? 'profile' : 'insurers')
-
-  function handleValuesDone(answers: Answers | null) {
-    const nextAnswers = answers ?? profile.answers
-    setProfile({ answers: nextAnswers })
-    if (onboarded) persist(nextAnswers, connections)
-    setValuesReturn(null)
-    setView(afterValues)
+  // During first-time onboarding, step 1 continues to step 2. The answers are saved together with the insurers.
+  function finishOnboardingValues(answers: Answers | null) {
+    if (answers) setProfile({ answers })
+    navigate('/forsikringer')
   }
 
-  function showMatches() {
-    setSeenMatches(true)
-    setView('matches')
+  // Edits from the profile page return to the profile. The matches page can also send the user to step 1
+  // and expects them back afterwards (?tilbake=/matcher).
+  function finishEditedValues(answers: Answers | null) {
+    const nextAnswers = answers ?? profile.answers
+    setProfile({ answers: nextAnswers })
+    persist(nextAnswers, connections)
+    navigate(returnPath(searchParams.get('tilbake')))
+  }
+
+  function editValues(search = '') {
+    clearDraft()
+    navigate(`${EDIT_VALUES_PATH}/1${search}`)
   }
 
   function finishInsurers(next: ConnectionState) {
     setConnections(next)
     setOnboarded(true)
     persist(profile.answers, next)
-    setView('profile')
+    navigate('/profil')
   }
 
   async function reset() {
@@ -86,62 +107,99 @@ function App() {
       setSaveError(error instanceof Error ? error.message : 'Kunne ikke slette profilen.')
       return
     }
+    clearDraft()
     setOnboarded(false)
     setSeenMatches(false)
     setConnections({})
     setProfile({ answers: null })
-    setView('values')
+    navigate(`${ONBOARDING_VALUES_PATH}/1`, { replace: true })
   }
+
+  const onboardedOnly = (element: ReactNode) =>
+    onboarded ? element : <Navigate to={`${ONBOARDING_VALUES_PATH}/1`} replace />
 
   return (
     <Theme theme={prefersDark ? 'dark' : 'light'} hasBackground className="app-theme">
       {saveError && (
         <Alert variant="error" size="small" closeButton onClose={() => setSaveError('')} className="app-alert">{saveError}</Alert>
       )}
-      {view === 'loading' && (
+      {!loaded ? (
         <HStack justify="center" align="center" className="app-loading">
           <Loader size="xlarge" title="Henter profilen din…" />
         </HStack>
+      ) : (
+        <Routes>
+          <Route path="/" element={<Navigate to={onboarded ? '/profil' : `${ONBOARDING_VALUES_PATH}/1`} replace />} />
+          <Route path={`${ONBOARDING_VALUES_PATH}/:spm`} element={onboarded ? <Navigate to="/profil" replace /> : (
+            <ValuesRoute
+              basePath={ONBOARDING_VALUES_PATH}
+              initialAnswers={profile.answers}
+              doneLabel="Neste: hent forsikringer"
+              onDone={finishOnboardingValues}
+              onSkip={() => finishOnboardingValues(null)}
+            />
+          )} />
+          <Route path="/forsikringer" element={
+            <Onboarding
+              initialConnections={connections}
+              onBack={onboarded ? undefined : () => navigate(`${ONBOARDING_VALUES_PATH}/${questionParam(QUESTIONS.length - 1)}`)}
+              onDone={finishInsurers}
+              onSkip={() => finishInsurers(connections)}
+            />
+          } />
+          <Route path="/profil" element={onboardedOnly(
+            <ProfilePage
+              connections={connections}
+              profile={profile}
+              onAddInsurers={() => navigate('/forsikringer')}
+              onEditProfile={() => editValues()}
+              onReset={() => void reset()}
+              onContinue={() => navigate(seenMatches ? '/vern' : '/matcher')}
+              continueLabel={seenMatches ? 'Gå til Vern' : 'Se hvem som passer deg'}
+              onShowMatches={seenMatches ? () => navigate('/matcher') : undefined}
+            />
+          )} />
+          <Route path={`${EDIT_VALUES_PATH}/:spm`} element={onboardedOnly(
+            <ValuesRoute
+              basePath={EDIT_VALUES_PATH}
+              initialAnswers={profile.answers}
+              doneLabel="Lagre"
+              onDone={finishEditedValues}
+              onSkip={() => finishEditedValues(null)}
+            />
+          )} />
+          <Route path="/matcher" element={onboardedOnly(
+            <MatchPage
+              connections={connections}
+              profile={profile}
+              onBack={() => navigate('/profil')}
+              onContinue={() => navigate('/vern')}
+              onCreateProfile={() => editValues('?tilbake=/matcher')}
+            />
+          )} />
+          <Route path="/vern" element={onboardedOnly(<Chat />)} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       )}
-      {view === 'values' && (
-        <ValueProfileFlow
-          initialAnswers={profile.answers}
-          doneLabel={onboarded ? 'Lagre' : 'Neste: hent forsikringer'}
-          onDone={handleValuesDone}
-          onSkip={() => handleValuesDone(null)}
-        />
-      )}
-      {view === 'insurers' && (
-        <Onboarding
-          initialConnections={connections}
-          onBack={onboarded ? undefined : () => setView('values')}
-          onDone={finishInsurers}
-          onSkip={() => finishInsurers(connections)}
-        />
-      )}
-      {view === 'profile' && (
-        <ProfilePage
-          connections={connections}
-          profile={profile}
-          onAddInsurers={() => setView('insurers')}
-          onEditProfile={() => setView('values')}
-          onReset={() => void reset()}
-          onContinue={seenMatches ? () => setView('chat') : showMatches}
-          continueLabel={seenMatches ? 'Gå til Vern' : 'Se hvem som passer deg'}
-          onShowMatches={seenMatches ? showMatches : undefined}
-        />
-      )}
-      {view === 'matches' && (
-        <MatchPage
-          connections={connections}
-          profile={profile}
-          onBack={() => setView('profile')}
-          onContinue={() => setView('chat')}
-          onCreateProfile={() => { setValuesReturn('matches'); setView('values') }}
-        />
-      )}
-      {view === 'chat' && <Chat />}
     </Theme>
+  )
+}
+
+type ValuesRouteProps = { basePath: string } & Omit<ComponentProps<typeof ValueProfileFlow>, 'step' | 'onStepChange'>
+
+// Reads the question number from the URL. Stays mounted across steps, so the flow keeps its state.
+function ValuesRoute({ basePath, ...props }: ValuesRouteProps) {
+  const { spm } = useParams()
+  const { search } = useLocation()
+  const navigate = useNavigate()
+  const step = parseQuestionParam(spm)
+  if (step === null) return <Navigate to={{ pathname: `${basePath}/1`, search }} replace />
+  return (
+    <ValueProfileFlow
+      {...props}
+      step={step}
+      onStepChange={(next, options) => navigate(`${basePath}/${questionParam(next)}${search}`, { replace: options?.replace })}
+    />
   )
 }
 
