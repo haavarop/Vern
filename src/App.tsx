@@ -2,19 +2,60 @@ import { useState, type FormEvent, type KeyboardEvent } from 'react'
 import { ArrowUp } from 'lucide-react'
 import { Theme } from '@navikt/ds-react'
 import Onboarding from './onboarding/Onboarding.tsx'
+import ProfilePage from './profile/ProfilePage.tsx'
+import ValueProfileFlow from './profile/ValueProfileFlow.tsx'
+import type { UserProfile } from './profile/types.ts'
+import type { ConnectionState } from './onboarding/types.ts'
 import { usePrefersDark } from './useMediaQuery.ts'
 import './App.css'
 
 type Message = { role: 'user' | 'assistant'; content: string }
 
+type View = 'values' | 'insurers' | 'profile' | 'chat'
+
 function App() {
+  // Onboarding is shown first as its own full page: verdiprofil (steg 1) → forsikringer (steg 2) → profil.
+  const [view, setView] = useState<View>('values')
   const [onboarded, setOnboarded] = useState(false)
+  const [connections, setConnections] = useState<ConnectionState>({})
+  const [profile, setProfile] = useState<UserProfile>({ answers: null })
   const prefersDark = usePrefersDark()
+
+  // During first-time onboarding, step 1 continues to step 2. Edits from the profile page return to the profile.
+  const afterValues: View = onboarded ? 'profile' : 'insurers'
+  function finishOnboarding() {
+    setOnboarded(true)
+    setView('profile')
+  }
+
   return (
     <Theme theme={prefersDark ? 'dark' : 'light'} hasBackground className="app-theme">
-      {onboarded
-        ? <Chat />
-        : <Onboarding onDone={() => setOnboarded(true)} onSkip={() => setOnboarded(true)} />}
+      {view === 'values' && (
+        <ValueProfileFlow
+          initialAnswers={profile.answers}
+          doneLabel={onboarded ? 'Lagre' : 'Neste: hent forsikringer'}
+          onDone={(answers) => { setProfile({ answers }); setView(afterValues) }}
+          onSkip={() => setView(afterValues)}
+        />
+      )}
+      {view === 'insurers' && (
+        <Onboarding
+          initialConnections={connections}
+          onBack={onboarded ? undefined : () => setView('values')}
+          onDone={(next) => { setConnections(next); finishOnboarding() }}
+          onSkip={finishOnboarding}
+        />
+      )}
+      {view === 'profile' && (
+        <ProfilePage
+          connections={connections}
+          profile={profile}
+          onAddInsurers={() => setView('insurers')}
+          onEditProfile={() => setView('values')}
+          onContinue={() => setView('chat')}
+        />
+      )}
+      {view === 'chat' && <Chat />}
     </Theme>
   )
 }

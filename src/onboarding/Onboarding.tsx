@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { BodyLong, BodyShort, Box, Button, Detail, Heading, HStack, VStack } from '@navikt/ds-react'
-import { Buildings2Icon, PlusIcon, ShieldCheckmarkIcon } from '@navikt/aksel-icons'
+import { ArrowLeftIcon, Buildings2Icon, PlusIcon, ShieldCheckmarkIcon } from '@navikt/aksel-icons'
 import InsurerPickerModal from './InsurerPickerModal.tsx'
 import Monogram from './Monogram.tsx'
 import PolicySummary from './PolicySummary.tsx'
@@ -9,11 +9,11 @@ import { getInsurer } from './insurers.ts'
 import type { ConnectionState, Policy } from './types.ts'
 import './onboarding.css'
 
-type Props = { onDone: (policies: Policy[]) => void; onSkip: () => void }
+type Props = { onDone: (connections: ConnectionState) => void; onSkip: () => void; onBack?: () => void; initialConnections?: ConnectionState }
 
-export default function Onboarding({ onDone, onSkip }: Props) {
-  const [connections, setConnections] = useState<ConnectionState>({})
-  const [pickerOpen, setPickerOpen] = useState(true)
+export default function Onboarding({ onDone, onSkip, onBack, initialConnections = {} }: Props) {
+  const [connections, setConnections] = useState<ConnectionState>(initialConnections)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   const handleConnected = useCallback((insurerId: string, policies: Policy[]) => {
     setConnections((current) => ({ ...current, [insurerId]: policies }))
@@ -34,7 +34,7 @@ export default function Onboarding({ onDone, onSkip }: Props) {
             <ShieldCheckmarkIcon aria-hidden fontSize="1.75rem" className="onboarding__logo" />
             <Heading level="2" size="small">Vern</Heading>
           </HStack>
-          <Detail textColor="subtle">Profil · steg 1 av 2</Detail>
+          <Detail textColor="subtle">Profil · steg 2 av 2</Detail>
         </HStack>
 
         <VStack gap="space-8">
@@ -80,8 +80,9 @@ export default function Onboarding({ onDone, onSkip }: Props) {
 
       <div className="cta-bar">
         <div className="cta-bar__actions">
+          {onBack && <Button variant="tertiary" icon={<ArrowLeftIcon aria-hidden />} onClick={onBack}>Tilbake</Button>}
           <Button variant="tertiary" onClick={onSkip}>Hopp over</Button>
-          <Button disabled={entries.length === 0} onClick={() => onDone(allPolicies)}>
+          <Button disabled={entries.length === 0} onClick={() => onDone(connections)}>
             {allPolicies.length ? `Fortsett med ${policyCountLabel(allPolicies.length)}` : 'Fortsett'}
           </Button>
         </div>
