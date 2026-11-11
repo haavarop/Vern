@@ -4,15 +4,16 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { getInsuranceData } from './insurance-data.ts'
 
 type Message = { role: 'user' | 'assistant'; content: string }
 type Chat = (messages: Message[]) => Promise<string>
 
 const credential = new AzureCliCredential()
 const model = new AzureChatOpenAICompletions({
-  model: 'gpt-5.6-luna',
+  model: 'gpt-6-luna',
   azureOpenAIEndpoint: 'https://genai.gjensidige.io',
-  azureOpenAIApiDeploymentName: 'gpt-5.6-luna',
+  azureOpenAIApiDeploymentName: 'gpt-6-luna',
   azureOpenAIApiVersion: '2024-10-21',
   azureADTokenProvider: async () => {
     const token = await credential.getToken('https://cognitiveservices.azure.com/.default')
@@ -24,7 +25,12 @@ const model = new AzureChatOpenAICompletions({
 })
 
 async function chat(messages: Message[]) {
-  const response = await model.invoke(messages.map(({ role, content }) => [role === 'assistant' ? 'ai' : 'human', content]))
+  const data = await getInsuranceData()
+  const context = `Du har tilgang til følgende forsikringsdata. Observasjonenes dataStatus viser om de er oppdatert fra kilden eller stammer fra et manuelt øyeblikksbilde. Registry er API-søketreff som kan inneholde flere foretak og ikke automatisk er bekreftede selskapskoblinger. Oppgi kilde, periode og omfang når du bruker dataene. Skill markedstall fra selskapstall. Ikke finn på manglende data eller presenter historiske tall som oppdatert i sanntid.\n${JSON.stringify(data)}`
+  const response = await model.invoke([
+    ['system', context],
+    ...messages.map(({ role, content }): ['ai' | 'human', string] => [role === 'assistant' ? 'ai' : 'human', content]),
+  ])
   return response.text
 }
 
@@ -102,9 +108,18 @@ async function handleProfile(request: IncomingMessage, response: ServerResponse,
   }
 }
 
-async function handle(request: IncomingMessage, response: ServerResponse, invoke: Chat, profilePath: string) {
+async function handle(request: IncomingMessage, response: ServerResponse, invoke: Chat, loadData: typeof getInsuranceData, profilePath: string) {
   if (request.url === '/api/profile') {
     await handleProfile(request, response, profilePath)
+    return
+  }
+  if (request.method === 'GET' && request.url === '/api/insurance-data') {
+    try {
+      send(response, 200, await loadData())
+    } catch (error) {
+      console.error('Insurance data request failed:', error)
+      send(response, 502, { error: 'Could not load insurance data.' })
+    }
     return
   }
   if (request.method !== 'POST' || request.url !== '/api/chat') {
@@ -149,8 +164,12 @@ async function handle(request: IncomingMessage, response: ServerResponse, invoke
   }
 }
 
-export function createChatServer(invoke: Chat = chat, profilePath = process.env.PROFILE_PATH || DEFAULT_PROFILE_PATH) {
-  return createServer((request, response) => { void handle(request, response, invoke, profilePath) })
+export function createChatServer(
+  invoke: Chat = chat,
+  loadData: typeof getInsuranceData = getInsuranceData,
+  profilePath = process.env.PROFILE_PATH || DEFAULT_PROFILE_PATH,
+) {
+  return createServer((request, response) => { void handle(request, response, invoke, loadData, profilePath) })
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
