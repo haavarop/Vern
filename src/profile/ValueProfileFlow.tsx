@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Box, Button, Detail, Heading, HelpText, HStack, Radio, RadioGroup, VStack } from '@navikt/ds-react'
 import { ArrowLeftIcon, ArrowRightIcon, ShieldCheckmarkIcon } from '@navikt/aksel-icons'
 import { QUESTIONS, emptyAnswers, type Answers } from './types.ts'
+import { firstUnansweredBefore, loadDraft, saveDraft } from './draft.ts'
 import '../onboarding/onboarding.css'
 import './profile.css'
 
@@ -9,13 +10,15 @@ type Props = {
   initialAnswers?: Answers | null
   /** Label on the final button. */
   doneLabel?: string
+  /** 0-based question index, from the URL. */
+  step: number
+  onStepChange: (step: number, options?: { replace?: boolean }) => void
   onDone: (answers: Answers) => void
   onSkip: () => void
 }
 
-export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', onDone, onSkip }: Props) {
-  const [answers, setAnswers] = useState<Answers>(() => initialAnswers ?? emptyAnswers())
-  const [step, setStep] = useState(0)
+export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', step, onStepChange, onDone, onSkip }: Props) {
+  const [answers, setAnswers] = useState<Answers>(() => loadDraft() ?? initialAnswers ?? emptyAnswers())
   const headingRef = useRef<HTMLHeadingElement>(null)
   const question = QUESTIONS[step]
   const value = answers[question.id] ?? null
@@ -24,10 +27,22 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
   // Move focus to the new question so screen readers announce it.
   useEffect(() => { if (step > 0) headingRef.current?.focus() }, [step])
 
+  // Deep links can't skip past unanswered questions.
+  const firstGap = firstUnansweredBefore(answers, step)
+  useEffect(() => { if (firstGap !== null) onStepChange(firstGap, { replace: true }) }, [firstGap, onStepChange])
+
   function next() {
     if (isLast) onDone(answers)
-    else setStep(step + 1)
+    else onStepChange(step + 1)
   }
+
+  function answer(option: number) {
+    const updated = { ...answers, [question.id]: option }
+    setAnswers(updated)
+    saveDraft(updated)
+  }
+
+  if (firstGap !== null) return null
 
   return (
     <Box as="main" className="onboarding" paddingInline={{ xs: 'space-16', md: 'space-32' }} paddingBlock="space-24 space-0">
@@ -60,7 +75,7 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
             hideLegend
             description="Velg det som passer deg best."
             value={value === null ? '' : String(value)}
-            onChange={(next: string) => setAnswers((current) => ({ ...current, [question.id]: Number(next) }))}
+            onChange={(next: string) => answer(Number(next))}
           >
             <div className="vp-q__options">
               {question.options.map((option, i) => (
@@ -75,7 +90,7 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
         <div className="cta-bar__actions">
           {step === 0
             ? <Button variant="tertiary" onClick={onSkip}>Hopp over</Button>
-            : <Button variant="tertiary" icon={<ArrowLeftIcon aria-hidden />} onClick={() => setStep(step - 1)}>Tilbake</Button>}
+            : <Button variant="tertiary" icon={<ArrowLeftIcon aria-hidden />} onClick={() => onStepChange(step - 1)}>Tilbake</Button>}
           <Button icon={<ArrowRightIcon aria-hidden />} iconPosition="right" disabled={value === null} onClick={next}>
             {isLast ? doneLabel : 'Neste'}
           </Button>

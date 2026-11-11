@@ -37,10 +37,22 @@ export function buildStoredProfile(answers: Answers | null, insurances: Connecti
   return { version: 1, updatedAt: new Date().toISOString(), onboarded: true, valueProfile, insurances }
 }
 
-export async function fetchProfile(): Promise<Partial<StoredProfile>> {
-  const response = await fetch('/api/profile')
-  if (!response.ok) throw new Error('Kunne ikke hente profilen.')
-  return response.json()
+// In dev the web server is often ready before the API, so network errors and 5xx (Vite proxy errors) are retried.
+// Treating them as "new customer" would send returning users into onboarding.
+export async function fetchProfile(
+  { attempts = 6, delayMs = 500, fetcher = fetch }: { attempts?: number; delayMs?: number; fetcher?: typeof fetch } = {},
+): Promise<Partial<StoredProfile>> {
+  for (let attempt = 1; ; attempt++) {
+    let response: Response | undefined
+    try {
+      response = await fetcher('/api/profile')
+    } catch (error) {
+      if (attempt >= attempts) throw error
+    }
+    if (response?.ok) return await response.json() as Partial<StoredProfile>
+    if (response && (response.status < 500 || attempt >= attempts)) throw new Error('Kunne ikke hente profilen.')
+    await new Promise((resolve) => setTimeout(resolve, delayMs * attempt))
+  }
 }
 
 export async function saveProfile(profile: StoredProfile): Promise<void> {
