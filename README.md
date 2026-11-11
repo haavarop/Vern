@@ -17,6 +17,14 @@ Run `npm test` for the local API test and `npm run build` to type-check and buil
 
 ## Forsikringsdata
 
-Chatboten har tilgang til et manuelt innhentet øyeblikksbilde av norske forsikringsdata fra 11. november 2026 og søker i Finanstilsynets åpne virksomhetsregister når dataene hentes. Dataene kan også hentes som JSON fra `/api/insurance-data`: `observations` inneholder historiske tall, mens `registry` inneholder søketreff fra API-et, hentetidspunkt, totalt antall treff og eventuelle feil per søk. Av de første 50 treffene vises bare selskaper med både selskapsnavnet og «forsikring» i foretaksnavnet. `total` gjelder alle ufiltrerte treff, og `truncated` viser om flere treff finnes. Treffene kan omfatte flere foretak og er ikke automatisk bekreftede selskapskoblinger. Finanstilsynet kan mellomlagre API-svar i opptil én time. Tallene er merket med kilde, periode og omfang. Finansklagenemndas bransjetall gjelder ikke enkeltselskaper.
+Hent dataene som JSON fra `/api/insurance-data`, eller oppdater den lokale filen `insurance-data.json` med:
 
-Datasettet inneholder BI-tall for kundetilfredshet og lojalitet for Gjensidige, If, Tryg og Fremtind, utvalgte klage- og utfallstall fra Finansklagenemnda samt finansielle nøkkeltall fra Fremtind. EPSI, Finansportalen og andre årsrapporter er dokumentert som kilder, men ikke integrert som automatiske datafeeds. Pris, individuelle kundebehov, klageårsaker og øvrige manglende opplysninger er ikke estimert. Oppdater tall og kontroller kildene manuelt før de brukes som beslutningsgrunnlag.
+```sh
+npm run data:refresh
+```
+
+BI-tall for 2026 og Fremtinds publiserte nøkkeltall hentes fra nettsidene ved hver forespørsel eller eksport. `dataStatus` angir om hver observasjon ble hentet på nytt (`refreshed`) eller kommer fra det manuelt innhentede øyeblikksbildet fra 11. november 2026 (`snapshot`). `refresh` viser kildestatus, tidspunkt og eventuelle feil. Dersom en kilde ikke kan hentes eller formatet er endret, beholdes de merkede øyeblikksbildedataene; eksportkommandoen returnerer en feilkode. BI-kilden er foreløpig låst til 2026 og må endres manuelt for en nyere årgang.
+
+`registry` inneholder søketreff fra Finanstilsynets API, hentetidspunkt, totalt antall treff og eventuelle feil per søk. Av de første 50 treffene vises bare selskaper med både selskapsnavnet og «forsikring» i foretaksnavnet. `total` gjelder alle ufiltrerte treff, og `truncated` viser om flere treff finnes. Treffene kan omfatte flere foretak og er ikke automatisk bekreftede selskapskoblinger. Finanstilsynet kan mellomlagre API-svar i opptil én time. Tallene er merket med kilde, periode og omfang. Finansklagenemndas bransjetall gjelder ikke enkeltselskaper.
+
+Datasettet inneholder BI-tall for kundetilfredshet og lojalitet for Gjensidige, If, Tryg og Fremtind, utvalgte klage- og utfallstall fra Finansklagenemnda samt finansielle nøkkeltall fra Fremtind. Finansklagenemnda, EPSI, Finansportalen og andre årsrapporter er dokumentert som kilder, men ikke integrert som automatiske datafeeds. Pris, individuelle kundebehov, klageårsaker og øvrige manglende opplysninger er ikke estimert. Kontroller kildene manuelt før tallene brukes som beslutningsgrunnlag.

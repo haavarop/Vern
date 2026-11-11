@@ -24,7 +24,7 @@ const model = new AzureChatOpenAICompletions({
 
 async function chat(messages: Message[]) {
   const data = await getInsuranceData()
-  const context = `Du har tilgang til følgende forsikringsdata. Observasjonene er et manuelt innhentet øyeblikksbilde, mens registry er API-søketreff som kan inneholde flere foretak og ikke automatisk er bekreftede selskapskoblinger. Oppgi kilde, periode og omfang når du bruker dataene. Skill markedstall fra selskapstall. Ikke finn på manglende data eller presenter øyeblikksbildet som oppdatert i sanntid.\n${JSON.stringify(data)}`
+  const context = `Du har tilgang til følgende forsikringsdata. Observasjonenes dataStatus viser om de er oppdatert fra kilden eller stammer fra et manuelt øyeblikksbilde. Registry er API-søketreff som kan inneholde flere foretak og ikke automatisk er bekreftede selskapskoblinger. Oppgi kilde, periode og omfang når du bruker dataene. Skill markedstall fra selskapstall. Ikke finn på manglende data eller presenter historiske tall som oppdatert i sanntid.\n${JSON.stringify(data)}`
   const response = await model.invoke([
     ['system', context],
     ...messages.map(({ role, content }): ['ai' | 'human', string] => [role === 'assistant' ? 'ai' : 'human', content]),
