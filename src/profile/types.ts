@@ -30,87 +30,87 @@ export const DIMENSIONS: Record<Dimension, { label: string; description: string;
 
 export const DIMENSION_ORDER: Dimension[] = ['pris', 'dekning', 'hjelp', 'enkelhet']
 
-type Option = { id: string; label: string; weights: Partial<Record<Dimension, number>> }
-export type Question = { id: string; title: string; hint: string; scale: [string, string]; options: Option[] }
+type Option = { label: string; weights: Partial<Record<Dimension, number>> }
+
+/** One question = one slider. The options are the stops along the same line. */
+export type Question = { id: string; title: string; help: string; options: Option[] }
 
 export const QUESTIONS: Question[] = [
   {
     id: 'viktigst',
     title: 'Hva betyr mest for deg?',
-    hint: 'Dra opp det som er viktigst for deg – gjerne to ting tydelig høyere enn resten.',
-    scale: ['Lite viktig', 'Svært viktig'],
+    help: 'Vi bruker svaret til å forstå hva du prioriterer høyest på tvers av pris, dekning, hjelp og enkelhet.',
     options: [
-      { id: 'penger', label: 'Mest mulig for pengene', weights: { pris: 1 } },
-      { id: 'dekning', label: 'God dekning', weights: { dekning: 1 } },
-      { id: 'hjelp', label: 'God og pålitelig hjelp', weights: { hjelp: 1 } },
-      { id: 'enkelt', label: 'Enkelt og oversiktlig', weights: { enkelhet: 1 } },
+      { label: 'Mest mulig for pengene', weights: { pris: 1 } },
+      { label: 'God dekning', weights: { dekning: 1 } },
+      { label: 'God og pålitelig hjelp', weights: { hjelp: 1 } },
+      { label: 'Enkelt og oversiktlig', weights: { enkelhet: 1 } },
     ],
   },
   {
     id: 'utsagn',
     title: 'Hvilket utsagn passer best på deg?',
-    hint: 'Hvor godt passer hvert utsagn?',
-    scale: ['Passer ikke', 'Passer godt'],
+    help: 'Forsikring handler ofte om et kompromiss. Her ser vi hvordan du veier pris opp mot dekning og service.',
     options: [
-      { id: 'lavest', label: 'Lavest mulig pris', weights: { pris: 1 } },
-      { id: 'balanse', label: 'Balanse mellom pris og dekning', weights: { pris: 0.5, dekning: 0.5 } },
-      { id: 'merdekning', label: 'Betaler mer for bedre dekning', weights: { dekning: 1 } },
-      { id: 'merservice', label: 'Betaler mer for bedre service', weights: { hjelp: 1 } },
+      { label: 'Lavest mulig pris', weights: { pris: 1 } },
+      { label: 'Balanse mellom pris og dekning', weights: { pris: 0.5, dekning: 0.5 } },
+      { label: 'Betaler mer for bedre dekning', weights: { dekning: 1 } },
+      { label: 'Betaler mer for bedre service', weights: { hjelp: 1 } },
     ],
   },
   {
     id: 'skade',
     title: 'Hvis du fikk en større skade, hva ville vært viktigst?',
-    hint: 'Tenk deg at uhellet er ute. Hva trenger du da?',
-    scale: ['Lite viktig', 'Svært viktig'],
+    help: 'Her finner vi ut hva service og trygghet betyr konkret for deg når noe faktisk skjer.',
     options: [
-      { id: 'rask', label: 'Rask løsning og utbetaling', weights: { hjelp: 0.5, enkelhet: 0.5 } },
-      { id: 'personlig', label: 'Personlig hjelp hele veien', weights: { hjelp: 1 } },
-      { id: 'digitalt', label: 'Enkelt og digitalt', weights: { enkelhet: 1 } },
-      { id: 'erstatning', label: 'Riktig hjelp og erstatning', weights: { dekning: 0.5, hjelp: 0.5 } },
+      { label: 'Rask løsning og utbetaling', weights: { hjelp: 0.5, enkelhet: 0.5 } },
+      { label: 'Personlig hjelp hele veien', weights: { hjelp: 1 } },
+      { label: 'Enkelt og digitalt', weights: { enkelhet: 1 } },
+      { label: 'Riktig hjelp og erstatning', weights: { dekning: 0.5, hjelp: 0.5 } },
     ],
   },
   {
     id: 'handtere',
     title: 'Hvordan vil du helst håndtere forsikringer?',
-    hint: 'Hvor godt passer hver måte for deg?',
-    scale: ['Passer ikke', 'Passer godt'],
+    help: 'Viser om du foretrekker bekvemmelighet, selvbetjening, kontroll eller rådgivning når du velger forsikring.',
     options: [
-      { id: 'fungerer', label: 'En løsning som bare fungerer', weights: { enkelhet: 1 } },
-      { id: 'raskdigital', label: 'Raskt og digitalt', weights: { enkelhet: 1 } },
-      { id: 'selv', label: 'Selv sammenligne og tilpasse', weights: { enkelhet: 0.5, pris: 0.5 } },
-      { id: 'radgiver', label: 'Rådgiverhjelp ved valg', weights: { hjelp: 1 } },
+      { label: 'En løsning som bare fungerer', weights: { enkelhet: 1 } },
+      { label: 'Raskt og digitalt', weights: { enkelhet: 1 } },
+      { label: 'Selv sammenligne og tilpasse', weights: { enkelhet: 0.5, pris: 0.5 } },
+      { label: 'Rådgiverhjelp ved valg', weights: { hjelp: 1 } },
     ],
   },
 ]
 
-export const SCALE_MAX = 4
-export const SCALE_DEFAULT = 2
-export const SCALE_LABELS = ['Ikke i det hele tatt', 'Litt', 'Middels', 'Mye', 'Svært mye']
-
-/** questionId → optionId → 0..SCALE_MAX */
-export type Answers = Record<string, Record<string, number>>
+/** questionId → chosen option index, or null if not answered. */
+export type Answers = Record<string, number | null>
 
 export type UserProfile = { answers: Answers | null }
 
-export function defaultAnswers(): Answers {
-  return Object.fromEntries(QUESTIONS.map((q) => [q.id, Object.fromEntries(q.options.map((o) => [o.id, SCALE_DEFAULT]))]))
+export function emptyAnswers(): Answers {
+  return Object.fromEntries(QUESTIONS.map((q) => [q.id, null]))
 }
 
-/** Score per dimension, 0–100. */
+export function isAnswered(answers: Answers | null): answers is Answers {
+  return !!answers && Object.values(answers).some((v) => v !== null)
+}
+
+/**
+ * Score per dimension, 0–100: the weight the chosen answers gave the dimension,
+ * relative to the most it could have got from the answered questions.
+ */
 export function scoreProfile(answers: Answers): Record<Dimension, number> {
-  const sum = { pris: 0, dekning: 0, hjelp: 0, enkelhet: 0 }
+  const got = { pris: 0, dekning: 0, hjelp: 0, enkelhet: 0 }
   const max = { pris: 0, dekning: 0, hjelp: 0, enkelhet: 0 }
   for (const q of QUESTIONS) {
-    for (const o of q.options) {
-      const value = answers[q.id]?.[o.id] ?? SCALE_DEFAULT
-      for (const [dim, w] of Object.entries(o.weights) as [Dimension, number][]) {
-        sum[dim] += value * w
-        max[dim] += SCALE_MAX * w
-      }
+    const chosen = answers[q.id]
+    if (chosen === null || chosen === undefined) continue
+    for (const dim of DIMENSION_ORDER) {
+      max[dim] += Math.max(...q.options.map((o) => o.weights[dim] ?? 0))
+      got[dim] += q.options[chosen]?.weights[dim] ?? 0
     }
   }
-  return Object.fromEntries(DIMENSION_ORDER.map((d) => [d, max[d] ? Math.round((sum[d] / max[d]) * 100) : 0])) as Record<Dimension, number>
+  return Object.fromEntries(DIMENSION_ORDER.map((d) => [d, max[d] ? Math.round((got[d] / max[d]) * 100) : 0])) as Record<Dimension, number>
 }
 
 /** Dimensions sorted by score, highest first. */

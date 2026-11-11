@@ -1,49 +1,110 @@
-import { useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { ArrowUp } from 'lucide-react'
-import { Theme } from '@navikt/ds-react'
+import { Alert, HStack, Loader, Theme } from '@navikt/ds-react'
 import Onboarding from './onboarding/Onboarding.tsx'
 import ProfilePage from './profile/ProfilePage.tsx'
 import ValueProfileFlow from './profile/ValueProfileFlow.tsx'
-import type { UserProfile } from './profile/types.ts'
+import type { Answers, UserProfile } from './profile/types.ts'
+import { buildStoredProfile, deleteProfile, fetchProfile, isNewCustomer, saveProfile } from './profile/storage.ts'
 import type { ConnectionState } from './onboarding/types.ts'
 import { usePrefersDark } from './useMediaQuery.ts'
 import './App.css'
 
 type Message = { role: 'user' | 'assistant'; content: string }
 
-type View = 'values' | 'insurers' | 'profile' | 'chat'
+type View = 'loading' | 'values' | 'insurers' | 'profile' | 'chat'
 
 function App() {
-  // Onboarding is shown first as its own full page: verdiprofil (steg 1) → forsikringer (steg 2) → profil.
-  const [view, setView] = useState<View>('values')
+  // New customers see onboarding first as its own full page: verdiprofil (steg 1) → forsikringer (steg 2) → profil.
+  // Returning customers (data/profile.json is filled in) go straight to the profile.
+  const [view, setView] = useState<View>('loading')
   const [onboarded, setOnboarded] = useState(false)
   const [connections, setConnections] = useState<ConnectionState>({})
   const [profile, setProfile] = useState<UserProfile>({ answers: null })
+  const [saveError, setSaveError] = useState('')
   const prefersDark = usePrefersDark()
+
+  useEffect(() => {
+    let cancelled = false
+    fetchProfile()
+      .then((stored) => {
+        if (cancelled) return
+        if (isNewCustomer(stored)) {
+          setView('values')
+          return
+        }
+        setOnboarded(true)
+        setProfile({ answers: stored.valueProfile?.answers ?? null })
+        setConnections(stored.insurances ?? {})
+        setView('profile')
+      })
+      .catch((error) => {
+        console.warn('Could not load profile, starting onboarding:', error)
+        if (!cancelled) setView('values')
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  function persist(answers: Answers | null, insurances: ConnectionState) {
+    setSaveError('')
+    saveProfile(buildStoredProfile(answers, insurances))
+      .catch((error: unknown) => setSaveError(error instanceof Error ? error.message : 'Kunne ikke lagre profilen.'))
+  }
 
   // During first-time onboarding, step 1 continues to step 2. Edits from the profile page return to the profile.
   const afterValues: View = onboarded ? 'profile' : 'insurers'
-  function finishOnboarding() {
+
+  function handleValuesDone(answers: Answers | null) {
+    const nextAnswers = answers ?? profile.answers
+    setProfile({ answers: nextAnswers })
+    if (onboarded) persist(nextAnswers, connections)
+    setView(afterValues)
+  }
+
+  function finishInsurers(next: ConnectionState) {
+    setConnections(next)
     setOnboarded(true)
+    persist(profile.answers, next)
     setView('profile')
+  }
+
+  async function reset() {
+    try {
+      await deleteProfile()
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Kunne ikke slette profilen.')
+      return
+    }
+    setOnboarded(false)
+    setConnections({})
+    setProfile({ answers: null })
+    setView('values')
   }
 
   return (
     <Theme theme={prefersDark ? 'dark' : 'light'} hasBackground className="app-theme">
+      {saveError && (
+        <Alert variant="error" size="small" closeButton onClose={() => setSaveError('')} className="app-alert">{saveError}</Alert>
+      )}
+      {view === 'loading' && (
+        <HStack justify="center" align="center" className="app-loading">
+          <Loader size="xlarge" title="Henter profilen din…" />
+        </HStack>
+      )}
       {view === 'values' && (
         <ValueProfileFlow
           initialAnswers={profile.answers}
           doneLabel={onboarded ? 'Lagre' : 'Neste: hent forsikringer'}
-          onDone={(answers) => { setProfile({ answers }); setView(afterValues) }}
-          onSkip={() => setView(afterValues)}
+          onDone={handleValuesDone}
+          onSkip={() => handleValuesDone(null)}
         />
       )}
       {view === 'insurers' && (
         <Onboarding
           initialConnections={connections}
           onBack={onboarded ? undefined : () => setView('values')}
-          onDone={(next) => { setConnections(next); finishOnboarding() }}
-          onSkip={finishOnboarding}
+          onDone={finishInsurers}
+          onSkip={() => finishInsurers(connections)}
         />
       )}
       {view === 'profile' && (
@@ -52,6 +113,7 @@ function App() {
           profile={profile}
           onAddInsurers={() => setView('insurers')}
           onEditProfile={() => setView('values')}
+          onReset={() => void reset()}
           onContinue={() => setView('chat')}
         />
       )}

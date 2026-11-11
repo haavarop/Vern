@@ -1,6 +1,8 @@
 import { AzureCliCredential } from '@azure/identity'
 import { AzureChatOpenAICompletions } from '@langchain/openai'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { getInsuranceData } from './insurance-data.ts'
 
@@ -37,7 +39,80 @@ function send(response: ServerResponse, status: number, body: object) {
   response.end(JSON.stringify(body))
 }
 
-async function handle(request: IncomingMessage, response: ServerResponse, invoke: Chat, loadData: typeof getInsuranceData) {
+const DEFAULT_PROFILE_PATH = resolve(import.meta.dirname, 'data', 'profile.json')
+
+class TooLarge extends Error {}
+
+async function readBody(request: IncomingMessage, limit = 100_000) {
+  let body = ''
+  for await (const chunk of request) {
+    body += chunk
+    if (body.length > limit) throw new TooLarge()
+  }
+  return body
+}
+
+/** Returns the stored profile, or {} when the customer is new (missing or empty file). */
+async function loadProfile(path: string): Promise<object> {
+  try {
+    const text = (await readFile(path, 'utf8')).trim()
+    if (!text) return {}
+    const data: unknown = JSON.parse(text)
+    return data && typeof data === 'object' && !Array.isArray(data) ? data : {}
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return {}
+    throw error
+  }
+}
+
+async function saveProfile(path: string, profile: object) {
+  await mkdir(dirname(path), { recursive: true })
+  const tmp = `${path}.tmp`
+  await writeFile(tmp, `${JSON.stringify(profile, null, 2)}\n`)
+  await rename(tmp, path)
+}
+
+async function handleProfile(request: IncomingMessage, response: ServerResponse, path: string) {
+  try {
+    if (request.method === 'GET') {
+      send(response, 200, await loadProfile(path))
+      return
+    }
+    if (request.method === 'DELETE') {
+      await rm(path, { force: true })
+      send(response, 200, {})
+      return
+    }
+    if (request.method === 'PUT') {
+      if (!request.headers['content-type']?.toLowerCase().startsWith('application/json')) {
+        send(response, 415, { error: 'Expected application/json.' })
+        return
+      }
+      const data: unknown = JSON.parse(await readBody(request, 1_000_000))
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        send(response, 400, { error: 'Profile must be a JSON object.' })
+        return
+      }
+      await saveProfile(path, data)
+      send(response, 200, data)
+      return
+    }
+    send(response, 405, { error: 'Method not allowed' })
+  } catch (error) {
+    if (error instanceof SyntaxError) send(response, 400, { error: 'Invalid JSON request.' })
+    else if (error instanceof TooLarge) send(response, 413, { error: 'Request is too large' })
+    else {
+      console.error('Profile storage failed:', error)
+      send(response, 500, { error: 'Could not read or save the profile.' })
+    }
+  }
+}
+
+async function handle(request: IncomingMessage, response: ServerResponse, invoke: Chat, loadData: typeof getInsuranceData, profilePath: string) {
+  if (request.url === '/api/profile') {
+    await handleProfile(request, response, profilePath)
+    return
+  }
   if (request.method === 'GET' && request.url === '/api/insurance-data') {
     try {
       send(response, 200, await loadData())
@@ -57,13 +132,15 @@ async function handle(request: IncomingMessage, response: ServerResponse, invoke
   }
 
   try {
-    let body = ''
-    for await (const chunk of request) {
-      body += chunk
-      if (body.length > 100_000) {
+    let body: string
+    try {
+      body = await readBody(request)
+    } catch (error) {
+      if (error instanceof TooLarge) {
         send(response, 413, { error: 'Request is too large' })
         return
       }
+      throw error
     }
     const data: unknown = JSON.parse(body)
     if (!data || typeof data !== 'object' || !('messages' in data) || !Array.isArray(data.messages) ||
@@ -87,8 +164,12 @@ async function handle(request: IncomingMessage, response: ServerResponse, invoke
   }
 }
 
-export function createChatServer(invoke: Chat = chat, loadData: typeof getInsuranceData = getInsuranceData) {
-  return createServer((request, response) => { void handle(request, response, invoke, loadData) })
+export function createChatServer(
+  invoke: Chat = chat,
+  loadData: typeof getInsuranceData = getInsuranceData,
+  profilePath = process.env.PROFILE_PATH || DEFAULT_PROFILE_PATH,
+) {
+  return createServer((request, response) => { void handle(request, response, invoke, loadData, profilePath) })
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

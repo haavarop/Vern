@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Customer profile (personal data, written by the API server)
+data/profile.json
+data/profile.json.tmp
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

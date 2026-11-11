@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { BodyLong, BodyShort, Box, Button, Detail, Heading, HStack, VStack } from '@navikt/ds-react'
+import { Box, Button, Detail, Heading, HelpText, HStack, Radio, RadioGroup, VStack } from '@navikt/ds-react'
 import { ArrowLeftIcon, ArrowRightIcon, ShieldCheckmarkIcon } from '@navikt/aksel-icons'
-import { QUESTIONS, SCALE_LABELS, SCALE_MAX, defaultAnswers, type Answers } from './types.ts'
+import { QUESTIONS, emptyAnswers, type Answers } from './types.ts'
 import '../onboarding/onboarding.css'
 import './profile.css'
 
@@ -13,54 +13,20 @@ type Props = {
   onSkip: () => void
 }
 
-function Slider({ id, label, value, scale, onChange }: {
-  id: string
-  label: string
-  value: number
-  scale: [string, string]
-  onChange: (value: number) => void
-}) {
-  const fill = `${(value / SCALE_MAX) * 100}%`
-  return (
-    <div className="vp-slider">
-      <HStack justify="space-between" align="baseline" gap="space-8" wrap={false}>
-        <label htmlFor={id}><BodyShort weight="semibold">{label}</BodyShort></label>
-        <Detail textColor="subtle" className="vp-slider__value" aria-hidden>{SCALE_LABELS[value]}</Detail>
-      </HStack>
-      <input
-        id={id}
-        type="range"
-        className="vp-slider__input"
-        min={0}
-        max={SCALE_MAX}
-        step={1}
-        value={value}
-        style={{ '--fill': fill } as React.CSSProperties}
-        aria-valuetext={SCALE_LABELS[value]}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
-      <div className="vp-slider__ticks" aria-hidden>
-        {Array.from({ length: SCALE_MAX + 1 }, (_, i) => <span key={i} className={i <= value ? 'is-on' : undefined} />)}
-      </div>
-      <HStack justify="space-between" aria-hidden>
-        <Detail textColor="subtle">{scale[0]}</Detail>
-        <Detail textColor="subtle">{scale[1]}</Detail>
-      </HStack>
-    </div>
-  )
-}
-
 export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', onDone, onSkip }: Props) {
-  const [answers, setAnswers] = useState<Answers>(() => initialAnswers ?? defaultAnswers())
+  const [answers, setAnswers] = useState<Answers>(() => initialAnswers ?? emptyAnswers())
   const [step, setStep] = useState(0)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const question = QUESTIONS[step]
+  const value = answers[question.id] ?? null
   const isLast = step === QUESTIONS.length - 1
 
+  // Move focus to the new question so screen readers announce it.
   useEffect(() => { if (step > 0) headingRef.current?.focus() }, [step])
 
-  function set(optionId: string, value: number) {
-    setAnswers((current) => ({ ...current, [question.id]: { ...current[question.id], [optionId]: value } }))
+  function next() {
+    if (isLast) onDone(answers)
+    else setStep(step + 1)
   }
 
   return (
@@ -83,25 +49,26 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
           </div>
         </VStack>
 
-        <VStack gap="space-8" key={question.id} className="vp-question">
-          <Heading ref={headingRef} tabIndex={-1} level="1" size="large" className="vp-question__title">{question.title}</Heading>
-          <BodyLong textColor="subtle">{question.hint}</BodyLong>
-        </VStack>
+        <VStack gap="space-16" key={question.id} className="vp-step">
+          <HStack gap="space-8" align="start" justify="space-between" wrap={false}>
+            <Heading ref={headingRef} tabIndex={-1} level="1" size="large" className="vp-step__title">{question.title}</Heading>
+            <HelpText title="Hvorfor spør vi om dette?" placement="left" className="vp-step__help">{question.help}</HelpText>
+          </HStack>
 
-        <Box as="section" key={`${question.id}-card`} aria-label={question.title} background="raised" borderRadius="12" padding="space-16" borderWidth="1" borderColor="neutral-subtle" className="vp-question">
-          <VStack gap="space-0" className="vp-sliders">
-            {question.options.map((option) => (
-              <Slider
-                key={option.id}
-                id={`${question.id}-${option.id}`}
-                label={option.label}
-                value={answers[question.id][option.id]}
-                scale={question.scale}
-                onChange={(value) => set(option.id, value)}
-              />
-            ))}
-          </VStack>
-        </Box>
+          <RadioGroup
+            legend={question.title}
+            hideLegend
+            description="Velg det som passer deg best."
+            value={value === null ? '' : String(value)}
+            onChange={(next: string) => setAnswers((current) => ({ ...current, [question.id]: Number(next) }))}
+          >
+            <div className="vp-q__options">
+              {question.options.map((option, i) => (
+                <Radio key={option.label} value={String(i)} className="vp-q__option">{option.label}</Radio>
+              ))}
+            </div>
+          </RadioGroup>
+        </VStack>
       </VStack>
 
       <div className="cta-bar">
@@ -109,11 +76,7 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
           {step === 0
             ? <Button variant="tertiary" onClick={onSkip}>Hopp over</Button>
             : <Button variant="tertiary" icon={<ArrowLeftIcon aria-hidden />} onClick={() => setStep(step - 1)}>Tilbake</Button>}
-          <Button
-            icon={isLast ? undefined : <ArrowRightIcon aria-hidden />}
-            iconPosition="right"
-            onClick={() => (isLast ? onDone(answers) : setStep(step + 1))}
-          >
+          <Button icon={<ArrowRightIcon aria-hidden />} iconPosition="right" disabled={value === null} onClick={next}>
             {isLast ? doneLabel : 'Neste'}
           </Button>
         </div>
