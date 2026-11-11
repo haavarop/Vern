@@ -8,6 +8,7 @@
   flex-direction: column;
 }
 .conversation { flex: 1; }
+.recommendations { display: grid; gap: var(--ax-space-12); margin-bottom: var(--ax-space-16); }
 .message { margin-bottom: 24px; line-height: 1.5; }
 .message p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .composer { display: flex; align-items: end; gap: 8px; }

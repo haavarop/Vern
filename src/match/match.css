@@ -25,6 +25,7 @@
 }
 
 .match-hero__name { min-width: 0; overflow-wrap: anywhere; }
+.match-hero--without-score .match-hero__name { grid-column: 1 / -1; }
 
 /* Ring gauge */
 .match-ring {

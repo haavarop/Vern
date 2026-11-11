@@ -225,10 +225,10 @@ export async function getInsuranceData(fetcher: typeof fetch = fetch) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const data = await getInsuranceData()
-  await writeFile('insurance-data.json', `${JSON.stringify(data, null, 2)}\n`)
-  console.log('Wrote insurance-data.json')
+  await writeFile('insurance-data-fetched.json', `${JSON.stringify(data, null, 2)}\n`)
+  console.log('Wrote insurance-data-fetched.json')
   if (data.refresh.bi.status !== 'ok' || data.refresh.fremtind.status !== 'ok' || data.registry.results.some((result) => result.status !== 'ok')) {
-    console.error('One or more sources failed; see source status in insurance-data.json.')
+    console.error('One or more sources failed; see source status in insurance-data-fetched.json.')
     process.exitCode = 1
   }
 }

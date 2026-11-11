@@ -1,483 +1,631 @@
 {
-  "collectedAt": "2026-11-11",
-  "companies": [
-    "Gjensidige",
-    "If",
-    "Tryg",
-    "Fremtind"
-  ],
-  "observations": [
-    {
-      "metric": "Mottatte klagesaker",
-      "value": 2885,
-      "unit": "saker",
-      "scope": "Skadeforsikring, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Skadeforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Andel klager: bygning og innbo",
-      "value": 37,
-      "unit": "%",
-      "scope": "Mottatte skadeforsikringsklager, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Skadeforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Andel klager: motorvogn",
-      "value": 20,
-      "unit": "%",
-      "scope": "Mottatte skadeforsikringsklager, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Skadeforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Andel klager: reise",
-      "value": 11,
-      "unit": "%",
-      "scope": "Mottatte skadeforsikringsklager, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Skadeforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Medhold i sekretariatet",
-      "value": 21,
-      "unit": "%",
-      "scope": "Realitetsbehandlede skadeforsikringssaker, helt eller delvis medhold, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Skadeforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Nemndsavgjørelser",
-      "value": 453,
-      "unit": "avgjørelser",
-      "scope": "FinKN Skade, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Skadeforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Medhold i nemnd",
-      "value": 15.2,
-      "unit": "%",
-      "scope": "FinKN Skade, helt eller delvis medhold, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/N%C3%B8kkeltall2",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Mottatte klagesaker",
-      "value": 1160,
-      "unit": "saker",
-      "scope": "Personforsikring, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Personforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Andel klager: liv og uførhet",
-      "value": 23.8,
-      "unit": "%",
-      "scope": "Personforsikring, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Personforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Andel klager: sykeforsikring",
-      "value": 20.9,
-      "unit": "%",
-      "scope": "Personforsikring, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Personforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Andel klager: ulykke",
-      "value": 18.7,
-      "unit": "%",
-      "scope": "Personforsikring, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Personforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Andel klager: yrkesskade",
-      "value": 17.8,
-      "unit": "%",
-      "scope": "Personforsikring, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Personforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Medhold i sekretariatet",
-      "value": 25.2,
-      "unit": "%",
-      "scope": "Realitetsbehandlede personforsikringssaker, helt eller delvis medhold, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Personforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "metric": "Medhold i nemnd",
-      "value": 22.4,
-      "unit": "%",
-      "scope": "FinKN Person, helt eller delvis medhold, alle foretak",
-      "company": null,
-      "period": "2025",
-      "source": "Finansklagenemnda, årsrapport",
-      "sourceUrl": "https://rapport.finkn.no/book/Personforsikring",
-      "dataStatus": "snapshot"
-    },
-    {
-      "company": "Tryg",
-      "metric": "Kundetilfredshet",
-      "value": 80.6,
-      "unit": "indekspoeng",
-      "period": "2026",
-      "scope": "Skadeforsikring",
-      "source": "Norsk kundebarometer",
-      "sourceUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "Tryg",
-      "metric": "Lojalitet",
-      "value": 85.5,
-      "unit": "indekspoeng",
-      "period": "2026",
-      "scope": "Skadeforsikring",
-      "source": "Norsk kundebarometer",
-      "sourceUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "Gjensidige",
-      "metric": "Kundetilfredshet",
-      "value": 78.8,
-      "unit": "indekspoeng",
-      "period": "2026",
-      "scope": "Skadeforsikring",
-      "source": "Norsk kundebarometer",
-      "sourceUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "Gjensidige",
-      "metric": "Lojalitet",
-      "value": 83.5,
-      "unit": "indekspoeng",
-      "period": "2026",
-      "scope": "Skadeforsikring",
-      "source": "Norsk kundebarometer",
-      "sourceUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "If",
-      "metric": "Kundetilfredshet",
-      "value": 75.5,
-      "unit": "indekspoeng",
-      "period": "2026",
-      "scope": "Skadeforsikring",
-      "source": "Norsk kundebarometer",
-      "sourceUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "If",
-      "metric": "Lojalitet",
-      "value": 76.8,
-      "unit": "indekspoeng",
-      "period": "2026",
-      "scope": "Skadeforsikring",
-      "source": "Norsk kundebarometer",
-      "sourceUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "Fremtind",
-      "metric": "Kundetilfredshet",
-      "value": 74,
-      "unit": "indekspoeng",
-      "period": "2026",
-      "scope": "Skadeforsikring",
-      "source": "Norsk kundebarometer",
-      "sourceUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "Fremtind",
-      "metric": "Lojalitet",
-      "value": 78.9,
-      "unit": "indekspoeng",
-      "period": "2026",
-      "scope": "Skadeforsikring",
-      "source": "Norsk kundebarometer",
-      "sourceUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "Fremtind",
-      "metric": "Inntekter fra forsikringstjenester",
-      "value": 18373,
-      "unit": "MNOK",
-      "period": "Fremtind per tredje kvartal 2026",
-      "scope": "Fremtind",
-      "source": "Fremtind, finansiell informasjon",
-      "sourceUrl": "https://www.fremtind.no/om-oss/finansiell-informasjon",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "Fremtind",
-      "metric": "Resultat fra forsikringstjenester",
-      "value": 4280,
-      "unit": "MNOK",
-      "period": "Fremtind per tredje kvartal 2026",
-      "scope": "Fremtind",
-      "source": "Fremtind, finansiell informasjon",
-      "sourceUrl": "https://www.fremtind.no/om-oss/finansiell-informasjon",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "Fremtind",
-      "metric": "Resultat før skatt",
-      "value": 4933,
-      "unit": "MNOK",
-      "period": "Fremtind per tredje kvartal 2026",
-      "scope": "Fremtind",
-      "source": "Fremtind, finansiell informasjon",
-      "sourceUrl": "https://www.fremtind.no/om-oss/finansiell-informasjon",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "Fremtind",
-      "metric": "Netto inntekt fra investeringer",
-      "value": 1034,
-      "unit": "MNOK",
-      "period": "Fremtind per tredje kvartal 2026",
-      "scope": "Fremtind",
-      "source": "Fremtind, finansiell informasjon",
-      "sourceUrl": "https://www.fremtind.no/om-oss/finansiell-informasjon",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "Fremtind",
-      "metric": "Combined ratio (netto etter gjenforsikring)",
-      "value": 76.7,
-      "unit": "%",
-      "period": "Fremtind per tredje kvartal 2026",
-      "scope": "Netto etter gjenforsikring",
-      "source": "Fremtind, finansiell informasjon",
-      "sourceUrl": "https://www.fremtind.no/om-oss/finansiell-informasjon",
-      "dataStatus": "refreshed"
-    },
-    {
-      "company": "Fremtind",
-      "metric": "Solvensmargin",
-      "value": 189,
-      "unit": "%",
-      "period": "Fremtind per tredje kvartal 2026",
-      "scope": "Fremtind",
-      "source": "Fremtind, finansiell informasjon",
-      "sourceUrl": "https://www.fremtind.no/om-oss/finansiell-informasjon",
-      "dataStatus": "refreshed"
-    }
-  ],
-  "sources": [
-    {
-      "name": "Norsk kundebarometer",
-      "url": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
-      "status": "Tall for tilfredshet og lojalitet er registrert."
-    },
-    {
-      "name": "EPSI Rating",
-      "url": "https://www.epsi-norway.org/bransjestudier/forsikring/",
-      "status": "Forsikringsstudie tilgjengelig, men selskapstall ikke verifisert her."
-    },
-    {
-      "name": "Finansklagenemnda",
-      "url": "https://www.finkn.no/om-oss/arsrapporter",
-      "status": "Aggregerte klage- og utfallstall er registrert; de er ikke tall per selskap."
-    },
-    {
-      "name": "Finanstilsynet",
-      "url": "https://www.finanstilsynet.no/analyser-og-statistikk/api-for-apne-data/",
-      "status": "Foretakssøk hentes fra API-et; treffene må ikke forveksles med bekreftede selskapskoblinger."
-    },
-    {
-      "name": "Finansportalen",
-      "url": "https://www.forbrukerradet.no/finansportalen/",
-      "status": "Ingen verifiserte sammenlignbare forsikringspriser er hentet inn her."
-    },
-    {
-      "name": "Fremtind",
-      "url": "https://www.fremtind.no/om-oss/finansiell-informasjon",
-      "status": "Utvalgte finansielle nøkkeltall er registrert."
-    },
-    {
-      "name": "Tryg",
-      "url": "https://tryg.com/en/downloads-all",
-      "status": "Rapporter tilgjengelige; tall er ikke hentet inn her."
-    }
-  ],
-  "limitations": [
-    "BI og Fremtinds nettsider forsøkes oppdatert ved henting; ved feil brukes det manuelle øyeblikksbildet. Finanstilsynet kan mellomlagre API-svar i opptil én time.",
-    "Trygghetsbehov, behov for hjelp, enkelhetsbehov og risikovilje er individuelle behov og kan ikke utledes fra selskapstallene.",
-    "Priser avhenger av kunde, produkt og risiko; dekninger og vilkår må undersøkes i konkrete avtaler.",
-    "Kundeopplevelse, klager per selskap, klageårsak, skadeoppgjør og flere selskapers nøkkeltall mangler eller er ikke verifisert.",
-    "Andeler klager etter produkt er ikke antall klager fordelt på årsak.",
-    "Tall fra ulike perioder, segmenter og kilder er ikke nødvendigvis direkte sammenlignbare."
-  ],
-  "generatedAt": "2026-11-11T14:40:13.996Z",
-  "registry": {
-    "source": "Finanstilsynet virksomhetsregister",
-    "fetchedAt": "2026-11-11T14:40:13.996Z",
-    "results": [
+  "kategorier": {
+    "kundetilfredshet": [
       {
-        "company": "Gjensidige",
-        "query": "Gjensidige",
-        "sourceUrl": "https://api.finanstilsynet.no/registry/v2/legal-entities/search?query=Gjensidige&pageSize=50",
-        "status": "ok",
-        "total": 33,
-        "truncated": false,
-        "entities": [
-          {
-            "name": "GJENSIDIGE FORSIKRING ASA",
-            "legalEntityId": 107829,
-            "finanstilsynetId": "FT00077656",
-            "organisationNumber": "995568217"
-          },
-          {
-            "name": "GJENSIDIGE PENSJONSFORSIKRING AS",
-            "legalEntityId": 104951,
-            "finanstilsynetId": "FT00074778",
-            "organisationNumber": "988343773"
-          },
-          {
-            "name": "GJENSIDIGE FORSIKRING BA, NORGE, DANSK FILIAL",
-            "legalEntityId": 182201,
-            "finanstilsynetId": "FT00095228",
-            "organisationNumber": null
-          },
-          {
-            "name": "GJENSIDIGE FORSIKRING BA, NORGE, SVENSK FILIAL",
-            "legalEntityId": 182199,
-            "finanstilsynetId": "FT00095226",
-            "organisationNumber": null
-          }
-        ]
+        "selskap": "Tryg",
+        "score": 80.6,
+        "enhet": "indekspoeng",
+        "periode": "2026",
+        "omfang": "Skadeforsikring",
+        "kilde": "Norsk kundebarometer",
+        "kildeUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
+        "dataStatus": "refreshed"
       },
       {
-        "company": "If",
-        "query": "If Skadeforsikring",
-        "sourceUrl": "https://api.finanstilsynet.no/registry/v2/legal-entities/search?query=If+Skadeforsikring&pageSize=50",
-        "status": "ok",
-        "total": 16,
-        "truncated": false,
-        "entities": [
-          {
-            "name": "IF SKADEFORSIKRING NUF",
-            "legalEntityId": 99591,
-            "finanstilsynetId": "FT00069418",
-            "organisationNumber": "981290666"
-          },
-          {
-            "name": "IF LIVSFORSIKRING NUF",
-            "legalEntityId": 105669,
-            "finanstilsynetId": "FT00075496",
-            "organisationNumber": "988661848"
-          }
-        ]
+        "selskap": "Gjensidige",
+        "score": 78.8,
+        "enhet": "indekspoeng",
+        "periode": "2026",
+        "omfang": "Skadeforsikring",
+        "kilde": "Norsk kundebarometer",
+        "kildeUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
+        "dataStatus": "refreshed"
       },
       {
-        "company": "Tryg",
-        "query": "Tryg",
-        "sourceUrl": "https://api.finanstilsynet.no/registry/v2/legal-entities/search?query=Tryg&pageSize=50",
-        "status": "ok",
-        "total": 112,
-        "truncated": true,
-        "entities": [
-          {
-            "name": "TRYG FORSIKRING A/S",
-            "legalEntityId": 181270,
-            "finanstilsynetId": "FT00094296",
-            "organisationNumber": null
-          },
-          {
-            "name": "TRYG FORSIKRING A/S NUF",
-            "legalEntityId": 106127,
-            "finanstilsynetId": "FT00075954",
-            "organisationNumber": "989563521"
-          }
-        ]
+        "selskap": "If",
+        "score": 75.5,
+        "enhet": "indekspoeng",
+        "periode": "2026",
+        "omfang": "Skadeforsikring",
+        "kilde": "Norsk kundebarometer",
+        "kildeUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
+        "dataStatus": "refreshed"
       },
       {
-        "company": "Fremtind",
-        "query": "Fremtind",
-        "sourceUrl": "https://api.finanstilsynet.no/registry/v2/legal-entities/search?query=Fremtind&pageSize=50",
-        "status": "ok",
-        "total": 11,
-        "truncated": false,
-        "entities": [
-          {
-            "name": "FREMTIND FORSIKRING AS",
-            "legalEntityId": 99172,
-            "finanstilsynetId": "FT00068999",
-            "organisationNumber": "915651232"
-          },
-          {
-            "name": "FREMTIND LIVSFORSIKRING AS",
-            "legalEntityId": 205307,
-            "finanstilsynetId": "FT00118577",
-            "organisationNumber": "922246181"
-          }
-        ]
+        "selskap": "Fremtind",
+        "score": 74,
+        "enhet": "indekspoeng",
+        "periode": "2026",
+        "omfang": "Skadeforsikring",
+        "kilde": "Norsk kundebarometer",
+        "kildeUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
+        "dataStatus": "refreshed"
       }
-    ]
-  },
-  "refresh": {
-    "bi": {
-      "status": "ok",
-      "sourceUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
-      "fetchedAt": "2026-11-11T14:40:13.889Z"
-    },
-    "fremtind": {
-      "status": "ok",
-      "sourceUrl": "https://www.fremtind.no/om-oss/finansiell-informasjon",
-      "fetchedAt": "2026-11-11T14:40:13.905Z"
-    }
+    ],
+    "lojalitet": [
+      {
+        "selskap": "Tryg",
+        "score": 85.5,
+        "enhet": "indekspoeng",
+        "periode": "2026",
+        "omfang": "Skadeforsikring",
+        "kilde": "Norsk kundebarometer",
+        "kildeUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
+        "dataStatus": "refreshed"
+      },
+      {
+        "selskap": "Gjensidige",
+        "score": 83.5,
+        "enhet": "indekspoeng",
+        "periode": "2026",
+        "omfang": "Skadeforsikring",
+        "kilde": "Norsk kundebarometer",
+        "kildeUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
+        "dataStatus": "refreshed"
+      },
+      {
+        "selskap": "If",
+        "score": 76.8,
+        "enhet": "indekspoeng",
+        "periode": "2026",
+        "omfang": "Skadeforsikring",
+        "kilde": "Norsk kundebarometer",
+        "kildeUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
+        "dataStatus": "refreshed"
+      },
+      {
+        "selskap": "Fremtind",
+        "score": 78.9,
+        "enhet": "indekspoeng",
+        "periode": "2026",
+        "omfang": "Skadeforsikring",
+        "kilde": "Norsk kundebarometer",
+        "kildeUrl": "https://www.bi.no/forskning/norsk-kundebarometer/bransjeresultater-2026/",
+        "dataStatus": "refreshed"
+      }
+    ],
+    "kundeopplevelse": [],
+    "klager": [
+      {
+        "selskap": "HDI Global Specialty",
+        "score": 1161,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "If",
+        "score": 738,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Gjensidige",
+        "score": 695,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Fremtind",
+        "score": 687,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Protector",
+        "score": 499,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Tryg",
+        "score": 397,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Anticimex Forsikring",
+        "score": 316,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "AmTrust",
+        "score": 255,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Storebrand",
+        "score": 256,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "KLP",
+        "score": 161,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "DNB Forsikring",
+        "score": 135,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Frende",
+        "score": 129,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Eika Forsikring",
+        "score": 115,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "HELP Forsikring",
+        "score": 71,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Landkreditt Forsikring",
+        "score": 67,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Jernbanepersonalets Forsikring (JBF)",
+        "score": 62,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Watercircles",
+        "score": 49,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "AIG",
+        "score": 42,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Codan",
+        "score": 42,
+        "enhet": "avgjørelser",
+        "periode": "2020–2026",
+        "omfang": "Offentliggjorte FinKN-avgjørelser knyttet til selskapet; ikke alle innkomne klager",
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      }
+    ],
+    "tvister": [],
+    "utfall": [
+      {
+        "selskap": "HDI Global Specialty",
+        "score": 47,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 1111,
+        "medhold": 522,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "If",
+        "score": 13.9,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 656,
+        "medhold": 91,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Gjensidige",
+        "score": 14.9,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 650,
+        "medhold": 97,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Fremtind",
+        "score": 18.9,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 608,
+        "medhold": 115,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Protector",
+        "score": 32.6,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 478,
+        "medhold": 156,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Tryg",
+        "score": 11,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 345,
+        "medhold": 38,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Anticimex Forsikring",
+        "score": 50.3,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 308,
+        "medhold": 155,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "AmTrust",
+        "score": 38.8,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 245,
+        "medhold": 95,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Storebrand",
+        "score": 19,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 237,
+        "medhold": 45,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "KLP",
+        "score": 12.2,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 147,
+        "medhold": 18,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "DNB Forsikring",
+        "score": 17.7,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 124,
+        "medhold": 22,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Frende",
+        "score": 10.7,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 112,
+        "medhold": 12,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Eika Forsikring",
+        "score": 21.7,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 106,
+        "medhold": 23,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "HELP Forsikring",
+        "score": 45.7,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 70,
+        "medhold": 32,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Landkreditt Forsikring",
+        "score": 37.3,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 59,
+        "medhold": 22,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Jernbanepersonalets Forsikring (JBF)",
+        "score": 13.2,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 53,
+        "medhold": 7,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Watercircles",
+        "score": 32.6,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 46,
+        "medhold": 15,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "AIG",
+        "score": 30,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 40,
+        "medhold": 12,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Codan",
+        "score": 11.4,
+        "enhet": "%",
+        "periode": "2020–2026",
+        "omfang": "Medhold til forbruker blant realitetsbehandlede FinKN-saker",
+        "realitetsbehandlede": 35,
+        "medhold": 4,
+        "kilde": "Forsikring.ai, basert på Finansklagenemnda",
+        "kildeUrl": "https://forsikring.ai/data/klagestatistikk-selskap.csv",
+        "lisens": "CC BY 4.0",
+        "hentet": "2026-11-11",
+        "lisensUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "dataStatus": "snapshot"
+      }
+    ],
+    "priser": [],
+    "dekninger": [],
+    "vilkår": [],
+    "skadeoppgjør": [],
+    "drift": []
   }
 }
