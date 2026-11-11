@@ -11,9 +11,11 @@ az login
 npm run dev
 ```
 
-Open the Vite URL printed in the terminal. The local API uses Azure CLI credentials on the server and listens on `127.0.0.1:3001`; Vite proxies chat requests to it. The configured deployment is `gpt-6-luna` at `https://genai.gjensidige.io`.
+Open the Vite URL printed in the terminal. The local API uses Azure CLI credentials on the server and listens on `127.0.0.1:3001`; Vite proxies API requests to it. The configured deployment is `gpt-6-luna` at `https://genai.gjensidige.io`.
 
-Run `npm test` for the local API test and `npm run build` to type-check and build the frontend. The Vite preview server does not run or proxy the API; use `npm run dev` for local chat.
+Run `npm test` for the tests and `npm run build` to type-check and build the frontend. The Vite preview server does not run or proxy the API; use `npm run dev` for local recommendations.
+
+When the user enters Vern, recommendations are generated automatically using the saved profile and insurance data. While that page is open, it checks the profile approximately every two seconds and regenerates results when the profile changes. Prices, policies, and match scores are simulated; if the model cannot make a selection, the current demo policy is shown as an explicitly labeled fallback.
 
 ## Forsikringsdata
 
