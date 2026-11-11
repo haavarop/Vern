@@ -105,6 +105,20 @@
   line-height: 1;
 }
 
+.monogram--logo {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--ax-border-neutral-subtle);
+}
+
+.monogram--logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 15%;
+  box-sizing: border-box;
+}
+
 .monogram--small {
   width: 32px;
   height: 32px;
