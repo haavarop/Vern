@@ -1,15 +1,21 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { QUESTIONS, defaultAnswers, rankDimensions, scoreProfile } from './types.ts'
+import { emptyAnswers, isAnswered, rankDimensions, scoreProfile } from './types.ts'
 
-test('default answers give 50 on every dimension', () => {
-  assert.deepEqual(scoreProfile(defaultAnswers()), { pris: 50, dekning: 50, hjelp: 50, enkelhet: 50 })
+test('empty answers are not a profile', () => {
+  assert.equal(isAnswered(emptyAnswers()), false)
+  assert.deepEqual(scoreProfile(emptyAnswers()), { pris: 0, dekning: 0, hjelp: 0, enkelhet: 0 })
 })
 
 test('price-focused answers rank pris first', () => {
-  const answers = defaultAnswers()
-  for (const q of QUESTIONS) for (const o of q.options) answers[q.id][o.id] = o.weights.pris ? 4 : 0
-  const scores = scoreProfile(answers)
+  const scores = scoreProfile({ viktigst: 0, utsagn: 0, skade: null, handtere: 2 })
   assert.equal(rankDimensions(scores)[0], 'pris')
   assert.equal(scores.pris, 100)
+  assert.equal(scores.dekning, 0)
+})
+
+test('help-focused answers rank hjelp first', () => {
+  const scores = scoreProfile({ viktigst: 2, utsagn: 3, skade: 1, handtere: 3 })
+  assert.equal(rankDimensions(scores)[0], 'hjelp')
+  assert.equal(scores.hjelp, 100)
 })
