@@ -1,9 +1,38 @@
-.chat { width: min(100%, 720px); min-height: 100dvh; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; }
+.chat {
+  width: min(100%, 720px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: var(--ax-space-24);
+  padding-bottom: max(var(--ax-space-24), env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+}
 .conversation { flex: 1; }
 .message { margin-bottom: 24px; line-height: 1.5; }
 .message p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .composer { display: flex; align-items: end; gap: 8px; }
-.composer textarea { flex: 1; min-width: 0; padding: 10px; resize: vertical; }
-.composer button { width: 42px; height: 42px; display: grid; place-items: center; cursor: pointer; }
-.composer button:disabled { cursor: not-allowed; }
-.error { color: #a22; }
+.composer textarea {
+  flex: 1;
+  min-width: 0;
+  padding: 10px;
+  resize: vertical;
+  color: var(--ax-text-neutral);
+  background: var(--ax-bg-input);
+  border: 1px solid var(--ax-border-neutral);
+  border-radius: var(--ax-radius-8);
+}
+.composer button {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--ax-text-neutral);
+  background: var(--ax-bg-neutral-soft);
+  border: 1px solid var(--ax-border-neutral);
+  border-radius: var(--ax-radius-8);
+}
+.composer button:disabled { cursor: not-allowed; opacity: 0.5; }
+.error { color: var(--ax-text-danger); }
+
+.app-theme { min-height: 100dvh; }
