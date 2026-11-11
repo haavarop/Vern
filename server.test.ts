@@ -72,3 +72,32 @@ test('profile API returns {} for new customers and persists saved profiles', asy
     await rm(dir, { recursive: true, force: true })
   }
 })
+
+test('match API returns sorted matches and validates requests', async () => {
+  const server = createChatServer(async () => '')
+  server.listen(0, '127.0.0.1')
+  await once(server, 'listening')
+  const address = server.address()
+  assert.ok(address && typeof address !== 'string')
+  const url = `http://127.0.0.1:${address.port}/api/match`
+  const post = (body: unknown) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  const weights = { pris: 80, dekning: 40, hjelp: 20, enkelhet: 60 }
+  try {
+    const response = await post({ weights, segments: ['skade'], currentInsurerIds: ['if'] })
+    assert.equal(response.status, 200)
+    const { matches } = await response.json() as { matches: { insurerId: string; score: number; isCurrent: boolean }[] }
+    assert.ok(matches.length > 0)
+    assert.deepEqual(matches.map((m) => m.score), matches.map((m) => m.score).toSorted((a, b) => b - a))
+    assert.equal(matches.find((m) => m.insurerId === 'if')?.isCurrent, true)
+    for (const invalid of [
+      { weights: { ...weights, pris: 101 }, segments: [], currentInsurerIds: [] },
+      { weights: { pris: 50 }, segments: [], currentInsurerIds: [] },
+      { weights, segments: [1], currentInsurerIds: [] },
+      { weights, segments: [], currentInsurerIds: Array(51).fill('if') },
+    ]) {
+      assert.equal((await post(invalid)).status, 400)
+    }
+  } finally {
+    server.close()
+  }
+})

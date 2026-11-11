@@ -6,19 +6,22 @@ import ProfilePage from './profile/ProfilePage.tsx'
 import ValueProfileFlow from './profile/ValueProfileFlow.tsx'
 import type { Answers, UserProfile } from './profile/types.ts'
 import { buildStoredProfile, deleteProfile, fetchProfile, isNewCustomer, saveProfile } from './profile/storage.ts'
+import MatchPage from './match/MatchPage.tsx'
 import type { ConnectionState } from './onboarding/types.ts'
 import { usePrefersDark } from './useMediaQuery.ts'
 import './App.css'
 
 type Message = { role: 'user' | 'assistant'; content: string }
 
-type View = 'loading' | 'values' | 'insurers' | 'profile' | 'chat'
+type View = 'loading' | 'values' | 'insurers' | 'profile' | 'matches' | 'chat'
 
 function App() {
-  // New customers see onboarding first as its own full page: verdiprofil (steg 1) → forsikringer (steg 2) → profil.
+  // New customers see onboarding first as its own full page: verdiprofil (steg 1) → forsikringer (steg 2) → profil → matcher.
   // Returning customers (data/profile.json is filled in) go straight to the profile.
   const [view, setView] = useState<View>('loading')
   const [onboarded, setOnboarded] = useState(false)
+  const [seenMatches, setSeenMatches] = useState(false)
+  const [valuesReturn, setValuesReturn] = useState<View | null>(null)
   const [connections, setConnections] = useState<ConnectionState>({})
   const [profile, setProfile] = useState<UserProfile>({ answers: null })
   const [saveError, setSaveError] = useState('')
@@ -34,6 +37,7 @@ function App() {
           return
         }
         setOnboarded(true)
+        setSeenMatches(true)
         setProfile({ answers: stored.valueProfile?.answers ?? null })
         setConnections(stored.insurances ?? {})
         setView('profile')
@@ -52,13 +56,20 @@ function App() {
   }
 
   // During first-time onboarding, step 1 continues to step 2. Edits from the profile page return to the profile.
-  const afterValues: View = onboarded ? 'profile' : 'insurers'
+  // The matches page can also send the user to step 1 and expects them back afterwards.
+  const afterValues: View = valuesReturn ?? (onboarded ? 'profile' : 'insurers')
 
   function handleValuesDone(answers: Answers | null) {
     const nextAnswers = answers ?? profile.answers
     setProfile({ answers: nextAnswers })
     if (onboarded) persist(nextAnswers, connections)
+    setValuesReturn(null)
     setView(afterValues)
+  }
+
+  function showMatches() {
+    setSeenMatches(true)
+    setView('matches')
   }
 
   function finishInsurers(next: ConnectionState) {
@@ -76,6 +87,7 @@ function App() {
       return
     }
     setOnboarded(false)
+    setSeenMatches(false)
     setConnections({})
     setProfile({ answers: null })
     setView('values')
@@ -114,7 +126,18 @@ function App() {
           onAddInsurers={() => setView('insurers')}
           onEditProfile={() => setView('values')}
           onReset={() => void reset()}
+          onContinue={seenMatches ? () => setView('chat') : showMatches}
+          continueLabel={seenMatches ? 'Gå til Vern' : 'Se hvem som passer deg'}
+          onShowMatches={seenMatches ? showMatches : undefined}
+        />
+      )}
+      {view === 'matches' && (
+        <MatchPage
+          connections={connections}
+          profile={profile}
+          onBack={() => setView('profile')}
           onContinue={() => setView('chat')}
+          onCreateProfile={() => { setValuesReturn('matches'); setView('values') }}
         />
       )}
       {view === 'chat' && <Chat />}
