@@ -1,10 +1,66 @@
 import { useState, type FormEvent, type KeyboardEvent } from 'react'
 import { ArrowUp } from 'lucide-react'
+import { Theme } from '@navikt/ds-react'
+import Onboarding from './onboarding/Onboarding.tsx'
+import ProfilePage from './profile/ProfilePage.tsx'
+import ValueProfileFlow from './profile/ValueProfileFlow.tsx'
+import type { UserProfile } from './profile/types.ts'
+import type { ConnectionState } from './onboarding/types.ts'
+import { usePrefersDark } from './useMediaQuery.ts'
 import './App.css'
 
 type Message = { role: 'user' | 'assistant'; content: string }
 
+type View = 'values' | 'insurers' | 'profile' | 'chat'
+
 function App() {
+  // Onboarding is shown first as its own full page: verdiprofil (steg 1) → forsikringer (steg 2) → profil.
+  const [view, setView] = useState<View>('values')
+  const [onboarded, setOnboarded] = useState(false)
+  const [connections, setConnections] = useState<ConnectionState>({})
+  const [profile, setProfile] = useState<UserProfile>({ answers: null })
+  const prefersDark = usePrefersDark()
+
+  // During first-time onboarding, step 1 continues to step 2. Edits from the profile page return to the profile.
+  const afterValues: View = onboarded ? 'profile' : 'insurers'
+  function finishOnboarding() {
+    setOnboarded(true)
+    setView('profile')
+  }
+
+  return (
+    <Theme theme={prefersDark ? 'dark' : 'light'} hasBackground className="app-theme">
+      {view === 'values' && (
+        <ValueProfileFlow
+          initialAnswers={profile.answers}
+          doneLabel={onboarded ? 'Lagre' : 'Neste: hent forsikringer'}
+          onDone={(answers) => { setProfile({ answers }); setView(afterValues) }}
+          onSkip={() => setView(afterValues)}
+        />
+      )}
+      {view === 'insurers' && (
+        <Onboarding
+          initialConnections={connections}
+          onBack={onboarded ? undefined : () => setView('values')}
+          onDone={(next) => { setConnections(next); finishOnboarding() }}
+          onSkip={finishOnboarding}
+        />
+      )}
+      {view === 'profile' && (
+        <ProfilePage
+          connections={connections}
+          profile={profile}
+          onAddInsurers={() => setView('insurers')}
+          onEditProfile={() => setView('values')}
+          onContinue={() => setView('chat')}
+        />
+      )}
+      {view === 'chat' && <Chat />}
+    </Theme>
+  )
+}
+
+function Chat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
@@ -27,16 +83,16 @@ function App() {
       const data: unknown = await response.json()
       if (!response.ok) {
         throw new Error(data && typeof data === 'object' && 'error' in data && typeof data.error === 'string'
-          ? data.error : 'Something went wrong. Please try again.')
+          ? data.error : 'Noe gikk galt. Prøv igjen.')
       }
       if (!data || typeof data !== 'object' || !('reply' in data) || typeof data.reply !== 'string' || !data.reply.trim()) {
-        throw new Error('The model returned an empty response. Please try again.')
+        throw new Error('Fikk et tomt svar. Prøv igjen.')
       }
       setMessages([...nextMessages, { role: 'assistant', content: data.reply }])
     } catch (caught) {
       setMessages(messages)
       setPrompt(content)
-      setError(caught instanceof Error ? caught.message : 'Something went wrong. Please try again.')
+      setError(caught instanceof Error ? caught.message : 'Noe gikk galt. Prøv igjen.')
     } finally {
       setLoading(false)
     }
@@ -59,16 +115,16 @@ function App() {
       <div className="conversation" aria-live="polite">
         {messages.map((message, index) => (
           <div className="message" key={index}>
-            <strong>{message.role === 'user' ? 'You' : 'Assistant'}</strong>
+            <strong>{message.role === 'user' ? 'Du' : 'Vern'}</strong>
             <p>{message.content}</p>
           </div>
         ))}
-        {loading && <p role="status">Thinking...</p>}
+        {loading && <p role="status">Tenker…</p>}
       </div>
       {error && <p className="error" role="alert">{error}</p>}
       <form className="composer" onSubmit={submit}>
-        <textarea aria-label="Message" placeholder="Type a message..." value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={handleKeyDown} rows={3} disabled={loading} />
-        <button type="submit" disabled={loading || !prompt.trim()} aria-label="Send message" title="Send message"><ArrowUp size={20} /></button>
+        <textarea aria-label="Melding" placeholder="Skriv en melding…" value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={handleKeyDown} rows={3} disabled={loading} />
+        <button type="submit" disabled={loading || !prompt.trim()} aria-label="Send melding" title="Send melding"><ArrowUp size={20} /></button>
       </form>
     </main>
   )

@@ -1,0 +1,254 @@
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Page */
+.onboarding {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding__content {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  flex: 1;
+}
+
+.onboarding__logo { color: var(--ax-text-accent-subtle); }
+
+.onboarding__add { width: 100%; }
+
+.connected-empty { color: var(--ax-text-neutral-subtle); }
+.connected-empty svg { flex-shrink: 0; }
+
+.connected-list,
+.insurer-list,
+.eid__stages,
+.eid__found {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.connected-list__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--ax-space-12);
+  padding-block: var(--ax-space-8);
+}
+
+.connected-list__row + .connected-list__row { border-top: 1px solid var(--ax-border-neutral-subtle); }
+.connected-list__text { min-width: 0; }
+
+/* Sticky CTA bar */
+.cta-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin-top: var(--ax-space-24);
+  margin-inline: calc(-1 * var(--ax-space-16));
+  padding: var(--ax-space-12) var(--ax-space-16) max(var(--ax-space-12), env(safe-area-inset-bottom));
+  background: var(--ax-bg-default);
+  border-top: 1px solid var(--ax-border-neutral-subtle);
+}
+
+.cta-bar__actions {
+  display: flex;
+  gap: var(--ax-space-8);
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+.cta-bar__actions > :last-child { flex: 1; }
+
+@media (min-width: 768px) {
+  .onboarding__content,
+  .cta-bar__actions { max-width: 720px; }
+
+  .onboarding__add { width: auto; align-self: flex-start; }
+
+  .cta-bar {
+    position: static;
+    margin-inline: 0;
+    border-top: 0;
+    background: none;
+    padding-bottom: max(var(--ax-space-24), env(safe-area-inset-bottom));
+  }
+
+  .cta-bar__actions { justify-content: flex-end; }
+  .cta-bar__actions > :last-child { flex: none; }
+}
+
+/* Monogram */
+.monogram {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ax-bg-moderate);
+  color: var(--ax-text-default);
+  font-weight: var(--ax-font-weight-bold);
+  font-size: var(--ax-font-size-medium);
+  line-height: 1;
+}
+
+.monogram--logo {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--ax-border-neutral-subtle);
+}
+
+.monogram--logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 15%;
+  box-sizing: border-box;
+}
+
+.monogram--small {
+  width: 32px;
+  height: 32px;
+  font-size: var(--ax-font-size-small);
+}
+
+/* Insurer picker: centered card on desktop, bottom sheet on mobile */
+.insurer-sheet__body { padding-top: 0; }
+
+.insurer-sheet__controls {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  gap: var(--ax-space-12);
+  padding-block: var(--ax-space-4) var(--ax-space-12);
+  background: var(--ax-bg-raised);
+}
+
+
+.insurer-sheet__notice { margin-bottom: var(--ax-space-8); }
+.insurer-sheet__notice-icon { flex-shrink: 0; color: var(--ax-text-success-subtle); font-size: 1.25rem; }
+
+.insurer-sheet__back { margin-bottom: var(--ax-space-12); }
+
+@media (min-width: 480px) {
+  .insurer-sheet .insurer-sheet__body { height: min(60dvh, 560px); }
+}
+
+@media (max-width: 479.98px) {
+  .insurer-sheet.aksel-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    margin: auto 0 0 0;
+    inset: auto 0 0 0;
+    border-width: 1px 0 0;
+    border-radius: var(--ax-radius-16) var(--ax-radius-16) 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: vern-sheet-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .insurer-sheet.aksel-modal::before {
+    content: '';
+    align-self: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 4px;
+    margin-top: var(--ax-space-8);
+    border-radius: 2px;
+    background: var(--ax-border-neutral-subtle);
+  }
+
+  .insurer-sheet .insurer-sheet__body {
+    height: 80dvh;
+    overscroll-behavior: contain;
+  }
+}
+
+@keyframes vern-sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .insurer-sheet.aksel-modal { animation: none; }
+}
+
+/* Insurer row */
+.insurer-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--ax-space-12);
+  min-height: 56px;
+  padding-block: var(--ax-space-12);
+}
+
+.insurer-row + .insurer-row { border-top: 1px solid var(--ax-border-neutral-subtle); }
+.insurer-row__text { min-width: 0; }
+.insurer-row__tags { margin-top: var(--ax-space-4); }
+.insurer-row__button,
+.touch-target,
+.insurer-sheet .aksel-modal__button { min-height: 44px; min-width: 44px; }
+
+.insurer-list__empty { padding-block: var(--ax-space-24); text-align: center; }
+
+/* Simulated e-ID panel */
+.eid {
+  overflow: hidden;
+  border: 1px solid var(--ax-border-neutral-subtle);
+  border-radius: var(--ax-radius-12);
+  background: var(--ax-bg-default);
+}
+
+.eid__strip { color: var(--ax-text-neutral-contrast); }
+.eid__strip svg { flex-shrink: 0; }
+.eid__strip-insurer { margin-left: auto; opacity: 0.85; text-align: right; }
+
+.eid__body { padding: var(--ax-space-16); }
+.eid__heading:focus { outline: none; }
+.eid__heading:focus-visible { outline: 2px solid var(--ax-border-focus); outline-offset: 2px; }
+
+.eid__choice { width: 100%; min-height: 56px; justify-content: flex-start; }
+
+.eid__reference {
+  font-size: var(--ax-font-size-heading-medium);
+  font-weight: var(--ax-font-weight-bold);
+  letter-spacing: 0.06em;
+}
+
+.eid__loader { margin-left: auto; }
+
+.eid__stages,
+.eid__found { display: grid; gap: var(--ax-space-8); }
+
+.eid__stage,
+.eid__found li {
+  display: flex;
+  align-items: center;
+  gap: var(--ax-space-8);
+}
+
+.eid__stage svg,
+.eid__found svg { flex-shrink: 0; font-size: 1.25rem; }
+.eid__stage--pending { color: var(--ax-text-neutral-subtle); }
+.eid__stage-done { color: var(--ax-text-success-subtle); }
+
+.eid__footer {
+  padding: var(--ax-space-12) var(--ax-space-16);
+  border-top: 1px solid var(--ax-border-neutral-subtle);
+  background: var(--ax-bg-sunken);
+}
