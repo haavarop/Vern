@@ -1,5 +1,5 @@
 import { BodyLong, BodyShort, Box, Button, Detail, Heading, HStack, Tag, VStack } from '@navikt/ds-react'
-import { Buildings2Icon, PencilIcon, PersonCircleIcon, PlusIcon, ShieldCheckmarkIcon } from '@navikt/aksel-icons'
+import { Buildings2Icon, PencilIcon, PersonCircleIcon, PlusIcon, ShieldCheckmarkIcon, StarIcon } from '@navikt/aksel-icons'
 import PolicySummary from '../onboarding/PolicySummary.tsx'
 import type { ConnectionState } from '../onboarding/types.ts'
 import { DIMENSIONS, rankDimensions, scoreProfile, type UserProfile } from './types.ts'
@@ -14,6 +14,9 @@ type Props = {
   /** Deletes the stored profile and restarts onboarding as a new customer. */
   onReset: () => void
   onContinue: () => void
+  continueLabel?: string
+  /** Shown as a secondary action once the user has seen their matches. */
+  onShowMatches?: () => void
 }
 
 function ValueProfile({ profile, onEdit }: { profile: UserProfile; onEdit: () => void }) {
@@ -67,7 +70,7 @@ function ValueProfile({ profile, onEdit }: { profile: UserProfile; onEdit: () =>
   )
 }
 
-export default function ProfilePage({ connections, profile, onAddInsurers, onEditProfile, onReset, onContinue }: Props) {
+export default function ProfilePage({ connections, profile, onAddInsurers, onEditProfile, onReset, onContinue, continueLabel = 'Gå til Vern', onShowMatches }: Props) {
   const hasConnections = Object.keys(connections).length > 0
 
   return (
@@ -114,7 +117,8 @@ export default function ProfilePage({ connections, profile, onAddInsurers, onEdi
       <div className="cta-bar">
         <div className="cta-bar__actions">
           <Button variant="tertiary" onClick={() => { if (window.confirm('Slette profilen og starte på nytt?')) onReset() }}>Start på nytt</Button>
-          <Button onClick={onContinue}>Gå til Vern</Button>
+          {onShowMatches && <Button variant="secondary" icon={<StarIcon aria-hidden />} onClick={onShowMatches}>Se matcher</Button>}
+          <Button onClick={onContinue}>{continueLabel}</Button>
         </div>
       </div>
     </Box>

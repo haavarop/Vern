@@ -5,9 +5,13 @@ import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { getInsuranceData } from './insurance-data.ts'
+import { mockMatches } from './src/match/mockScores.ts'
+import type { InsurerMatch, MatchRequest } from './src/match/types.ts'
+import { DIMENSION_ORDER } from './src/profile/types.ts'
 
 type Message = { role: 'user' | 'assistant'; content: string }
 type Chat = (messages: Message[]) => Promise<string>
+type Match = (request: MatchRequest) => InsurerMatch[] | Promise<InsurerMatch[]>
 
 const credential = new AzureCliCredential()
 const model = new AzureChatOpenAICompletions({
@@ -50,6 +54,21 @@ async function readBody(request: IncomingMessage, limit = 100_000) {
     if (body.length > limit) throw new TooLarge()
   }
   return body
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.length <= 50 && value.every((item) => typeof item === 'string')
+}
+
+function isMatchRequest(data: unknown): data is MatchRequest {
+  if (!data || typeof data !== 'object' || !('weights' in data) || !('segments' in data) || !('currentInsurerIds' in data)) return false
+  const { weights } = data
+  return !!weights && typeof weights === 'object' && !Array.isArray(weights) &&
+    DIMENSION_ORDER.every((d) => {
+      const value = (weights as Record<string, unknown>)[d]
+      return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100
+    }) &&
+    isStringArray(data.segments) && isStringArray(data.currentInsurerIds)
 }
 
 /** Returns the stored profile, or {} when the customer is new (missing or empty file). */
@@ -108,7 +127,7 @@ async function handleProfile(request: IncomingMessage, response: ServerResponse,
   }
 }
 
-async function handle(request: IncomingMessage, response: ServerResponse, invoke: Chat, loadData: typeof getInsuranceData, profilePath: string) {
+async function handle(request: IncomingMessage, response: ServerResponse, invoke: Chat, loadData: typeof getInsuranceData, profilePath: string, match: Match) {
   if (request.url === '/api/profile') {
     await handleProfile(request, response, profilePath)
     return
@@ -122,7 +141,8 @@ async function handle(request: IncomingMessage, response: ServerResponse, invoke
     }
     return
   }
-  if (request.method !== 'POST' || request.url !== '/api/chat') {
+  const route = request.method === 'POST' ? request.url : undefined
+  if (route !== '/api/chat' && route !== '/api/match') {
     send(response, 404, { error: 'Not found' })
     return
   }
@@ -143,6 +163,14 @@ async function handle(request: IncomingMessage, response: ServerResponse, invoke
       throw error
     }
     const data: unknown = JSON.parse(body)
+    if (route === '/api/match') {
+      if (!isMatchRequest(data)) {
+        send(response, 400, { error: 'Please provide weights for every dimension (0–100), segments and currentInsurerIds.' })
+        return
+      }
+      send(response, 200, { matches: await match(data) })
+      return
+    }
     if (!data || typeof data !== 'object' || !('messages' in data) || !Array.isArray(data.messages) ||
       data.messages.length === 0 || data.messages.length > 100 ||
       !data.messages.every((message: unknown) => message && typeof message === 'object' &&
@@ -159,6 +187,11 @@ async function handle(request: IncomingMessage, response: ServerResponse, invoke
       send(response, 400, { error: 'Invalid JSON request.' })
       return
     }
+    if (route === '/api/match') {
+      console.error('Match request failed:', error)
+      send(response, 500, { error: 'Could not compute matches.' })
+      return
+    }
     console.error('Azure chat request failed:', error)
     send(response, 502, { error: 'Could not reach Azure OpenAI. Check your Azure CLI login and access, then try again.' })
   }
@@ -168,8 +201,9 @@ export function createChatServer(
   invoke: Chat = chat,
   loadData: typeof getInsuranceData = getInsuranceData,
   profilePath = process.env.PROFILE_PATH || DEFAULT_PROFILE_PATH,
+  match: Match = mockMatches,
 ) {
-  return createServer((request, response) => { void handle(request, response, invoke, loadData, profilePath) })
+  return createServer((request, response) => { void handle(request, response, invoke, loadData, profilePath, match) })
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
