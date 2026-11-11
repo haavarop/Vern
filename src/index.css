@@ -1,4 +1,4 @@
-:root { font-family: sans-serif; color: #222; background: #fff; }
+html { -webkit-text-size-adjust: 100%; }
 * { box-sizing: border-box; }
 body { margin: 0; }
 button, textarea { font: inherit; }
