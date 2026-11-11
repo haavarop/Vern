@@ -36,3 +36,12 @@
 .error { color: var(--ax-text-danger); }
 
 .app-theme { min-height: 100dvh; }
+.app-loading { min-height: 100dvh; }
+.app-alert {
+  position: fixed;
+  top: var(--ax-space-12);
+  left: 50%;
+  z-index: 10;
+  width: min(calc(100% - 2 * var(--ax-space-16)), 560px);
+  transform: translateX(-50%);
+}

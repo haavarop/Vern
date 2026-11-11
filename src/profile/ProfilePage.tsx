@@ -11,6 +11,8 @@ type Props = {
   profile: UserProfile
   onAddInsurers: () => void
   onEditProfile: () => void
+  /** Deletes the stored profile and restarts onboarding as a new customer. */
+  onReset: () => void
   onContinue: () => void
 }
 
@@ -65,7 +67,7 @@ function ValueProfile({ profile, onEdit }: { profile: UserProfile; onEdit: () =>
   )
 }
 
-export default function ProfilePage({ connections, profile, onAddInsurers, onEditProfile, onContinue }: Props) {
+export default function ProfilePage({ connections, profile, onAddInsurers, onEditProfile, onReset, onContinue }: Props) {
   const hasConnections = Object.keys(connections).length > 0
 
   return (
@@ -111,6 +113,7 @@ export default function ProfilePage({ connections, profile, onAddInsurers, onEdi
 
       <div className="cta-bar">
         <div className="cta-bar__actions">
+          <Button variant="tertiary" onClick={() => { if (window.confirm('Slette profilen og starte på nytt?')) onReset() }}>Start på nytt</Button>
           <Button onClick={onContinue}>Gå til Vern</Button>
         </div>
       </div>
