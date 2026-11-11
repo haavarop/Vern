@@ -1,60 +1,92 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BodyShort, Box, Button, HStack, Modal, Search } from '@navikt/ds-react'
+import { BodyShort, Box, Button, Checkbox, HStack, Modal, Search } from '@navikt/ds-react'
 import { ArrowLeftIcon, CheckmarkCircleFillIcon } from '@navikt/aksel-icons'
 import InsurerRow from './InsurerRow.tsx'
 import MockBankIdFlow from './MockBankIdFlow.tsx'
-import { policyCountLabel } from './format.ts'
+import { insurerCountLabel, policyCountLabel } from './format.ts'
 import { getInsurer, searchInsurers } from './insurers.ts'
-import type { ConnectionState, Policy } from './types.ts'
+import type { ConnectionState, Insurer } from './types.ts'
 
-type View = { kind: 'list' } | { kind: 'login'; insurerId: string }
+type View = { kind: 'list' } | { kind: 'login'; insurerIds: string[] }
 
 type Props = {
   open: boolean
   onClose: () => void
   connections: ConnectionState
-  onConnected: (insurerId: string, policies: Policy[]) => void
+  onConnected: (results: ConnectionState) => void
 }
 
 export default function InsurerPickerModal({ open, onClose, connections, onConnected }: Props) {
   const [view, setView] = useState<View>({ kind: 'list' })
   const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [announcement, setAnnouncement] = useState('')
-  const [returnFocusId, setReturnFocusId] = useState<string>()
   const flowActive = useRef(false)
-  const buttonRefs = useRef(new Map<string, HTMLButtonElement>())
+  const loginButtonRef = useRef<HTMLButtonElement>(null)
+  const controlsRef = useRef<HTMLDivElement>(null)
+  const returnFocus = useRef(false)
 
   const results = useMemo(() => searchInsurers(query), [query])
-  const loginInsurer = view.kind === 'login' ? getInsurer(view.insurerId) : undefined
+  const loginInsurers = useMemo(
+    () => (view.kind === 'login' ? view.insurerIds.map(getInsurer).filter((insurer): insurer is Insurer => !!insurer) : []),
+    [view],
+  )
   const connectedCount = Object.keys(connections).length
+  const selectedInResults = results.filter((insurer) => selected.has(insurer.id)).length
+  const allResultsSelected = results.length > 0 && selectedInResults === results.length
 
-  useEffect(() => {
-    if (view.kind === 'list' && returnFocusId) buttonRefs.current.get(returnFocusId)?.focus()
-  }, [view, returnFocusId])
+  function toggle(insurerId: string, checked: boolean) {
+    setSelected((current) => {
+      const next = new Set(current)
+      if (checked) next.add(insurerId)
+      else next.delete(insurerId)
+      return next
+    })
+  }
 
-  function startLogin(insurerId: string) {
+  function toggleAllResults() {
+    setSelected((current) => {
+      const next = new Set(current)
+      for (const insurer of results) {
+        if (allResultsSelected) next.delete(insurer.id)
+        else next.add(insurer.id)
+      }
+      return next
+    })
+  }
+
+  function startLogin() {
+    if (selected.size === 0) return
     setAnnouncement('')
     flowActive.current = false
-    setView({ kind: 'login', insurerId })
+    setView({ kind: 'login', insurerIds: [...selected] })
   }
 
   function backToList(confirmFirst: boolean) {
     if (view.kind !== 'login') return
     if (confirmFirst && flowActive.current && !window.confirm('Vil du avbryte innloggingen?')) return
-    setReturnFocusId(view.insurerId)
+    returnFocus.current = true
     setView({ kind: 'list' })
   }
+
+  useEffect(() => {
+    if (view.kind !== 'list' || !returnFocus.current) return
+    returnFocus.current = false
+    const button = loginButtonRef.current
+    ;(button && !button.disabled ? button : controlsRef.current?.querySelector('input'))?.focus()
+  }, [view])
 
   const handleActiveChange = useCallback((active: boolean) => {
     flowActive.current = active
   }, [])
 
-  const handleConnected = useCallback((policies: Policy[]) => {
-    if (view.kind !== 'login') return
-    const name = getInsurer(view.insurerId)?.name ?? ''
-    onConnected(view.insurerId, policies)
-    setAnnouncement(`${name} tilkoblet – ${policyCountLabel(policies.length)} funnet`)
-  }, [view, onConnected])
+  const handleConnected = useCallback((connected: ConnectionState) => {
+    const insurerCount = Object.keys(connected).length
+    const policyCount = Object.values(connected).flat().length
+    onConnected(connected)
+    setSelected(new Set())
+    setAnnouncement(`${insurerCountLabel(insurerCount)} tilkoblet – ${policyCountLabel(policyCount)} funnet`)
+  }, [onConnected])
 
   // The native dialog can close even when onBeforeClose vetoes (e.g. repeated Esc), so always reset here.
   function handleClose() {
@@ -63,6 +95,8 @@ export default function InsurerPickerModal({ open, onClose, connections, onConne
     setAnnouncement('')
     onClose()
   }
+
+  const loginHeading = loginInsurers.length === 1 ? loginInsurers[0].name : insurerCountLabel(loginInsurers.length)
 
   return (
     <Modal
@@ -74,9 +108,9 @@ export default function InsurerPickerModal({ open, onClose, connections, onConne
         return false
       }}
       header={{
-        heading: loginInsurer ? `Logg inn – ${loginInsurer.name} (demo)` : 'Velg forsikringsselskap',
+        heading: view.kind === 'login' ? `Logg inn – ${loginHeading} (demo)` : 'Velg forsikringsselskaper',
         size: 'small',
-        closeButton: !loginInsurer,
+        closeButton: view.kind === 'list',
       }}
       width="medium"
       placement="top"
@@ -87,7 +121,7 @@ export default function InsurerPickerModal({ open, onClose, connections, onConne
 
         {view.kind === 'list' && (
           <>
-            <div className="insurer-sheet__controls">
+            <div ref={controlsRef} className="insurer-sheet__controls">
               <Search
                 label="Søk etter selskap"
                 variant="simple"
@@ -99,6 +133,16 @@ export default function InsurerPickerModal({ open, onClose, connections, onConne
                 autoComplete="off"
                 placeholder="Søk etter selskap eller bank"
               />
+              {results.length > 0 && (
+                <Checkbox
+                  size="small"
+                  checked={allResultsSelected}
+                  indeterminate={selectedInResults > 0 && !allResultsSelected}
+                  onChange={toggleAllResults}
+                >
+                  {query ? `Velg alle treff (${results.length})` : `Velg alle (${results.length})`}
+                </Checkbox>
+              )}
               <span className="sr-only" role="status">{results.length} selskaper</span>
             </div>
 
@@ -118,11 +162,8 @@ export default function InsurerPickerModal({ open, onClose, connections, onConne
                     key={insurer.id}
                     insurer={insurer}
                     policyCount={connections[insurer.id]?.length}
-                    onLogin={() => startLogin(insurer.id)}
-                    buttonRef={(node) => {
-                      if (node) buttonRefs.current.set(insurer.id, node)
-                      else buttonRefs.current.delete(insurer.id)
-                    }}
+                    selected={selected.has(insurer.id)}
+                    onToggle={(checked) => toggle(insurer.id, checked)}
                   />
                 ))}
               </ul>
@@ -134,14 +175,13 @@ export default function InsurerPickerModal({ open, onClose, connections, onConne
           </>
         )}
 
-        {open && loginInsurer && (
+        {open && view.kind === 'login' && (
           <>
             <Button variant="tertiary" size="small" icon={<ArrowLeftIcon aria-hidden />} onClick={() => backToList(true)} className="insurer-sheet__back touch-target">
               Tilbake til listen
             </Button>
             <MockBankIdFlow
-              key={loginInsurer.id}
-              insurer={loginInsurer}
+              insurers={loginInsurers}
               onConnected={handleConnected}
               onExit={() => backToList(false)}
               onActiveChange={handleActiveChange}
@@ -152,7 +192,10 @@ export default function InsurerPickerModal({ open, onClose, connections, onConne
 
       {view.kind === 'list' && (
         <Modal.Footer className="insurer-sheet__footer">
-          <Button type="button" onClick={handleClose}>
+          <Button ref={loginButtonRef} type="button" disabled={selected.size === 0} onClick={startLogin}>
+            {selected.size ? `Logg inn (${selected.size})` : 'Logg inn'}
+          </Button>
+          <Button type="button" variant="secondary" onClick={handleClose}>
             {connectedCount ? `Ferdig (${connectedCount} tilkoblet)` : 'Lukk'}
           </Button>
         </Modal.Footer>

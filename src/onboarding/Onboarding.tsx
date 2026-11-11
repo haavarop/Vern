@@ -6,7 +6,7 @@ import Monogram from './Monogram.tsx'
 import PolicySummary from './PolicySummary.tsx'
 import { formatKr, policyCountLabel, sumPremium } from './format.ts'
 import { getInsurer } from './insurers.ts'
-import type { ConnectionState, Policy } from './types.ts'
+import type { ConnectionState } from './types.ts'
 import './onboarding.css'
 
 type Props = { onDone: (connections: ConnectionState) => void; onSkip: () => void; onBack?: () => void; initialConnections?: ConnectionState }
@@ -15,8 +15,8 @@ export default function Onboarding({ onDone, onSkip, onBack, initialConnections 
   const [connections, setConnections] = useState<ConnectionState>(initialConnections)
   const [pickerOpen, setPickerOpen] = useState(false)
 
-  const handleConnected = useCallback((insurerId: string, policies: Policy[]) => {
-    setConnections((current) => ({ ...current, [insurerId]: policies }))
+  const handleConnected = useCallback((results: ConnectionState) => {
+    setConnections((current) => ({ ...current, ...results }))
   }, [])
 
   function remove(insurerId: string) {

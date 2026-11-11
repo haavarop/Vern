@@ -1,19 +1,22 @@
-import { useEffect, useReducer, useRef, type FormEvent } from 'react'
+import { useEffect, useMemo, useReducer, useRef, type FormEvent } from 'react'
 import { BodyLong, BodyShort, Box, Button, Detail, Heading, HStack, Label, LocalAlert, Loader, ProgressBar, Tag, TextField, VStack } from '@navikt/ds-react'
 import { CheckmarkCircleFillIcon, CircleIcon, MobileIcon, PadlockLockedIcon } from '@navikt/aksel-icons'
 import { initialState, maskNnin, reducer, TEST_NNIN, type FetchStage, type State } from './bankidMachine.ts'
+import { insurerCountLabel, policyCountLabel } from './format.ts'
 import { generatePolicies, referenceWords } from './mockPolicies.ts'
-import type { Insurer, Policy } from './types.ts'
+import type { ConnectionState, Insurer } from './types.ts'
 import { usePrefersReducedMotion } from '../useMediaQuery.ts'
 
 const APP_CONFIRM_MS = 2500
 const APP_TIMEOUT_MS = 60_000
 const FETCH_TICK_MS = 150
 const FETCH_STEP = 5
-/** Demo quirk: `nemi` fails once mid-fetch (per open flow) to show the retry path. */
+/** Demo quirk: a login including `nemi` fails once mid-fetch (per open flow) to show the retry path. */
 const FAILS_FIRST_FETCH = new Set(['nemi'])
 
 const STAGES: FetchStage[] = ['connecting', 'authorising', 'fetchingPolicies', 'analysing']
+
+const listFormat = new Intl.ListFormat('nb-NO', { type: 'conjunction' })
 
 function stageLabel(stage: FetchStage, insurer: string): string {
   switch (stage) {
@@ -24,7 +27,7 @@ function stageLabel(stage: FetchStage, insurer: string): string {
   }
 }
 
-function stepTitle(state: State, insurer: string): string {
+function stepTitle(state: State, insurers: string): string {
   switch (state.step) {
     case 'identify': return 'Identifiser deg'
     case 'chooseMethod': return 'Velg hvordan du vil bekrefte'
@@ -32,7 +35,7 @@ function stepTitle(state: State, insurer: string): string {
     case 'codeEntry': return 'Skriv inn engangskode'
     case 'consent': return 'Gi samtykke'
     case 'fetching': return 'Henter forsikringene dine'
-    case 'done': return state.policies.length ? `Fant ${state.policies.length} forsikringer` : `Ingen forsikringer funnet hos ${insurer}`
+    case 'done': return state.policies.length ? `Fant ${policyCountLabel(state.policies.length)}` : `Ingen forsikringer funnet hos ${insurers}`
     case 'failed': return 'Innloggingen ble ikke fullført'
   }
 }
@@ -40,19 +43,22 @@ function stepTitle(state: State, insurer: string): string {
 const isMidFlow = (state: State) => !['identify', 'done', 'failed'].includes(state.step)
 
 type Props = {
-  insurer: Insurer
-  onConnected: (policies: Policy[]) => void
+  insurers: Insurer[]
+  onConnected: (results: ConnectionState) => void
   onExit: () => void
   onActiveChange: (active: boolean) => void
 }
 
-export default function MockBankIdFlow({ insurer, onConnected, onExit, onActiveChange }: Props) {
+export default function MockBankIdFlow({ insurers, onConnected, onExit, onActiveChange }: Props) {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState())
   const headingRef = useRef<HTMLHeadingElement>(null)
   const failedOnce = useRef(false)
   const reducedMotion = usePrefersReducedMotion()
   const progress = state.step === 'fetching' ? state.progress : -1
   const active = isMidFlow(state)
+  const insurerIds = useMemo(() => insurers.map((insurer) => insurer.id), [insurers])
+  const names = insurers.length <= 3 ? listFormat.format(insurers.map((insurer) => insurer.name)) : `${insurers.length} valgte selskaper`
+  const shortLabel = insurers.length === 1 ? insurers[0].name : insurerCountLabel(insurers.length)
 
   useEffect(() => {
     headingRef.current?.focus()
@@ -74,20 +80,20 @@ export default function MockBankIdFlow({ insurer, onConnected, onExit, onActiveC
 
   useEffect(() => {
     if (progress < 0) return
-    if (progress >= 60 && FAILS_FIRST_FETCH.has(insurer.id) && !failedOnce.current) {
+    if (progress >= 60 && insurerIds.some((id) => FAILS_FIRST_FETCH.has(id)) && !failedOnce.current) {
       failedOnce.current = true
       dispatch({ type: 'FETCH_ERROR' })
       return
     }
     if (progress >= 100) {
-      const policies = generatePolicies(insurer.id)
-      dispatch({ type: 'FETCH_DONE', policies })
-      onConnected(policies)
+      const results: ConnectionState = Object.fromEntries(insurerIds.map((id) => [id, generatePolicies(id)]))
+      dispatch({ type: 'FETCH_DONE', policies: Object.values(results).flat() })
+      onConnected(results)
       return
     }
     const tick = setTimeout(() => dispatch({ type: 'FETCH_PROGRESS', progress: progress + FETCH_STEP }), reducedMotion ? FETCH_TICK_MS / 4 : FETCH_TICK_MS)
     return () => clearTimeout(tick)
-  }, [progress, insurer.id, onConnected, reducedMotion])
+  }, [progress, insurerIds, onConnected, reducedMotion])
 
   function submit(event: FormEvent<HTMLFormElement>, type: 'SUBMIT_NNIN' | 'SUBMIT_CODE') {
     event.preventDefault()
@@ -102,7 +108,7 @@ export default function MockBankIdFlow({ insurer, onConnected, onExit, onActiveC
         <HStack gap="space-8" align="center" wrap={false}>
           <PadlockLockedIcon aria-hidden fontSize="1.25rem" />
           <BodyShort weight="semibold">Sikker innlogging (demo)</BodyShort>
-          <BodyShort size="small" className="eid__strip-insurer">{insurer.name}</BodyShort>
+          <BodyShort size="small" className="eid__strip-insurer">{shortLabel}</BodyShort>
         </HStack>
       </Box>
 
@@ -111,13 +117,15 @@ export default function MockBankIdFlow({ insurer, onConnected, onExit, onActiveC
           <Tag data-color="warning" variant="moderate" size="small">Demo – simulert innlogging</Tag>
         </div>
         <Heading ref={headingRef} tabIndex={-1} level="3" size="small" className="eid__heading">
-          {stepTitle(state, insurer.name)}
+          {stepTitle(state, names)}
         </Heading>
 
         {state.step === 'identify' && (
           <form onSubmit={(event) => submit(event, 'SUBMIT_NNIN')}>
             <VStack gap="space-16">
-              <BodyShort textColor="subtle">BankID-lignende innlogging (simulert) hos {insurer.name}.</BodyShort>
+              <BodyShort textColor="subtle">
+                BankID-lignende innlogging (simulert) hos {names}.{insurers.length > 1 && ' Én innlogging gjelder for alle valgte selskaper.'}
+              </BodyShort>
               <TextField
                 label="Fødselsnummer (11 siffer)"
                 description="Dette er en demo. Ikke skriv inn ditt ekte fødselsnummer."
@@ -145,7 +153,7 @@ export default function MockBankIdFlow({ insurer, onConnected, onExit, onActiveC
           <VStack gap="space-12">
             <BodyShort textColor="subtle">Fødselsnummer: {maskNnin(state.nnin)}</BodyShort>
             <Button variant="secondary" className="eid__choice" icon={<MobileIcon aria-hidden />}
-              onClick={() => dispatch({ type: 'CHOOSE_METHOD', method: 'app', reference: referenceWords(insurer.id) })}>
+              onClick={() => dispatch({ type: 'CHOOSE_METHOD', method: 'app', reference: referenceWords(insurerIds.join(',')) })}>
               Bekreft i app (simulert)
             </Button>
             <Button variant="secondary" className="eid__choice" icon={<PadlockLockedIcon aria-hidden />}
@@ -201,7 +209,7 @@ export default function MockBankIdFlow({ insurer, onConnected, onExit, onActiveC
         {state.step === 'consent' && (
           <VStack gap="space-16">
             <BodyLong>
-              Vern vil hente oversikt over forsikringene dine hos {insurer.name}: produkt, dekning, pris og fornyelsesdato.
+              Vern vil hente oversikt over forsikringene dine hos {names}: produkt, dekning, pris og fornyelsesdato.
             </BodyLong>
             <HStack gap="space-8">
               <Button onClick={() => dispatch({ type: 'ACCEPT_CONSENT' })}>Godta og hent</Button>
@@ -212,7 +220,7 @@ export default function MockBankIdFlow({ insurer, onConnected, onExit, onActiveC
 
         {state.step === 'fetching' && (
           <VStack gap="space-16">
-            <Label as="p" id="eid-stage" size="small">{stageLabel(state.stage, insurer.name)}</Label>
+            <Label as="p" id="eid-stage" size="small">{stageLabel(state.stage, shortLabel)}</Label>
             <ProgressBar value={state.progress} valueMax={100} aria-labelledby="eid-stage" />
             <ul className="eid__stages">
               {STAGES.map((stage, index) => {
@@ -222,18 +230,22 @@ export default function MockBankIdFlow({ insurer, onConnected, onExit, onActiveC
                     {index < current ? <CheckmarkCircleFillIcon aria-hidden className="eid__stage-done" />
                       : index === current ? <Loader size="xsmall" title="Pågår" />
                         : <CircleIcon aria-hidden />}
-                    <BodyShort size="small">{stageLabel(stage, insurer.name)}</BodyShort>
+                    <BodyShort size="small">{stageLabel(stage, shortLabel)}</BodyShort>
                   </li>
                 )
               })}
             </ul>
-            <span className="sr-only" aria-live="polite">{stageLabel(state.stage, insurer.name)}</span>
+            <span className="sr-only" aria-live="polite">{stageLabel(state.stage, shortLabel)}</span>
           </VStack>
         )}
 
         {state.step === 'done' && (
           <VStack gap="space-16">
-            {state.policies.length > 0 ? (
+            {state.policies.length === 0 ? (
+              <BodyShort textColor="subtle">
+                Vi fant ingen aktive avtaler. {insurers.length === 1 ? 'Selskapet er' : 'Selskapene er'} likevel markert som tilkoblet.
+              </BodyShort>
+            ) : insurers.length === 1 ? (
               <ul className="eid__found">
                 {state.policies.map((policy) => (
                   <li key={policy.id}>
@@ -243,7 +255,19 @@ export default function MockBankIdFlow({ insurer, onConnected, onExit, onActiveC
                 ))}
               </ul>
             ) : (
-              <BodyShort textColor="subtle">Vi fant ingen aktive avtaler. Selskapet er likevel markert som tilkoblet.</BodyShort>
+              <ul className="eid__found">
+                {insurers.map((insurer) => {
+                  const count = state.policies.filter((policy) => policy.insurerId === insurer.id).length
+                  return (
+                    <li key={insurer.id}>
+                      <CheckmarkCircleFillIcon aria-hidden className="eid__stage-done" />
+                      <BodyShort size="small">
+                        <strong>{insurer.name}</strong> – {count ? policyCountLabel(count) : 'ingen forsikringer'}
+                      </BodyShort>
+                    </li>
+                  )
+                })}
+              </ul>
             )}
             <div><Button onClick={onExit}>Tilbake til listen</Button></div>
           </VStack>

@@ -197,10 +197,17 @@
   padding-block: var(--ax-space-12);
 }
 
-.insurer-row + .insurer-row { border-top: 1px solid var(--ax-border-neutral-subtle); }
+.insurer-row { cursor: pointer; }
+.insurer-list > li + li { border-top: 1px solid var(--ax-border-neutral-subtle); }
+.insurer-row__checkbox {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0 var(--ax-space-8);
+  accent-color: var(--ax-bg-accent-strong);
+  cursor: pointer;
+}
 .insurer-row__text { min-width: 0; }
 .insurer-row__tags { margin-top: var(--ax-space-4); }
-.insurer-row__button,
 .touch-target,
 .insurer-sheet .aksel-modal__button { min-height: 44px; min-width: 44px; }
 
