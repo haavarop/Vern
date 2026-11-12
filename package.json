@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "concurrently -k -n api,web \"tsx server.ts\" \"vite\"",
     "build": "tsc -b && vite build",
+    "start": "tsx server.ts",
     "lint": "oxlint",
     "test": "node --import tsx --test server.test.ts insurance-data.test.ts document-analysis.test.ts \"src/**/*.test.ts\"",
     "preview": "vite preview"

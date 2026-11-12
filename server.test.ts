@@ -405,3 +405,39 @@ test('persona endpoint validates the pass before asking the model', async () => 
     server.close()
   }
 })
+
+test('serves the built frontend, with index.html for app routes, and nothing outside it', async () => {
+  const { mkdtemp, mkdir, writeFile, rm } = await import('node:fs/promises')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const root = await mkdtemp(join(tmpdir(), 'vern-static-'))
+  const dist = join(root, 'dist')
+  await mkdir(join(dist, 'assets'), { recursive: true })
+  await writeFile(join(dist, 'index.html'), '<!doctype html><title>Vern</title>')
+  await writeFile(join(dist, 'assets', 'app-abc123.js'), 'console.log(1)')
+  await writeFile(join(root, 'secret.txt'), 'outside dist')
+  const server = createAppServer(undefined, undefined, undefined, undefined, undefined, undefined, dist)
+  server.listen(0, '127.0.0.1')
+  await once(server, 'listening')
+  const address = server.address()
+  assert.ok(address && typeof address !== 'string')
+  const base = `http://127.0.0.1:${address.port}`
+  try {
+    for (const path of ['/', '/persona', '/profil/verdiprofil/2']) {
+      const page = await fetch(base + path)
+      assert.equal(page.status, 200, path)
+      assert.match(page.headers.get('content-type') ?? '', /text\/html/)
+      assert.match(await page.text(), /<title>Vern<\/title>/)
+    }
+    const script = await fetch(`${base}/assets/app-abc123.js`)
+    assert.equal(script.status, 200)
+    assert.match(script.headers.get('content-type') ?? '', /javascript/)
+    assert.match(script.headers.get('cache-control') ?? '', /immutable/)
+    assert.equal((await fetch(`${base}/assets/missing.js`)).status, 404)
+    assert.equal((await fetch(`${base}/..%2fsecret.txt`)).status, 404)
+    assert.equal((await fetch(`${base}/api/unknown`)).status, 404)
+  } finally {
+    server.close()
+    await rm(root, { recursive: true, force: true })
+  }
+})

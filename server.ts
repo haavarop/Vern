@@ -1,7 +1,7 @@
 import { ChatAnthropic } from '@langchain/anthropic'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
-import { dirname, resolve } from 'node:path'
+import { dirname, extname, join, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { getInsuranceData } from './insurance-data.ts'
 import { analyzeDocument, DocumentError, MAX_DOCUMENT_BYTES, type ExtractModel } from './document-analysis.ts'
@@ -175,6 +175,56 @@ function send(response: ServerResponse, status: number, body: object) {
 
 const DEFAULT_PROFILE_PATH = resolve(import.meta.dirname, 'data', 'profile.json')
 const INSURANCE_DATA_PATH = resolve(import.meta.dirname, 'insurance-data.json')
+/** The built frontend (`npm run build`). In development Vite serves it instead. */
+const STATIC_DIR = resolve(import.meta.dirname, 'dist')
+
+const CONTENT_TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.txt': 'text/plain; charset=utf-8',
+}
+
+/**
+ * Serves a file from the built frontend. Paths without a file extension get index.html, so
+ * client-side routes such as /persona and /profil load the app. Returns false when there is no
+ * such file, so the caller can answer 404.
+ */
+async function serveStatic(request: IncomingMessage, response: ServerResponse, staticDir: string): Promise<boolean> {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return false
+  let pathname: string
+  try {
+    pathname = decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname)
+  } catch {
+    return false
+  }
+  if (pathname.startsWith('/api/')) return false
+  const requested = resolve(staticDir, `.${pathname}`)
+  if (requested !== staticDir && !requested.startsWith(staticDir + sep)) return false
+  const file = extname(requested) ? requested : join(staticDir, 'index.html')
+  let body: Buffer
+  try {
+    body = await readFile(file)
+  } catch {
+    return false
+  }
+  response.writeHead(200, {
+    'Content-Type': CONTENT_TYPES[extname(file).toLowerCase()] ?? 'application/octet-stream',
+    // Vite puts a content hash in every file name under /assets/, so those never change.
+    'Cache-Control': pathname.startsWith('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache',
+  })
+  response.end(request.method === 'HEAD' ? undefined : body)
+  return true
+}
 
 class TooLarge extends Error {}
 
@@ -448,7 +498,7 @@ async function handlePersona(request: IncomingMessage, response: ServerResponse,
   }
 }
 
-async function handle(request: IncomingMessage, response: ServerResponse, loadData: typeof getInsuranceData, profilePath: string, match: Match, getRecommendations: () => Promise<RecommendationResponse>, extract: ExtractModel, suggest: Suggest) {
+async function handle(request: IncomingMessage, response: ServerResponse, loadData: typeof getInsuranceData, profilePath: string, match: Match, getRecommendations: () => Promise<RecommendationResponse>, extract: ExtractModel, suggest: Suggest, staticDir: string) {
   if (request.url === '/api/profile') {
     await handleProfile(request, response, profilePath)
     return
@@ -501,7 +551,7 @@ async function handle(request: IncomingMessage, response: ServerResponse, loadDa
     return
   }
   if (request.method !== 'POST' || request.url !== '/api/match') {
-    send(response, 404, { error: 'Her fant vi ingenting.' })
+    if (!(await serveStatic(request, response, staticDir))) send(response, 404, { error: 'Her fant vi ingenting.' })
     return
   }
   if (!request.headers['content-type']?.toLowerCase().startsWith('application/json')) {
@@ -543,8 +593,9 @@ export function createAppServer(
   getRecommendations: () => Promise<RecommendationResponse> = () => recommend(profilePath),
   extract: ExtractModel = extractWithClaude,
   suggest: Suggest = (pass) => suggestValueProfile(pass),
+  staticDir = STATIC_DIR,
 ) {
-  return createServer((request, response) => { void handle(request, response, loadData, profilePath, match, getRecommendations, extract, suggest) })
+  return createServer((request, response) => { void handle(request, response, loadData, profilePath, match, getRecommendations, extract, suggest, staticDir) })
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -554,6 +605,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
   }
-  const port = Number(process.env.API_PORT || 3001)
-  createAppServer().listen(port, '127.0.0.1', () => console.log(`API listening on http://127.0.0.1:${port}`))
+  // Locally the API stays on 127.0.0.1:3001 behind Vite. Hosts such as Render set PORT, and HOST=0.0.0.0
+  // makes it reachable from outside the container; it then also serves the built frontend.
+  const port = Number(process.env.API_PORT || process.env.PORT || 3001)
+  const host = process.env.HOST || '127.0.0.1'
+  createAppServer().listen(port, host, () => console.log(`Vern listening on http://${host}:${port}`))
 }

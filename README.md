@@ -13,6 +13,12 @@ npm run dev
 
 Open the Vite URL printed in the terminal. The local API listens on `127.0.0.1:3001`; Vite proxies API requests to it. The API calls Claude Opus 5.5 (`claude-opus-5-5`) through LangChain's Anthropic integration (`ChatAnthropic` from `@langchain/anthropic`), with low effort to keep waits short and structured outputs for the JSON answers. If Claude declines a request, the API's server-side fallback re-runs it on another model. A key already in the environment overrides `.env.local`.
 
+## Deploy on Render
+
+`render.yaml` is a Render Blueprint: in the Render dashboard choose New → Blueprint and select this repository, then set `ANTHROPIC_API_KEY`. Render runs `npm ci && npm run build` and then `npm start`, a single Node process that serves the API and the built frontend from `dist/` (paths without a file extension get `index.html`, so `/persona` and `/profil` work). `HOST=0.0.0.0` and Render's `PORT` decide where it listens; locally it stays on `127.0.0.1:3001`.
+
+The server keeps one customer profile in `data/profile.json`, so everyone who opens the deployed site shares it, and Render's filesystem is reset on every deploy and restart (free instances also restart after sleeping). That suits a demo, not real customers.
+
 ## DigiU profile
 
 Customers can bring their DigiU profile instead of starting from scratch. DigiU sends it as a Persona Pass (format `persona-pass/v1`): the traits the customer chose to share there, such as "You have a dog" or "You recently moved", most important first. It contains no evidence, sources or raw data.

@@ -1,0 +1,21 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Create the service in the Render dashboard with New → Blueprint and select this repository.
+services:
+  - type: web
+    name: vern
+    runtime: node
+    region: frankfurt
+    plan: free # Free instances sleep after 15 idle minutes. Use "starter" to avoid cold starts.
+    buildCommand: npm ci && npm run build
+    # One Node process serves the API and the built frontend from dist/.
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 22.21.0
+      # Listen on all interfaces; Render sets PORT.
+      - key: HOST
+        value: 0.0.0.0
+      # Recommendations, value-profile suggestions and document reading call Claude. Set the value in the dashboard.
+      - key: ANTHROPIC_API_KEY
+        sync: false
