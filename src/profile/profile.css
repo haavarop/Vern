@@ -11,7 +11,6 @@
 .vp-step { animation: vp-fade-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .vp-step__title:focus { outline: none; }
 .vp-step__title:focus-visible { outline: 3px solid var(--vern-forest); outline-offset: 2px; }
-.vp-step__help { margin-top: var(--vern-space-sm); flex-shrink: 0; }
 
 @keyframes vp-fade-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -28,8 +27,10 @@
  * layout: the native radio stays in the DOM for keyboard and screen readers but is invisible and
  * covers the whole tile, so the tile is the click target.
  */
-.vp-q__option.aksel-radio { position: relative; margin: 0; }
-.vp-q__option .aksel-radio__input {
+.vp-q__option.aksel-radio,
+.vp-q__option.aksel-checkbox { position: relative; margin: 0; }
+.vp-q__option .aksel-radio__input,
+.vp-q__option .aksel-checkbox__input {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -38,7 +39,8 @@
   opacity: 0;
   cursor: pointer;
 }
-.vp-q__option .aksel-radio__label {
+.vp-q__option .aksel-radio__label,
+.vp-q__option .aksel-checkbox__label {
   display: flex;
   align-items: center;
   flex: 1;
@@ -48,9 +50,13 @@
   color: inherit;
   cursor: pointer;
 }
+.vp-q__option .aksel-checkbox__icon { display: none; }
+.vp-q__option .aksel-checkbox__input:disabled { cursor: not-allowed; }
+.vp-q__option:has(input:disabled:not(:checked)) { opacity: var(--ax-opacity-disabled, .45); cursor: not-allowed; }
 .vp-q__check { flex-shrink: 0; margin-left: auto; visibility: hidden; }
 .vp-q__option:has(input:checked) .vp-q__check { visibility: visible; }
-.vp-q__option.aksel-radio:focus-within::after { display: none; }
+.vp-q__option.aksel-radio:focus-within::after,
+.vp-q__option.aksel-checkbox:focus-within::after { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .vp-step { animation: none; }
