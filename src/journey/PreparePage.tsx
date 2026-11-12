@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { BodyLong, BodyShort, Box, Button, Heading, VStack } from '@navikt/ds-react'
+import { BodyShort, Box, Button, Heading, VStack } from '@navikt/ds-react'
 import { ArrowLeft, ArrowRight, FileText, ListChecks, Lock } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import VernHeader from '../onboarding/VernHeader.tsx'
@@ -24,8 +24,8 @@ const POINTS: { icon: LucideIcon; title: string; text: string }[] = [
   },
   {
     icon: Lock,
-    title: 'Du bestemmer',
-    text: 'Vi lagrer bare forsikringene vi finner, ikke selve dokumentet. Du kan hoppe over det du ikke vil svare på.',
+    title: 'Vi passer på opplysningene dine',
+    text: 'Du kan være trygg på at vi tar personvernet ditt på alvor. Vi behandler opplysningene dine i tråd med vår Personvernerklæring.',
   },
 ]
 
@@ -40,8 +40,7 @@ export default function PreparePage({ onContinue, onBack }: Props) {
         <VernHeader />
 
         <VStack gap="space-8">
-          <Heading ref={headingRef} tabIndex={-1} level="1" size="large">Før vi starter</Heading>
-          <BodyLong>Slik sjekker vi om forsikringene dine passer deg. Det tar bare noen minutter.</BodyLong>
+          <Heading ref={headingRef} tabIndex={-1} level="1" size="large">Før vi sjekker dine forsikringer</Heading>
         </VStack>
 
         <ul className="landing__points" aria-label="Slik går det til">
