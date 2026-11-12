@@ -72,7 +72,7 @@ export default function AboutYouPage({ initialValue, onDone, onSkip, onBack }: P
         <VStack gap="space-8">
           <HStack justify="space-between" align="center" wrap={false}>
             <Heading level="1" size="large">Om deg</Heading>
-            <Button variant="tertiary" size="small" className="about__skip" onClick={onSkip}>Hopp over</Button>
+            <Button variant="tertiary" size="small" onClick={onSkip}>Hopp over</Button>
           </HStack>
           <BodyLong>Fortell oss litt om livet ditt, så kan vi lettere matche deg med riktig selskap.</BodyLong>
           <BodyLong textColor="subtle">Alle spørsmålene er valgfrie. Hopp over det du ikke vil svare på.</BodyLong>
