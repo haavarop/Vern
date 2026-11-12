@@ -41,17 +41,18 @@ test('EPSI scores preserve the 2026 report values and market scope', async () =>
   assert.match(epsi.at(-1)?.merknad ?? '', /SpareBank 1, DNB, Eika eller Fremtind/)
 })
 
-test('complaint outcomes use the number of cases considered on their merits', async () => {
+test('complaint outcomes include all listed companies and use the number of cases considered on their merits', async () => {
   const data = JSON.parse(await readFile(new URL('./insurance-data.json', import.meta.url), 'utf8')) as {
     kategorier: {
       klager: Array<{ selskap: string; score: number; kildeUrl: string }>
       utfall: Array<{ selskap: string; score: number; realitetsbehandlede: number; medhold: number; kildeUrl: string }>
     }
   }
-  const sourceUrl = 'https://forsikring.ai/data/klagestatistikk-selskap.csv'
-  const cases = data.kategorier.klager.filter((entry) => entry.kildeUrl === sourceUrl)
-  const outcomes = data.kategorier.utfall.filter((entry) => entry.kildeUrl === sourceUrl)
-  assert.ok(outcomes.length > 0)
+  const sourceUrls = new Set(['https://forsikring.ai/data/klagestatistikk-selskap.csv', 'https://forsikring.ai/selskap'])
+  const cases = data.kategorier.klager.filter((entry) => sourceUrls.has(entry.kildeUrl))
+  const outcomes = data.kategorier.utfall.filter((entry) => sourceUrls.has(entry.kildeUrl))
+  assert.equal(cases.length, 22)
+  assert.equal(outcomes.length, 22)
   for (const outcome of outcomes) {
     const complaint = cases.find((entry) => entry.selskap === outcome.selskap)
     assert.ok(complaint)
@@ -59,6 +60,11 @@ test('complaint outcomes use the number of cases considered on their merits', as
     assert.ok(outcome.medhold >= 0 && outcome.medhold <= outcome.realitetsbehandlede)
     assert.ok(Math.abs(outcome.score - outcome.medhold / outcome.realitetsbehandlede * 100) < 0.051)
   }
+  assert.ok(cases.some((entry) => entry.selskap === 'Gjensidige' && entry.score === 696))
+  assert.ok(outcomes.some((entry) => entry.selskap === 'Gjensidige' && entry.realitetsbehandlede === 651))
+  assert.ok(outcomes.some((entry) => entry.selskap === 'KNIF Trygghet Forsikring' && entry.score === 3.4 && entry.medhold === 1))
+  assert.ok(outcomes.some((entry) => entry.selskap === 'Statens pensjonskasse' && entry.score === 14.8 && entry.medhold === 4))
+  assert.ok(outcomes.some((entry) => entry.selskap === 'Ly Forsikring' && entry.score === 23.1 && entry.medhold === 6))
 })
 
 test('BI score table is parsed with company, period and metric', () => {

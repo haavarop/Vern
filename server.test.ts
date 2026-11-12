@@ -123,12 +123,19 @@ test('recommendation prompt includes preferences and policies without policy ide
   const prompt = buildRecommendationPrompt({
     valueProfile: { scores: { dekning: 60 }, ranked: ['dekning'] },
     insurances: { gjensidige: [{ insurer: 'Gjensidige', product: 'Katteforsikring', premium: 228, coverage: 'Pluss', policyNumber: 'SECRET-POLICY' }] },
-  }, { kategorier: { epsi: [{ selskap: 'Gjensidige', score: 78.8, enhet: 'indekspoeng', periode: '2026', kilde: 'EPSI Rating' }] } })
+  }, { kategorier: {
+    epsi: [{ selskap: 'Gjensidige', score: 78.8, enhet: 'indekspoeng', periode: '2026', kilde: 'EPSI Rating' }],
+    utfall: [{ selskap: 'Gjensidige', score: 14.9, enhet: '%', periode: '2020–2026', realitetsbehandlede: 651, medhold: 97 }],
+  } })
   assert.match(prompt, /Katteforsikring/)
   assert.match(prompt, /78\.8/)
   assert.match(prompt, /EPSI Rating er et uavhengig analysebyrå/)
   assert.match(prompt, /høyere score betyr mer fornøyde kunder/)
   assert.match(prompt, /verifisert EPSI-grunnlag/)
+  assert.match(prompt, /`kategorier\.utfall` beskriver utfallet av offentliggjorte klagesaker/)
+  assert.match(prompt, /`score` er prosentandelen med medhold til forbrukeren blant sakene som ble realitetsbehandlet/)
+  assert.match(prompt, /`medhold` er antall slike saker med medhold/)
+  assert.match(prompt, /ikke sannsynligheten for at brukerens sak får medhold/)
   assert.match(prompt, /"dekning":60/)
   assert.doesNotMatch(prompt, /SECRET-POLICY/)
   assert.match(prompt, /simulerte demodata/)
