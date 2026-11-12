@@ -84,6 +84,108 @@
         "dataStatus": "refreshed"
       }
     ],
+    "epsi": [
+      {
+        "selskap": "Gjensidige",
+        "score": 71.8,
+        "enhet": "EPSI-indekspoeng (0–100)",
+        "periode": "2026",
+        "omfang": "Privatmarked",
+        "kilde": "EPSI Rating, Kundetilfredshet Forsikring",
+        "kildeUrl": "https://www.epsi-norway.org/wp-content/uploads/2026/11/epsi-norge-forsikringsselskapene-2026.pdf",
+        "hentet": "2026-11-12",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Tryg",
+        "score": 70.4,
+        "enhet": "EPSI-indekspoeng (0–100)",
+        "periode": "2026",
+        "omfang": "Privatmarked",
+        "kilde": "EPSI Rating, Kundetilfredshet Forsikring",
+        "kildeUrl": "https://www.epsi-norway.org/wp-content/uploads/2026/11/epsi-norge-forsikringsselskapene-2026.pdf",
+        "hentet": "2026-11-12",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "SpareBank 1 (Fremtind)",
+        "score": 69.4,
+        "enhet": "EPSI-indekspoeng (0–100)",
+        "periode": "2026",
+        "omfang": "Privatmarked",
+        "kilde": "EPSI Rating, Kundetilfredshet Forsikring",
+        "kildeUrl": "https://www.epsi-norway.org/wp-content/uploads/2026/11/epsi-norge-forsikringsselskapene-2026.pdf",
+        "hentet": "2026-11-12",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "If",
+        "score": 69.2,
+        "enhet": "EPSI-indekspoeng (0–100)",
+        "periode": "2026",
+        "omfang": "Privatmarked",
+        "kilde": "EPSI Rating, Kundetilfredshet Forsikring",
+        "kildeUrl": "https://www.epsi-norway.org/wp-content/uploads/2026/11/epsi-norge-forsikringsselskapene-2026.pdf",
+        "hentet": "2026-11-12",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Eika (Fremtind)",
+        "score": 68.1,
+        "enhet": "EPSI-indekspoeng (0–100)",
+        "periode": "2026",
+        "omfang": "Privatmarked",
+        "kilde": "EPSI Rating, Kundetilfredshet Forsikring",
+        "kildeUrl": "https://www.epsi-norway.org/wp-content/uploads/2026/11/epsi-norge-forsikringsselskapene-2026.pdf",
+        "hentet": "2026-11-12",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "DNB (Fremtind)",
+        "score": 64.6,
+        "enhet": "EPSI-indekspoeng (0–100)",
+        "periode": "2026",
+        "omfang": "Privatmarked",
+        "kilde": "EPSI Rating, Kundetilfredshet Forsikring",
+        "kildeUrl": "https://www.epsi-norway.org/wp-content/uploads/2026/11/epsi-norge-forsikringsselskapene-2026.pdf",
+        "hentet": "2026-11-12",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Gjensidige",
+        "score": 68.9,
+        "enhet": "EPSI-indekspoeng (0–100)",
+        "periode": "2026",
+        "omfang": "Bedriftsmarked",
+        "kilde": "EPSI Rating, Kundetilfredshet Forsikring",
+        "kildeUrl": "https://www.epsi-norway.org/wp-content/uploads/2026/11/epsi-norge-forsikringsselskapene-2026.pdf",
+        "hentet": "2026-11-12",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Tryg",
+        "score": 64.3,
+        "enhet": "EPSI-indekspoeng (0–100)",
+        "periode": "2026",
+        "omfang": "Bedriftsmarked",
+        "kilde": "EPSI Rating, Kundetilfredshet Forsikring",
+        "kildeUrl": "https://www.epsi-norway.org/wp-content/uploads/2026/11/epsi-norge-forsikringsselskapene-2026.pdf",
+        "hentet": "2026-11-12",
+        "dataStatus": "snapshot"
+      },
+      {
+        "selskap": "Fremtind",
+        "score": 62.3,
+        "enhet": "EPSI-indekspoeng (0–100)",
+        "periode": "2026",
+        "omfang": "Bedriftsmarked",
+        "kilde": "EPSI Rating, Kundetilfredshet Forsikring",
+        "kildeUrl": "https://www.epsi-norway.org/wp-content/uploads/2026/11/epsi-norge-forsikringsselskapene-2026.pdf",
+        "hentet": "2026-11-12",
+        "dataStatus": "snapshot",
+        "merknad": "EPSI opplyser at Fremtind-resultatet inkluderer intervjuer med kunder som har svart SpareBank 1, DNB, Eika eller Fremtind."
+      }
+    ],
     "kundeopplevelse": [],
     "klager": [
       {

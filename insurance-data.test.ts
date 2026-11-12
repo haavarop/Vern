@@ -7,7 +7,7 @@ test('curated JSON has the requested categories and only documented scores', asy
   const data = JSON.parse(await readFile(new URL('./insurance-data.json', import.meta.url), 'utf8')) as {
     kategorier: Record<string, Array<{ selskap: string; score: number; enhet: string; periode: string; kilde: string; kildeUrl: string }>>
   }
-  assert.deepEqual(Object.keys(data.kategorier), ['kundetilfredshet', 'lojalitet', 'kundeopplevelse', 'klager', 'tvister', 'utfall', 'priser', 'dekninger', 'vilkår', 'skadeoppgjør', 'drift'])
+  assert.deepEqual(Object.keys(data.kategorier), ['kundetilfredshet', 'lojalitet', 'epsi', 'kundeopplevelse', 'klager', 'tvister', 'utfall', 'priser', 'dekninger', 'vilkår', 'skadeoppgjør', 'drift'])
   const containsNull = (value: unknown): boolean => value === null || (typeof value === 'object' && Object.values(value).some(containsNull))
   assert.equal(containsNull(data), false)
   for (const scores of Object.values(data.kategorier)) {
@@ -18,6 +18,27 @@ test('curated JSON has the requested categories and only documented scores', asy
       assert.equal(new URL(score.kildeUrl).protocol, 'https:')
     }
   }
+})
+
+test('EPSI scores preserve the 2026 report values and market scope', async () => {
+  const data = JSON.parse(await readFile(new URL('./insurance-data.json', import.meta.url), 'utf8')) as {
+    kategorier: { epsi: Array<{ selskap: string; score: number; enhet: string; periode: string; omfang: string; kildeUrl: string; merknad?: string }> }
+  }
+  const epsi = data.kategorier.epsi
+  assert.equal(epsi.length, 9)
+  assert.deepEqual(epsi.map(({ selskap, score, omfang }) => [selskap, score, omfang]), [
+    ['Gjensidige', 71.8, 'Privatmarked'],
+    ['Tryg', 70.4, 'Privatmarked'],
+    ['SpareBank 1 (Fremtind)', 69.4, 'Privatmarked'],
+    ['If', 69.2, 'Privatmarked'],
+    ['Eika (Fremtind)', 68.1, 'Privatmarked'],
+    ['DNB (Fremtind)', 64.6, 'Privatmarked'],
+    ['Gjensidige', 68.9, 'Bedriftsmarked'],
+    ['Tryg', 64.3, 'Bedriftsmarked'],
+    ['Fremtind', 62.3, 'Bedriftsmarked'],
+  ])
+  assert.ok(epsi.every(({ score, enhet, periode, kildeUrl }) => score >= 0 && score <= 100 && enhet.includes('0–100') && periode === '2026' && kildeUrl.endsWith('epsi-norge-forsikringsselskapene-2026.pdf')))
+  assert.match(epsi.at(-1)?.merknad ?? '', /SpareBank 1, DNB, Eika eller Fremtind/)
 })
 
 test('complaint outcomes use the number of cases considered on their merits', async () => {

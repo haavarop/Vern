@@ -123,9 +123,12 @@ test('recommendation prompt includes preferences and policies without policy ide
   const prompt = buildRecommendationPrompt({
     valueProfile: { scores: { dekning: 60 }, ranked: ['dekning'] },
     insurances: { gjensidige: [{ insurer: 'Gjensidige', product: 'Katteforsikring', premium: 228, coverage: 'Pluss', policyNumber: 'SECRET-POLICY' }] },
-  }, { kategorier: { kundetilfredshet: [{ selskap: 'Gjensidige', score: 78.8 }] } })
+  }, { kategorier: { epsi: [{ selskap: 'Gjensidige', score: 78.8, enhet: 'indekspoeng', periode: '2026', kilde: 'EPSI Rating' }] } })
   assert.match(prompt, /Katteforsikring/)
   assert.match(prompt, /78\.8/)
+  assert.match(prompt, /EPSI Rating er et uavhengig analysebyrå/)
+  assert.match(prompt, /høyere score betyr mer fornøyde kunder/)
+  assert.match(prompt, /verifisert EPSI-grunnlag/)
   assert.match(prompt, /"dekning":60/)
   assert.doesNotMatch(prompt, /SECRET-POLICY/)
   assert.match(prompt, /simulerte demodata/)

@@ -123,7 +123,7 @@ export const insuranceData = {
   observations: insuranceObservations,
   sources: [
     { name: 'Norsk kundebarometer', url: biUrl, status: 'Tall for tilfredshet og lojalitet er registrert.' },
-    { name: 'EPSI Rating', url: 'https://www.epsi-norway.org/bransjestudier/forsikring/', status: 'Forsikringsstudie tilgjengelig, men selskapstall ikke verifisert her.' },
+    { name: 'EPSI Rating', url: 'https://www.epsi-norway.org/bransjestudier/forsikring/', status: 'Selskapsscorer for privat- og bedriftsmarkedet fra rapporten for 2026 er lagt manuelt inn i insurance-data.json; ingen automatisk datafeed.' },
     { name: 'Finansklagenemnda', url: 'https://www.finkn.no/om-oss/arsrapporter', status: 'Aggregerte klage- og utfallstall er registrert; de er ikke tall per selskap.' },
     { name: 'Finanstilsynet', url: 'https://www.finanstilsynet.no/analyser-og-statistikk/api-for-apne-data/', status: 'Foretakssøk hentes fra API-et; treffene må ikke forveksles med bekreftede selskapskoblinger.' },
     { name: 'Finansportalen', url: 'https://www.forbrukerradet.no/finansportalen/', status: 'Ingen verifiserte sammenlignbare forsikringspriser er hentet inn her.' },
