@@ -24,7 +24,7 @@ type Props = {
   connections: ConnectionState
   profile: UserProfile
   onBack: () => void
-  onContinue: () => void
+  onContinue?: () => void
   onCreateProfile: () => void
   /** 'sjekk' shows how the customer's current insurers match first; 'ny' talks about recommendations. */
   journey?: Journey | null
@@ -420,7 +420,7 @@ export default function MatchPage({ connections, profile, onBack, onContinue, on
       <div className="match-actions">
         <div className="match-actions__inner">
           <Button variant="tertiary" icon={<ArrowLeft aria-hidden size={20} strokeWidth={2} />} onClick={onBack}>Tilbake</Button>
-          <Button icon={<ArrowRight aria-hidden size={20} strokeWidth={2} />} iconPosition="right" onClick={onContinue}>Se forslagene dine</Button>
+          {onContinue && <Button icon={<ArrowRight aria-hidden size={20} strokeWidth={2} />} iconPosition="right" onClick={onContinue}>Se forslagene dine</Button>}
         </div>
       </div>
     </main>

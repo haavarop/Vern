@@ -41,8 +41,14 @@ const PREPARE_PATH = '/forbered'
 const ONBOARDING_VALUES_PATH = '/verdiprofil'
 const EDIT_VALUES_PATH = '/profil/verdiprofil'
 const CALLBACK_PATH = '/ring-meg'
+// Shows the recommendations when the customer has insurances, otherwise the matches.
+const VERN_PATH = '/vern'
 // Only these paths are accepted in ?tilbake= so the URL can't send the user anywhere else.
-const RETURN_PATHS = ['/matcher', '/profil']
+const RETURN_PATHS = [VERN_PATH, '/profil']
+
+function hasInsurances(connections: ConnectionState): boolean {
+  return Object.values(connections).some((policies) => policies.length > 0)
+}
 
 function returnPath(value: string | null): string {
   return value && RETURN_PATHS.includes(value) ? value : '/profil'
@@ -51,12 +57,12 @@ function returnPath(value: string | null): string {
 function App() {
   // New customers start on the landing page and go through onboarding as full pages:
   // /start → /om-deg → /forsikringer-i-dag → (/sjekke → /forbered | /ny-match) → /verdiprofil/:spm → (/forsikringer, only when checking
-  // existing insurances) → /profil → /matcher → /ring-meg/:selskap.
+  // existing insurances) → /profil → /vern → /ring-meg/:selskap. /vern shows the recommendations when the customer
+  // has insurances and the matches when they have none.
   // Returning customers (data/profile.json is filled in) go straight to /profil. The URL only holds where the user is;
   // the profile data lives here.
   const [loaded, setLoaded] = useState(false)
   const [onboarded, setOnboarded] = useState(false)
-  const [seenMatches, setSeenMatches] = useState(false)
   const [connections, setConnections] = useState<ConnectionState>({})
   const [profile, setProfile] = useState<UserProfile>({ answers: null })
   const [aboutYou, setAboutYou] = useState<AboutYou | null>(null)
@@ -65,7 +71,6 @@ function App() {
   const [callbacks, setCallbacks] = useState<CallbackRequest[]>([])
   const [saveError, setSaveError] = useState('')
   const navigate = useNavigate()
-  const { pathname } = useLocation()
   const [searchParams] = useSearchParams()
 
   const syncSavedProfile = useCallback((stored: Partial<StoredProfile>) => {
@@ -88,12 +93,8 @@ function App() {
     fetchProfile()
       .then((stored) => {
         if (cancelled) return
-        if (isNewCustomer(stored)) {
-          startOnboarding()
-        } else {
-          setSeenMatches(true)
-          syncSavedProfile(stored)
-        }
+        if (isNewCustomer(stored)) startOnboarding()
+        else syncSavedProfile(stored)
         setLoaded(true)
       })
       .catch((error) => {
@@ -104,8 +105,6 @@ function App() {
       })
     return () => { cancelled = true }
   }, [syncSavedProfile])
-
-  if (loaded && onboarded && !seenMatches && pathname === '/matcher') setSeenMatches(true)
 
   function currentInput(overrides: Partial<ProfileInput> = {}): ProfileInput {
     return { answers: profile.answers, insurances: connections, aboutYou, journey, callbacks, ...overrides }
@@ -154,7 +153,7 @@ function App() {
   }
 
   // Edits from the profile page return to the profile. The matches page can also send the user to step 1
-  // and expects them back afterwards (?tilbake=/matcher).
+  // and expects them back afterwards (?tilbake=/vern).
   function finishEditedValues(answers: Answers | null) {
     const nextAnswers = answers ?? profile.answers
     setProfile({ answers: nextAnswers })
@@ -206,7 +205,6 @@ function App() {
     clearAboutDraft()
     saveJourneyDraft(null)
     setOnboarded(false)
-    setSeenMatches(false)
     setConnections({})
     setProfile({ answers: null })
     setAboutYou(null)
@@ -307,9 +305,8 @@ function App() {
               onAddInsurers={() => navigate('/forsikringer')}
               onEditProfile={() => editValues()}
               onReset={() => void reset()}
-              onContinue={() => navigate(seenMatches ? '/vern' : '/matcher')}
-              continueLabel={seenMatches ? 'Se forslagene dine' : 'Finn matchen din'}
-              onShowMatches={seenMatches ? () => navigate('/matcher') : undefined}
+              onContinue={() => navigate(VERN_PATH)}
+              continueLabel={hasInsurances(connections) ? 'Se forslagene dine' : 'Finn matchen din'}
             />
           )} />
           <Route path={EDIT_ABOUT_PATH} element={onboardedOnly(
@@ -329,22 +326,23 @@ function App() {
               onSkip={() => finishEditedValues(null)}
             />
           )} />
-          <Route path="/matcher" element={onboardedOnly(
+          <Route path={VERN_PATH} element={onboardedOnly(hasInsurances(connections) ? (
+            <Recommendations onBack={() => navigate('/profil')} onProfileChange={syncSavedProfile} />
+          ) : (
             <MatchPage
               connections={connections}
               profile={profile}
               journey={journey}
               onBack={() => navigate('/profil')}
-              onContinue={() => navigate('/vern')}
-              onCreateProfile={() => editValues('?tilbake=/matcher')}
+              onCreateProfile={() => editValues(`?tilbake=${VERN_PATH}`)}
               onRequestCallback={(insurerId) => navigate(`${CALLBACK_PATH}/${encodeURIComponent(insurerId)}`)}
               callbackRequestedFor={callbacks.map((callback) => callback.insurerId)}
             />
-          )} />
+          ))} />
+          <Route path="/matcher" element={<Navigate to={VERN_PATH} replace />} />
           <Route path={`${CALLBACK_PATH}/:selskap`} element={onboardedOnly(
-            <CallbackRoute onSubmit={requestCallback} onBack={() => navigate('/matcher')} />
+            <CallbackRoute onSubmit={requestCallback} onBack={() => navigate(VERN_PATH)} />
           )} />
-          <Route path="/vern" element={onboardedOnly(<Recommendations onBack={() => navigate('/profil')} onProfileChange={syncSavedProfile} />)} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       )}
@@ -355,7 +353,7 @@ function App() {
 // Reads the insurer from the URL; unknown insurers go back to the matches.
 function CallbackRoute({ onSubmit, onBack }: { onSubmit: (insurerId: string, phone: string) => Promise<void>; onBack: () => void }) {
   const { selskap } = useParams()
-  if (!selskap || !getInsurer(selskap)) return <Navigate to="/matcher" replace />
+  if (!selskap || !getInsurer(selskap)) return <Navigate to={VERN_PATH} replace />
   return <CallbackForm insurerId={selskap} onSubmit={(phone) => onSubmit(selskap, phone)} onBack={onBack} />
 }
 
