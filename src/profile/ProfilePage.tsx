@@ -94,7 +94,7 @@ export default function ProfilePage({ connections, profile, onAddInsurers, onEdi
         <VStack gap="space-16" as="section" aria-labelledby="policies-heading">
           <Heading id="policies-heading" level="2" size="small">Forsikringene dine</Heading>
           {hasConnections ? (
-            <PolicySummary connections={connections} />
+            <PolicySummary connections={connections} collapsible />
           ) : (
             <div className="vern-card">
               <HStack gap="space-12" align="center" wrap={false} className="connected-empty">
