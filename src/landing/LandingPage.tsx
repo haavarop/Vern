@@ -29,7 +29,7 @@ export default function LandingPage({ onStart }: Props) {
               Din <em>personlige</em> forsikringsmatch
             </Heading>
             <BodyLong size="large">
-              Vern matcher deg med forsikringsselskapet som passer best for deg, på mer enn bare pris. En matchscore viser hvor godt hvert selskap passer.
+              Vern matcher deg med forsikringsselskapet som passer best for deg.
             </BodyLong>
           </VStack>
           <VernSymbol size={120} className="landing__symbol" />
