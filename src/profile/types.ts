@@ -60,7 +60,7 @@ export const QUESTIONS: Question[] = [
     id: 'skade',
     title: 'Hva ville bekymret deg mest hvis du får en skade?',
     options: [
-      { label: 'At jeg må betale en høy egenandel', weights: { dekning: 1 } },
+      { label: 'At jeg må betale en høy egenandel', weights: { pris: 1 } },
       { label: 'At forsikringen min ikke dekker skaden', weights: { dekning: 1 } },
       { label: 'At jeg ikke får den hjelpen jeg trenger', weights: { hjelp: 1 } },
       { label: 'At det tar lang tid å behandle skadesaken', weights: { hjelp: 0.5, enkelhet: 0.5 } },
