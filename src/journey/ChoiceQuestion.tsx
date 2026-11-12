@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BodyLong, Box, Button, Detail, Heading, HelpText, HStack, Radio, RadioGroup, VStack } from '@navikt/ds-react'
+import { BodyLong, Box, Button, Heading, HStack, Radio, RadioGroup, VStack } from '@navikt/ds-react'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import VernHeader from '../onboarding/VernHeader.tsx'
 import '../onboarding/onboarding.css'
@@ -20,7 +20,7 @@ export default function ChoiceQuestion(props: Props) {
   return <ChoiceQuestionPage key={props.title} {...props} />
 }
 
-function ChoiceQuestionPage({ title, description, help, yesLabel = 'Ja', noLabel = 'Nei', initialValue = null, onAnswer, onBack, stepLabel }: Props) {
+function ChoiceQuestionPage({ title, description, yesLabel = 'Ja', noLabel = 'Nei', initialValue = null, onAnswer, onBack }: Props) {
   const [value, setValue] = useState<boolean | null>(initialValue)
   const headingRef = useRef<HTMLHeadingElement>(null)
 
@@ -32,13 +32,12 @@ function ChoiceQuestionPage({ title, description, help, yesLabel = 'Ja', noLabel
   return (
     <Box as="main" className="onboarding" paddingInline={{ xs: 'space-16', md: 'space-32' }} paddingBlock="space-24 space-0">
       <VStack gap="space-24" className="onboarding__content">
-        <VernHeader>{stepLabel && <Detail textColor="subtle">{stepLabel}</Detail>}</VernHeader>
+        <VernHeader />
 
         <VStack gap="space-16" className="vp-step">
           <VStack gap="space-8">
             <HStack gap="space-8" align="start" justify="space-between" wrap={false}>
               <Heading ref={headingRef} tabIndex={-1} level="1" size="large" className="vp-step__title">{title}</Heading>
-              {help && <HelpText title="Hvorfor spør vi om dette?" placement="left" className="vp-step__help">{help}</HelpText>}
             </HStack>
             {description && <BodyLong>{description}</BodyLong>}
           </VStack>

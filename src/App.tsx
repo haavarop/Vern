@@ -286,7 +286,6 @@ function App() {
               stepLabel={`Del 2 av ${totalParts}`}
               onBack={() => navigate(journey === 'ny' ? FIND_NEW_PATH : PREPARE_PATH)}
               onDone={finishOnboardingValues}
-              onSkip={() => finishOnboardingValues(null)}
             />
           )} />
           <Route path="/forsikringer" element={
@@ -326,7 +325,6 @@ function App() {
               initialAnswers={profile.answers}
               doneLabel="Lagre"
               onDone={finishEditedValues}
-              onSkip={() => finishEditedValues(null)}
             />
           )} />
           <Route path="/matcher" element={onboardedOnly(

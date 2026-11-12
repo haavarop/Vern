@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { BodyLong, Box, Button, Checkbox, CheckboxGroup, Detail, Heading, HelpText, HStack, Radio, RadioGroup, TextField, VStack } from '@navikt/ds-react'
+import { BodyLong, Box, Button, Checkbox, CheckboxGroup, Heading, HStack, Radio, RadioGroup, TextField, VStack } from '@navikt/ds-react'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import VernHeader from '../onboarding/VernHeader.tsx'
 import { INTERESTS, INTEREST_LABELS, MAX_AGE, MAX_OCCUPATION_LENGTH, MIN_AGE, emptyAboutYou, parseAboutYou, type AboutYou, type Interest } from '../journey/types.ts'
@@ -30,7 +30,7 @@ function parseAge(text: string): number | null | 'invalid' {
   return age >= MIN_AGE && age <= MAX_AGE ? age : 'invalid'
 }
 
-export default function AboutYouPage({ initialValue, onDone, onSkip, onBack, stepLabel }: Props) {
+export default function AboutYouPage({ initialValue, onDone, onSkip, onBack }: Props) {
   const [initial] = useState<AboutYou>(() => loadAboutDraft() ?? parseAboutYou(initialValue) ?? emptyAboutYou())
   const [ageText, setAgeText] = useState(initial.age === null ? '' : String(initial.age))
   const [ageError, setAgeError] = useState<string | undefined>()
@@ -67,10 +67,13 @@ export default function AboutYouPage({ initialValue, onDone, onSkip, onBack, ste
   return (
     <Box as="main" className="onboarding" paddingInline={{ xs: 'space-16', md: 'space-32' }} paddingBlock="space-24 space-0">
       <VStack gap="space-24" className="onboarding__content">
-        <VernHeader>{stepLabel && <Detail textColor="subtle">{stepLabel}</Detail>}</VernHeader>
+        <VernHeader />
 
         <VStack gap="space-8">
-          <Heading level="1" size="large">Om deg</Heading>
+          <HStack justify="space-between" align="center" wrap={false}>
+            <Heading level="1" size="large">Om deg</Heading>
+            <Button variant="tertiary" size="small" onClick={onSkip}>Hopp over</Button>
+          </HStack>
           <BodyLong>Fortell oss litt om livet ditt, så kan vi lettere matche deg med riktig selskap.</BodyLong>
           <BodyLong textColor="subtle">Alle spørsmålene er valgfrie. Hopp over det du ikke vil svare på.</BodyLong>
         </VStack>
@@ -94,9 +97,6 @@ export default function AboutYouPage({ initialValue, onDone, onSkip, onBack, ste
                   update({ ageText: event.target.value })
                 }}
               />
-              <HelpText title="Hvorfor spør vi om dette?" placement="left" className="vp-step__help">
-                Behovene endrer seg med alderen. Det hjelper oss å peke på det som er relevant for deg nå.
-              </HelpText>
             </HStack>
 
             <HStack gap="space-8" align="start" justify="space-between" wrap={false}>
@@ -111,9 +111,6 @@ export default function AboutYouPage({ initialValue, onDone, onSkip, onBack, ste
                   update({ occupation: event.target.value })
                 }}
               />
-              <HelpText title="Hvorfor spør vi om dette?" placement="left" className="vp-step__help">
-                Noen jobber gir andre behov, for eksempel om du reiser mye eller jobber fysisk. Du kan svare kort.
-              </HelpText>
             </HStack>
 
             <HStack gap="space-8" align="start" justify="space-between" wrap={false}>
@@ -135,9 +132,6 @@ export default function AboutYouPage({ initialValue, onDone, onSkip, onBack, ste
                   ))}
                 </div>
               </RadioGroup>
-              <HelpText title="Hvorfor spør vi om dette?" placement="left" className="vp-step__help">
-                Har du barn, kan det være lurt å tenke på dekning for hele familien.
-              </HelpText>
             </HStack>
 
             <HStack gap="space-8" align="start" justify="space-between" wrap={false}>
@@ -161,9 +155,6 @@ export default function AboutYouPage({ initialValue, onDone, onSkip, onBack, ste
                   ))}
                 </div>
               </CheckboxGroup>
-              <HelpText title="Hvorfor spør vi om dette?" placement="left" className="vp-step__help">
-                Da kan vi vise deg det du faktisk trenger, og la resten være.
-              </HelpText>
             </HStack>
           </VStack>
         </form>
