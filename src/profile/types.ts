@@ -42,7 +42,7 @@ export const QUESTIONS: Question[] = [
     options: [
       { label: 'Lavest mulig pris, selv om jeg får færre dekninger', weights: { pris: 1 } },
       { label: 'God balanse mellom pris og dekning', weights: { pris: 0.5, dekning: 0.5 } },
-      { label: 'Høy dekning, selv om det koster mer', weights: { dekning: 1 } },
+      { label: 'Høy dekning, selv om det koster mer i måneden', weights: { dekning: 1 } },
     ],
   },
   {
