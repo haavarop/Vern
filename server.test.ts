@@ -11,7 +11,7 @@ test('recommendation candidates use only matching mock products and prices', asy
   assert.equal(result.length, 1)
   assert.equal(result[0].insurance, policy.product)
   assert.deepEqual(result[0].candidates[0], { company: policy.insurer, price: policy.premium })
-  assert.throws(() => buildMockCandidates({ insurances: { test: [{ product: 'Bil', insurer: 'If' }] } }), /demopris/)
+  assert.throws(() => buildMockCandidates({ insurances: { test: [{ product: 'Bil', insurer: 'If' }] } }), /pris/)
   assert.throws(() => buildMockCandidates({ insurances: { test: {} } }), /Ugyldige forsikringer/)
   assert.deepEqual(buildMockCandidates({}), [])
 })

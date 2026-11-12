@@ -224,6 +224,14 @@
 
 .match-card__text { display: grid; gap: var(--vern-space-xs); justify-items: start; min-width: 0; overflow-wrap: anywhere; }
 
+/* «Ring meg» on the top matches. Cream on the forest card so it stays visible. */
+.match-callback { display: flex; }
+.match-callback--done { align-items: flex-start; gap: var(--vern-space-sm); margin: 0; color: var(--vern-text-brand); }
+.match-callback--done svg { flex-shrink: 0; }
+.match-hero--best .match-callback--done { color: var(--vern-cream); }
+.match-hero--best .match-callback .aksel-button { background: var(--vern-cream); color: var(--vern-forest); box-shadow: none; }
+.match-hero--best .match-callback .aksel-button:hover { background: var(--vern-white); }
+
 .match-score-pill {
   padding: var(--vern-space-xs) var(--vern-space-md);
   border-radius: var(--vern-radius-pill);

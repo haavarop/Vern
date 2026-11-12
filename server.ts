@@ -28,7 +28,7 @@ export function buildMockCandidates(profile: unknown) {
   return policies.map((policy, policyIndex) => {
     if (!isRecord(policy) || typeof policy.product !== 'string' || !policy.product.trim() ||
       typeof policy.insurer !== 'string' || !policy.insurer.trim() || typeof policy.premium !== 'number' ||
-      !Number.isFinite(policy.premium) || policy.premium < 0) throw new Error('Forsikringen mangler navn, selskap eller demopris')
+      !Number.isFinite(policy.premium) || policy.premium < 0) throw new Error('Forsikringen mangler navn, selskap eller pris')
     const candidates = [{ company: policy.insurer, price: policy.premium }]
     for (const mock of mockPolicies) {
       if (mock.product === policy.product && !candidates.some((candidate) => candidate.company === mock.insurer)) {

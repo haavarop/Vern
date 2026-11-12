@@ -5,7 +5,6 @@ import VernHeader from '../onboarding/VernHeader.tsx'
 import '../onboarding/onboarding.css'
 import '../profile/profile.css'
 import { type ChoiceQuestionCopy } from './questions.ts'
-import './journey.css'
 
 type Props = ChoiceQuestionCopy & {
   initialValue?: boolean | null

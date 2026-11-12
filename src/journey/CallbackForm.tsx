@@ -8,7 +8,6 @@ import { friendlyError } from '../match/api.ts'
 import { formatPhone, normalizePhone } from './phone.ts'
 import '../onboarding/onboarding.css'
 import '../profile/profile.css'
-import './journey.css'
 
 type Props = {
   insurerId: string
@@ -65,10 +64,7 @@ export default function CallbackForm({ insurerId, onSubmit, onBack }: Props) {
             <Box className="vern-status-positive" role="status">
               <HStack gap="space-12" align="start" wrap={false}>
                 <CircleCheck aria-hidden size={24} className="upload-status__icon" />
-                <VStack gap="space-4">
-                  <BodyShort weight="semibold">{name} ringer deg på {formatPhone(sentTo)}.</BodyShort>
-                  <BodyShort size="small">Dette er en demo, så nummeret er ikke sendt til {name}, og ingen ringer deg på ekte.</BodyShort>
-                </VStack>
+                <BodyShort weight="semibold">{name} ringer deg på {formatPhone(sentTo)}.</BodyShort>
               </HStack>
             </Box>
           </VStack>
@@ -117,7 +113,7 @@ export default function CallbackForm({ insurerId, onSubmit, onBack }: Props) {
             <HStack gap="space-12" align="start" wrap={false} className="upload-privacy">
               <Lock aria-hidden size={24} />
               <BodyShort size="small">
-                Vi deler nummeret bare med {name}, og bare for denne samtalen. Dette er en demo, så ingenting blir faktisk sendt.
+                Vi deler nummeret bare med {name}, og bare for denne samtalen.
               </BodyShort>
             </HStack>
           </VStack>

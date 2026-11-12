@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ComponentProps, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { BodyLong, BodyShort, Button, Heading, Loader, Skeleton, Theme } from '@navikt/ds-react'
-import { ArrowLeft, CircleAlert, Info, RefreshCw, X } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, CircleAlert, CircleCheck, Info, RefreshCw, ShoppingBag, X } from 'lucide-react'
 import { VernSymbol } from './brand/VernLogo.tsx'
 import Onboarding from './onboarding/Onboarding.tsx'
 import { getInsurer, INSURERS, normalize } from './onboarding/insurers.ts'
@@ -21,7 +21,7 @@ import { BRANCH_QUESTIONS } from './journey/questions.ts'
 import { loadJourneyDraft, parseCallbacks, parseJourney, saveJourneyDraft } from './journey/journeyDraft.ts'
 import { isAboutYouFilled, parseAboutYou, type AboutYou, type CallbackRequest, type Journey } from './journey/types.ts'
 import { clearDraft, loadDraft, parseQuestionParam, questionParam } from './profile/draft.ts'
-import MatchPage, { ScoreRing } from './match/MatchPage.tsx'
+import MatchPage, { MatchResults, ScoreRing } from './match/MatchPage.tsx'
 import VernHeader from './onboarding/VernHeader.tsx'
 import { buildMatchRequest, fetchMatches, friendlyError } from './match/api.ts'
 import type { InsurerMatch } from './match/types.ts'
@@ -41,8 +41,14 @@ const PREPARE_PATH = '/forbered'
 const ONBOARDING_VALUES_PATH = '/verdiprofil'
 const EDIT_VALUES_PATH = '/profil/verdiprofil'
 const CALLBACK_PATH = '/ring-meg'
+// Shows the recommendations when the customer has insurances, otherwise the matches.
+const VERN_PATH = '/vern'
 // Only these paths are accepted in ?tilbake= so the URL can't send the user anywhere else.
-const RETURN_PATHS = ['/matcher', '/profil']
+const RETURN_PATHS = [VERN_PATH, '/profil']
+
+function hasInsurances(connections: ConnectionState): boolean {
+  return Object.values(connections).some((policies) => policies.length > 0)
+}
 
 function returnPath(value: string | null): string {
   return value && RETURN_PATHS.includes(value) ? value : '/profil'
@@ -51,12 +57,12 @@ function returnPath(value: string | null): string {
 function App() {
   // New customers start on the landing page and go through onboarding as full pages:
   // /start → /om-deg → /forsikringer-i-dag → (/sjekke → /forbered | /ny-match) → /verdiprofil/:spm → (/forsikringer, only when checking
-  // existing insurances) → /profil → /matcher → /ring-meg/:selskap.
+  // existing insurances) → /profil → /vern → /ring-meg/:selskap. /vern shows the recommendations when the customer
+  // has insurances and the matches when they have none.
   // Returning customers (data/profile.json is filled in) go straight to /profil. The URL only holds where the user is;
   // the profile data lives here.
   const [loaded, setLoaded] = useState(false)
   const [onboarded, setOnboarded] = useState(false)
-  const [seenMatches, setSeenMatches] = useState(false)
   const [connections, setConnections] = useState<ConnectionState>({})
   const [profile, setProfile] = useState<UserProfile>({ answers: null })
   const [aboutYou, setAboutYou] = useState<AboutYou | null>(null)
@@ -65,7 +71,6 @@ function App() {
   const [callbacks, setCallbacks] = useState<CallbackRequest[]>([])
   const [saveError, setSaveError] = useState('')
   const navigate = useNavigate()
-  const { pathname } = useLocation()
   const [searchParams] = useSearchParams()
 
   const syncSavedProfile = useCallback((stored: Partial<StoredProfile>) => {
@@ -88,12 +93,8 @@ function App() {
     fetchProfile()
       .then((stored) => {
         if (cancelled) return
-        if (isNewCustomer(stored)) {
-          startOnboarding()
-        } else {
-          setSeenMatches(true)
-          syncSavedProfile(stored)
-        }
+        if (isNewCustomer(stored)) startOnboarding()
+        else syncSavedProfile(stored)
         setLoaded(true)
       })
       .catch((error) => {
@@ -104,8 +105,6 @@ function App() {
       })
     return () => { cancelled = true }
   }, [syncSavedProfile])
-
-  if (loaded && onboarded && !seenMatches && pathname === '/matcher') setSeenMatches(true)
 
   function currentInput(overrides: Partial<ProfileInput> = {}): ProfileInput {
     return { answers: profile.answers, insurances: connections, aboutYou, journey, callbacks, ...overrides }
@@ -154,7 +153,7 @@ function App() {
   }
 
   // Edits from the profile page return to the profile. The matches page can also send the user to step 1
-  // and expects them back afterwards (?tilbake=/matcher).
+  // and expects them back afterwards (?tilbake=/vern).
   function finishEditedValues(answers: Answers | null) {
     const nextAnswers = answers ?? profile.answers
     setProfile({ answers: nextAnswers })
@@ -189,6 +188,10 @@ function App() {
     }
   }
 
+  function openCallback(insurerId: string) {
+    navigate(`${CALLBACK_PATH}/${encodeURIComponent(insurerId)}`)
+  }
+
   async function requestCallback(insurerId: string, phone: string) {
     const next = [...callbacks, { insurerId, phone, requestedAt: new Date().toISOString() }]
     await saveProfile(buildStoredProfile(currentInput({ callbacks: next })))
@@ -206,7 +209,6 @@ function App() {
     clearAboutDraft()
     saveJourneyDraft(null)
     setOnboarded(false)
-    setSeenMatches(false)
     setConnections({})
     setProfile({ answers: null })
     setAboutYou(null)
@@ -306,9 +308,8 @@ function App() {
               onAddInsurers={() => navigate('/forsikringer')}
               onEditProfile={() => editValues()}
               onReset={() => void reset()}
-              onContinue={() => navigate(seenMatches ? '/vern' : '/matcher')}
-              continueLabel={seenMatches ? 'Se forslagene dine' : 'Finn matchen din'}
-              onShowMatches={seenMatches ? () => navigate('/matcher') : undefined}
+              onContinue={() => navigate(VERN_PATH)}
+              continueLabel={hasInsurances(connections) ? 'Se forslagene dine' : 'Finn matchen din'}
             />
           )} />
           <Route path={EDIT_ABOUT_PATH} element={onboardedOnly(
@@ -327,22 +328,28 @@ function App() {
               onDone={finishEditedValues}
             />
           )} />
-          <Route path="/matcher" element={onboardedOnly(
+          <Route path={VERN_PATH} element={onboardedOnly(hasInsurances(connections) ? (
+            <Recommendations
+              onBack={() => navigate('/profil')}
+              onProfileChange={syncSavedProfile}
+              onRequestCallback={openCallback}
+              callbackRequestedFor={callbacks.map((callback) => callback.insurerId)}
+            />
+          ) : (
             <MatchPage
               connections={connections}
               profile={profile}
               journey={journey}
               onBack={() => navigate('/profil')}
-              onContinue={() => navigate('/vern')}
-              onCreateProfile={() => editValues('?tilbake=/matcher')}
-              onRequestCallback={(insurerId) => navigate(`${CALLBACK_PATH}/${encodeURIComponent(insurerId)}`)}
+              onCreateProfile={() => editValues(`?tilbake=${VERN_PATH}`)}
+              onRequestCallback={openCallback}
               callbackRequestedFor={callbacks.map((callback) => callback.insurerId)}
             />
-          )} />
+          ))} />
+          <Route path="/matcher" element={<Navigate to={VERN_PATH} replace />} />
           <Route path={`${CALLBACK_PATH}/:selskap`} element={onboardedOnly(
-            <CallbackRoute onSubmit={requestCallback} onBack={() => navigate('/matcher')} />
+            <CallbackRoute onSubmit={requestCallback} onBack={() => navigate(VERN_PATH)} />
           )} />
-          <Route path="/vern" element={onboardedOnly(<Recommendations onBack={() => navigate('/profil')} onProfileChange={syncSavedProfile} />)} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       )}
@@ -353,7 +360,7 @@ function App() {
 // Reads the insurer from the URL; unknown insurers go back to the matches.
 function CallbackRoute({ onSubmit, onBack }: { onSubmit: (insurerId: string, phone: string) => Promise<void>; onBack: () => void }) {
   const { selskap } = useParams()
-  if (!selskap || !getInsurer(selskap)) return <Navigate to="/matcher" replace />
+  if (!selskap || !getInsurer(selskap)) return <Navigate to={VERN_PATH} replace />
   return <CallbackForm insurerId={selskap} onSubmit={(phone) => onSubmit(selskap, phone)} onBack={onBack} />
 }
 
@@ -375,7 +382,50 @@ function ValuesRoute({ basePath, ...props }: ValuesRouteProps) {
   )
 }
 
-function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onProfileChange: (profile: Partial<StoredProfile>) => void }) {
+type Change = { insurance: string; from: string; to: string }
+
+/** The first thing on the recommendations page: whether the customer should change anything. */
+function ChangeSummary({ changes }: { changes: Change[] }) {
+  if (changes.length === 0) {
+    return (
+      <section className="change-summary vern-status-positive" aria-labelledby="change-summary-title">
+        <CircleCheck aria-hidden size={32} strokeWidth={2} className="change-summary__icon" />
+        <div className="change-summary__text">
+          <Heading id="change-summary-title" level="2" size="medium">Du trenger ikke endre noe</Heading>
+          <BodyShort>Vi har sett på forsikringene dine, og alle passer deg godt. Du kan beholde det du har.</BodyShort>
+        </div>
+      </section>
+    )
+  }
+  return (
+    <section className="change-summary change-summary--action vern-card" aria-labelledby="change-summary-title">
+      <ArrowLeftRight aria-hidden size={32} strokeWidth={2} className="change-summary__icon" />
+      <div className="change-summary__text">
+        <Heading id="change-summary-title" level="2" size="medium">
+          {changes.length === 1 ? 'Vi anbefaler 1 endring' : `Vi anbefaler ${changes.length} endringer`}
+        </Heading>
+        <BodyShort>Et annet selskap matcher deg bedre for:</BodyShort>
+        <ul className="change-summary__list">
+          {changes.map((change, index) => (
+            <li key={`${change.insurance}-${index}`}>
+              <BodyShort as="span" weight="semibold">{change.insurance}</BodyShort>
+              <BodyShort as="span">{`: fra ${change.from} til ${change.to}`}</BodyShort>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
+type RecommendationsProps = {
+  onBack: () => void
+  onProfileChange: (profile: Partial<StoredProfile>) => void
+  onRequestCallback: (insurerId: string) => void
+  callbackRequestedFor: string[]
+}
+
+function Recommendations({ onBack, onProfileChange, onRequestCallback, callbackRequestedFor }: RecommendationsProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [syncError, setSyncError] = useState('')
@@ -476,13 +526,10 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
   const recommendedChanges = rankedRecommendations.filter((item) => item.requiresChange)
   const unchangedRecommendations = rankedRecommendations.filter((item) => !item.requiresChange)
 
-  const renderRecommendationGroup = (title: string, items: typeof rankedRecommendations, unchanged: boolean) => (
+  const renderRecommendationGroup = (title: string, items: typeof rankedRecommendations, unchanged: boolean) => items.length > 0 && (
     <section className="recommendation-group" aria-labelledby={unchanged ? 'recommendation-unchanged-title' : 'recommendation-changes-title'}>
       <Heading id={unchanged ? 'recommendation-unchanged-title' : 'recommendation-changes-title'} level="2" size="large" className="recommendation-group__title">{title}</Heading>
-      {items.length === 0 ? (
-        <BodyShort className="vern-card">{unchanged ? 'Ingen forslag uten endring akkurat nå.' : 'Ingen anbefalte endringer akkurat nå.'}</BodyShort>
-      ) : (
-        <ol className="recommendation-list" aria-label={`${title} sortert etter match`}>
+      <ol className="recommendation-list" aria-label={`${title} sortert etter match`}>
           {items.map(({ recommendation, currentPolicy, suggestedInsurer, currentMatch, suggestedMatch, sameCompany, index }) => (
             <li className="recommendation-pair" key={currentPolicy?.id ?? `${recommendation.insurance}-${index}`}>
               <Heading level="3" size="small" className="recommendation-pair__title">{recommendation.insurance}</Heading>
@@ -516,7 +563,7 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
                     <ScoreRing score={suggestedMatch?.score} compact showMatchLabel />
                     {suggestedMatch === undefined
                       ? <BodyShort size="small" className="match-muted">Match ikke tilgjengelig</BodyShort>
-                      : <BodyShort size="small" className="recommendation-company__price">Demopris {new Intl.NumberFormat('nb-NO').format(recommendation.price)}&nbsp;kr per måned</BodyShort>}
+                      : <BodyShort size="small" className="recommendation-company__price">{new Intl.NumberFormat('nb-NO').format(recommendation.price)}&nbsp;kr per måned</BodyShort>}
                     {recommendation.fallback && <BodyShort size="small" className="match-muted">Viser selskapet du har i dag</BodyShort>}
                   </article>
                 </div>
@@ -524,7 +571,6 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
             </li>
           ))}
         </ol>
-      )}
     </section>
   )
 
@@ -546,15 +592,39 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
         )}
         {recommendations !== null && (
           <section className="recommendations">
-            <div className="app-notice">
-              <Info aria-hidden size={24} strokeWidth={2} />
-              <BodyShort size="small" className="app-notice__text">Dette er en demo med simulerte priser. Matchen gjelder selskapet, ikke hver enkelt forsikring.</BodyShort>
-            </div>
             {recommendations.length === 0 && <BodyShort className="vern-card">Du har ikke lagt til noen forsikringer ennå. Legg dem til i profilen din, så ser vi på dem sammen.</BodyShort>}
+            {recommendations.length > 0 && <span className="recommendation-part-label">Forsikringene du har i dag</span>}
+            {recommendations.length > 0 && <ChangeSummary changes={recommendedChanges.map(({ recommendation, currentPolicy }) => ({
+              insurance: recommendation.insurance,
+              from: currentPolicy?.insurer ?? 'selskapet du har i dag',
+              to: recommendation.company,
+            }))} />}
             {recommendations.length > 0 && <div className="recommendation-groups">
               {renderRecommendationGroup('Anbefalte endringer', recommendedChanges, false)}
               {renderRecommendationGroup('Krever ikke endring', unchangedRecommendations, true)}
             </div>}
+            <section className="recommendation-new" aria-labelledby="recommendation-new-title">
+              <div className="recommendation-new__intro">
+                <span className="recommendation-part-label recommendation-part-label--new">
+                  <ShoppingBag aria-hidden size={16} strokeWidth={2} />
+                  Ny forsikring
+                </span>
+                <Heading id="recommendation-new-title" level="2" size="large">Skal du kjøpe en ny forsikring?</Heading>
+                <BodyLong>
+                  Forslagene over gjelder forsikringene du har i dag. Her ser du hvilke selskaper som passer deg best
+                  hvis du vil kjøpe en forsikring du ikke har ennå, eller samle forsikringene dine et nytt sted.
+                </BodyLong>
+              </div>
+              {matches && matches.length > 0
+                ? <MatchResults
+                  matches={matches}
+                  eyebrow="Dine beste matcher for ny forsikring"
+                  headingLevel="3"
+                  onRequestCallback={onRequestCallback}
+                  callbackRequestedFor={callbackRequestedFor}
+                />
+                : <BodyShort className="vern-card">Vi fikk ikke hentet matchene med selskapene akkurat nå.</BodyShort>}
+            </section>
           </section>
         )}
         {loading && (
