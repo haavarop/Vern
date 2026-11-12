@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BodyLong, BodyShort, Box, Button, Detail, FileUpload, Heading, HStack, List, ReadMore, VStack } from '@navikt/ds-react'
+import { BodyLong, BodyShort, Box, Button, FileUpload, Heading, HStack, List, ReadMore, VStack } from '@navikt/ds-react'
 import { ArrowLeft, CircleCheck, Lock } from 'lucide-react'
 import PolicySummary from './PolicySummary.tsx'
 import VernHeader from './VernHeader.tsx'
@@ -41,7 +41,7 @@ function removePolicies(connections: ConnectionState, ids: string[]): Connection
   return next
 }
 
-export default function Onboarding({ onDone, onSkip, onBack, initialConnections = {}, stepLabel }: Props) {
+export default function Onboarding({ onDone, onSkip, onBack, initialConnections = {} }: Props) {
   const [connections, setConnections] = useState<ConnectionState>(initialConnections)
   const [uploads, setUploads] = useState<Upload[]>([])
 
@@ -85,7 +85,7 @@ export default function Onboarding({ onDone, onSkip, onBack, initialConnections 
   return (
     <Box as="main" className="onboarding" paddingInline={{ xs: 'space-16', md: 'space-32' }} paddingBlock="space-24 space-0">
       <VStack gap="space-24" className="onboarding__content">
-        <VernHeader>{stepLabel && <Detail textColor="subtle">{stepLabel}</Detail>}</VernHeader>
+        <VernHeader />
 
         <VStack gap="space-8">
           <Heading level="1" size="large">Hvilke forsikringer har du i dag?</Heading>
