@@ -1,8 +1,9 @@
 import { BodyShort, Box, Button, Detail, Heading, HStack, Tag, VStack } from '@navikt/ds-react'
-import { CircleUser, FileText, Pencil, Star, Upload } from 'lucide-react'
+import { CircleUser, FileText, Pencil, Star, Upload, UserRound } from 'lucide-react'
 import PolicySummary from '../onboarding/PolicySummary.tsx'
 import VernHeader from '../onboarding/VernHeader.tsx'
 import type { ConnectionState } from '../onboarding/types.ts'
+import { INTEREST_LABELS, type AboutYou } from '../journey/types.ts'
 import { RadarChart } from '../onboarding/charts.tsx'
 import { DIMENSION_ORDER, DIMENSIONS, rankDimensions, scoreProfile, type Dimension, type UserProfile } from './types.ts'
 import '../onboarding/onboarding.css'
@@ -13,6 +14,8 @@ const SHORT_LABELS: Record<Dimension, string> = { pris: 'Pris', dekning: 'Deknin
 type Props = {
   connections: ConnectionState
   profile: UserProfile
+  aboutYou: AboutYou | null
+  onEditAbout: () => void
   onAddInsurers: () => void
   onEditProfile: () => void
   /** Deletes the stored profile and restarts onboarding as a new customer. */
@@ -21,6 +24,43 @@ type Props = {
   continueLabel?: string
   /** Shown as a secondary action once the user has seen their matches. */
   onShowMatches?: () => void
+}
+
+function AboutYouSummary({ aboutYou, onEdit }: { aboutYou: AboutYou | null; onEdit: () => void }) {
+  if (!aboutYou) {
+    return (
+      <VStack gap="space-16">
+        <HStack gap="space-12" align="center" wrap={false} className="connected-empty">
+          <UserRound aria-hidden size={32} />
+          <BodyShort textColor="subtle">Fortell litt om deg selv, så kan vi matche deg enda bedre. Alt er valgfritt.</BodyShort>
+        </HStack>
+        <Button variant="secondary" onClick={onEdit} className="onboarding__add">Fortell om deg selv</Button>
+      </VStack>
+    )
+  }
+
+  const rows: Array<[string, string]> = [
+    ['Alder', aboutYou.age === null ? 'Ikke oppgitt' : `${aboutYou.age} år`],
+    ['Jobb', aboutYou.occupation ?? 'Ikke oppgitt'],
+    ['Barn', aboutYou.hasChildren === null ? 'Ikke oppgitt' : aboutYou.hasChildren ? 'Ja' : 'Nei'],
+    ['Vil forsikre', aboutYou.interests.length ? aboutYou.interests.map((interest) => INTEREST_LABELS[interest]).join(', ') : 'Ikke oppgitt'],
+  ]
+
+  return (
+    <VStack gap="space-12">
+      <dl className="about-summary">
+        {rows.map(([label, value]) => (
+          <div key={label} className="about-summary__row">
+            <BodyShort as="dt" size="small" textColor="subtle">{label}</BodyShort>
+            <BodyShort as="dd" size="small">{value}</BodyShort>
+          </div>
+        ))}
+      </dl>
+      <div>
+        <Button variant="tertiary" size="small" icon={<Pencil size="1em" aria-hidden />} onClick={onEdit}>Endre</Button>
+      </div>
+    </VStack>
+  )
 }
 
 function ValueProfile({ profile, onEdit }: { profile: UserProfile; onEdit: () => void }) {
@@ -68,7 +108,7 @@ function ValueProfile({ profile, onEdit }: { profile: UserProfile; onEdit: () =>
   )
 }
 
-export default function ProfilePage({ connections, profile, onAddInsurers, onEditProfile, onReset, onContinue, continueLabel = 'Se forslagene dine', onShowMatches }: Props) {
+export default function ProfilePage({ connections, profile, aboutYou, onEditAbout, onAddInsurers, onEditProfile, onReset, onContinue, continueLabel = 'Se forslagene dine', onShowMatches }: Props) {
   const hasConnections = Object.keys(connections).length > 0
 
   return (
@@ -80,6 +120,16 @@ export default function ProfilePage({ connections, profile, onAddInsurers, onEdi
           <Heading level="1" size="large">Profilen din</Heading>
           <BodyShort textColor="subtle">Her ser du det som betyr noe for deg, og forsikringene du har i dag.</BodyShort>
         </VStack>
+
+        <section aria-labelledby="about-heading" className="vern-card">
+          <VStack gap="space-16">
+            <HStack justify="space-between" align="center" gap="space-8">
+              <Heading id="about-heading" level="2" size="small">Om deg</Heading>
+              {!aboutYou && <Tag size="small" variant="neutral">Ikke svart ennå</Tag>}
+            </HStack>
+            <AboutYouSummary aboutYou={aboutYou} onEdit={onEditAbout} />
+          </VStack>
+        </section>
 
         <section aria-labelledby="values-heading" className="vern-card">
           <VStack gap="space-16">

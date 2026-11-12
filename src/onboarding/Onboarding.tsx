@@ -8,7 +8,7 @@ import { policyCountLabel } from './format.ts'
 import type { ConnectionState, Policy } from './types.ts'
 import './onboarding.css'
 
-type Props = { onDone: (connections: ConnectionState) => void; onSkip: () => void; onBack?: () => void; initialConnections?: ConnectionState }
+type Props = { onDone: (connections: ConnectionState) => void; onSkip: () => void; onBack?: () => void; initialConnections?: ConnectionState; stepLabel?: string }
 
 type Upload = {
   id: string
@@ -41,7 +41,7 @@ function removePolicies(connections: ConnectionState, ids: string[]): Connection
   return next
 }
 
-export default function Onboarding({ onDone, onSkip, onBack, initialConnections = {} }: Props) {
+export default function Onboarding({ onDone, onSkip, onBack, initialConnections = {}, stepLabel }: Props) {
   const [connections, setConnections] = useState<ConnectionState>(initialConnections)
   const [uploads, setUploads] = useState<Upload[]>([])
 
@@ -85,7 +85,7 @@ export default function Onboarding({ onDone, onSkip, onBack, initialConnections 
   return (
     <Box as="main" className="onboarding" paddingInline={{ xs: 'space-16', md: 'space-32' }} paddingBlock="space-24 space-0">
       <VStack gap="space-24" className="onboarding__content">
-        <VernHeader><Detail textColor="subtle">Del 2 av 2</Detail></VernHeader>
+        <VernHeader>{stepLabel && <Detail textColor="subtle">{stepLabel}</Detail>}</VernHeader>
 
         <VStack gap="space-8">
           <Heading level="1" size="large">Hvilke forsikringer har du i dag?</Heading>

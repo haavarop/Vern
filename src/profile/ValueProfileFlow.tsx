@@ -17,9 +17,13 @@ type Props = {
   onStepChange: (step: number, options?: { replace?: boolean }) => void
   onDone: (answers: Answers) => void
   onSkip: () => void
+  /** Shown in the header, e.g. "Del 2 av 3". */
+  stepLabel?: string
+  /** Replaces "Hopp over" on the first question, e.g. when the flow is entered from an earlier step. */
+  onBack?: () => void
 }
 
-export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', step, onStepChange, onDone, onSkip }: Props) {
+export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', step, onStepChange, onDone, onSkip, stepLabel, onBack }: Props) {
   const [answers, setAnswers] = useState<Answers>(() => loadDraft() ?? initialAnswers ?? emptyAnswers())
   const headingRef = useRef<HTMLHeadingElement>(null)
   const question = QUESTIONS[step]
@@ -57,13 +61,13 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
   return (
     <Box as="main" className="onboarding" paddingInline={{ xs: 'space-16', md: 'space-32' }} paddingBlock="space-24 space-0">
       <VStack gap="space-24" className="onboarding__content">
-        {step === 0 ? (
+        {step === 0 && !stepLabel ? (
           <VStack gap="space-16">
             <VernLockup size={80} />
 
           </VStack>
         ) : (
-          <VernHeader><Detail textColor="subtle">Del 1 av 2</Detail></VernHeader>
+          <VernHeader>{stepLabel && <Detail textColor="subtle">{stepLabel}</Detail>}</VernHeader>
         )}
 
         <VStack gap="space-8">
@@ -122,10 +126,10 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
       </VStack>
 
       <div className="cta-bar">
-        <div className="cta-bar__actions">
-          {step === 0
-            ? <Button variant="tertiary" onClick={onSkip}>Hopp over</Button>
-            : <Button variant="tertiary" icon={<ArrowLeft size="1em" aria-hidden />} onClick={() => onStepChange(step - 1)}>Tilbake</Button>}
+        <div className={step === 0 && onBack ? 'cta-bar__actions cta-bar__actions--stack' : 'cta-bar__actions'}>
+          {step > 0 && <Button variant="tertiary" icon={<ArrowLeft size="1em" aria-hidden />} onClick={() => onStepChange(step - 1)}>Tilbake</Button>}
+          {step === 0 && onBack && <Button variant="tertiary" icon={<ArrowLeft size="1em" aria-hidden />} onClick={onBack}>Tilbake</Button>}
+          {step === 0 && <Button variant="tertiary" onClick={onSkip}>Hopp over</Button>}
           <Button icon={<ArrowRight size="1em" aria-hidden />} iconPosition="right" disabled={!isComplete(question, value)} onClick={next}>
             {isLast ? doneLabel : 'Neste'}
           </Button>

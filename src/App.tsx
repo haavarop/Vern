@@ -4,13 +4,21 @@ import { BodyLong, BodyShort, Button, Heading, Loader, Skeleton, Theme } from '@
 import { ArrowLeft, CircleAlert, Info, RefreshCw, X } from 'lucide-react'
 import { VernSymbol } from './brand/VernLogo.tsx'
 import Onboarding from './onboarding/Onboarding.tsx'
-import { INSURERS, normalize } from './onboarding/insurers.ts'
+import { getInsurer, INSURERS, normalize } from './onboarding/insurers.ts'
 import Monogram from './onboarding/Monogram.tsx'
 import type { Policy } from './onboarding/types.ts'
 import ProfilePage from './profile/ProfilePage.tsx'
 import ValueProfileFlow from './profile/ValueProfileFlow.tsx'
 import { QUESTIONS, type Answers, type UserProfile } from './profile/types.ts'
-import { buildStoredProfile, deleteProfile, fetchProfile, isNewCustomer, saveProfile, type StoredProfile } from './profile/storage.ts'
+import { buildStoredProfile, deleteProfile, fetchProfile, isNewCustomer, saveProfile, type ProfileInput, type StoredProfile } from './profile/storage.ts'
+import LandingPage from './landing/LandingPage.tsx'
+import AboutYouPage from './landing/AboutYouPage.tsx'
+import { clearAboutDraft, loadAboutDraft } from './landing/aboutDraft.ts'
+import ChoiceQuestion from './journey/ChoiceQuestion.tsx'
+import CallbackForm from './journey/CallbackForm.tsx'
+import { BRANCH_QUESTIONS } from './journey/questions.ts'
+import { loadJourneyDraft, parseCallbacks, parseJourney, saveJourneyDraft } from './journey/journeyDraft.ts'
+import { isAboutYouFilled, parseAboutYou, type AboutYou, type CallbackRequest, type Journey } from './journey/types.ts'
 import { clearDraft, loadDraft, parseQuestionParam, questionParam } from './profile/draft.ts'
 import MatchPage, { ScoreRing } from './match/MatchPage.tsx'
 import VernHeader from './onboarding/VernHeader.tsx'
@@ -22,8 +30,15 @@ import './App.css'
 
 type Recommendation = { insurance: string; company: string; price: number; fallback?: boolean }
 
+const LANDING_PATH = '/start'
+const ABOUT_PATH = '/om-deg'
+const EDIT_ABOUT_PATH = '/profil/om-deg'
+const HAS_INSURANCE_PATH = '/forsikringer-i-dag'
+const CHECK_EXISTING_PATH = '/sjekke'
+const FIND_NEW_PATH = '/ny-match'
 const ONBOARDING_VALUES_PATH = '/verdiprofil'
 const EDIT_VALUES_PATH = '/profil/verdiprofil'
+const CALLBACK_PATH = '/ring-meg'
 // Only these paths are accepted in ?tilbake= so the URL can't send the user anywhere else.
 const RETURN_PATHS = ['/matcher', '/profil']
 
@@ -32,7 +47,9 @@ function returnPath(value: string | null): string {
 }
 
 function App() {
-  // New customers see onboarding first as its own full page: /verdiprofil/:spm (steg 1) → /forsikringer (steg 2) → /profil → /matcher.
+  // New customers start on the landing page and go through onboarding as full pages:
+  // /start → /om-deg → /forsikringer-i-dag → (/sjekke | /ny-match) → /verdiprofil/:spm → (/forsikringer, only when checking
+  // existing insurances) → /profil → /matcher → /ring-meg/:selskap.
   // Returning customers (data/profile.json is filled in) go straight to /profil. The URL only holds where the user is;
   // the profile data lives here.
   const [loaded, setLoaded] = useState(false)
@@ -40,6 +57,10 @@ function App() {
   const [seenMatches, setSeenMatches] = useState(false)
   const [connections, setConnections] = useState<ConnectionState>({})
   const [profile, setProfile] = useState<UserProfile>({ answers: null })
+  const [aboutYou, setAboutYou] = useState<AboutYou | null>(null)
+  const [journey, setJourney] = useState<Journey | null>(null)
+  const [hasInsurance, setHasInsurance] = useState<boolean | null>(null)
+  const [callbacks, setCallbacks] = useState<CallbackRequest[]>([])
   const [saveError, setSaveError] = useState('')
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -49,46 +70,84 @@ function App() {
     setOnboarded(!isNewCustomer(stored))
     setProfile({ answers: stored.valueProfile?.answers ?? null })
     setConnections(stored.insurances ?? {})
+    setAboutYou(parseAboutYou(stored.aboutYou))
+    setJourney(parseJourney(stored.journey))
+    setCallbacks(parseCallbacks(stored.callbacks))
   }, [])
 
   useEffect(() => {
     let cancelled = false
+    // Keeps answers from earlier onboarding steps when a later step is refreshed.
+    function startOnboarding() {
+      setProfile({ answers: loadDraft() })
+      setAboutYou(loadAboutDraft())
+      setJourney(loadJourneyDraft())
+    }
     fetchProfile()
       .then((stored) => {
         if (cancelled) return
         if (isNewCustomer(stored)) {
-          // Keeps answers from step 1 when step 2 is refreshed.
-          setProfile({ answers: loadDraft() })
+          startOnboarding()
         } else {
-          setOnboarded(true)
           setSeenMatches(true)
-          setProfile({ answers: stored.valueProfile?.answers ?? null })
-          setConnections(stored.insurances ?? {})
+          syncSavedProfile(stored)
         }
         setLoaded(true)
       })
       .catch((error) => {
         console.warn('Could not load profile, starting onboarding:', error)
         if (cancelled) return
-        setProfile({ answers: loadDraft() })
+        startOnboarding()
         setLoaded(true)
       })
     return () => { cancelled = true }
-  }, [])
+  }, [syncSavedProfile])
 
   if (loaded && onboarded && !seenMatches && pathname === '/matcher') setSeenMatches(true)
 
-  function persist(answers: Answers | null, insurances: ConnectionState) {
+  function currentInput(overrides: Partial<ProfileInput> = {}): ProfileInput {
+    return { answers: profile.answers, insurances: connections, aboutYou, journey, callbacks, ...overrides }
+  }
+
+  function persist(overrides: Partial<ProfileInput> = {}) {
     setSaveError('')
     clearDraft()
-    saveProfile(buildStoredProfile({ answers, insurances }))
+    clearAboutDraft()
+    saveJourneyDraft(null)
+    saveProfile(buildStoredProfile(currentInput(overrides)))
       .catch((error: unknown) => setSaveError(friendlyError(error, 'Vi fikk ikke lagret profilen din. Prøv igjen om litt.')))
   }
 
-  // During first-time onboarding, step 1 continues to step 2. The answers are saved together with the insurers.
+  function completeOnboarding(overrides: Partial<ProfileInput> = {}) {
+    setOnboarded(true)
+    persist(overrides)
+    navigate('/profil')
+  }
+
+  // «Om deg» is optional: skipping clears whatever was typed.
+  function finishAbout(about: AboutYou | null) {
+    if (!about) clearAboutDraft()
+    setAboutYou(isAboutYouFilled(about) ? about : null)
+    navigate(HAS_INSURANCE_PATH)
+  }
+
+  function answerHasInsurance(yes: boolean) {
+    setHasInsurance(yes)
+    navigate(yes ? CHECK_EXISTING_PATH : FIND_NEW_PATH)
+  }
+
+  function chooseJourney(next: Journey) {
+    setJourney(next)
+    saveJourneyDraft(next)
+    navigate(`${ONBOARDING_VALUES_PATH}/1`)
+  }
+
+  // Only the «check my insurances» branch continues to the upload step; a new match goes straight to the profile.
   function finishOnboardingValues(answers: Answers | null) {
+    const nextAnswers = answers ?? profile.answers
     if (answers) setProfile({ answers })
-    navigate('/forsikringer')
+    if (journey === 'ny') completeOnboarding({ answers: nextAnswers })
+    else navigate('/forsikringer')
   }
 
   // Edits from the profile page return to the profile. The matches page can also send the user to step 1
@@ -96,8 +155,15 @@ function App() {
   function finishEditedValues(answers: Answers | null) {
     const nextAnswers = answers ?? profile.answers
     setProfile({ answers: nextAnswers })
-    persist(nextAnswers, connections)
+    persist({ answers: nextAnswers })
     navigate(returnPath(searchParams.get('tilbake')))
+  }
+
+  function finishEditedAbout(about: AboutYou | null) {
+    const next = about === null ? aboutYou : isAboutYouFilled(about) ? about : null
+    setAboutYou(next)
+    persist({ aboutYou: next })
+    navigate('/profil')
   }
 
   function editValues(search = '') {
@@ -105,11 +171,25 @@ function App() {
     navigate(`${EDIT_VALUES_PATH}/1${search}`)
   }
 
+  function editAbout() {
+    clearAboutDraft()
+    navigate(EDIT_ABOUT_PATH)
+  }
+
   function finishInsurers(next: ConnectionState) {
     setConnections(next)
-    setOnboarded(true)
-    persist(profile.answers, next)
-    navigate('/profil')
+    if (onboarded) {
+      persist({ insurances: next })
+      navigate('/profil')
+    } else {
+      completeOnboarding({ insurances: next })
+    }
+  }
+
+  async function requestCallback(insurerId: string, phone: string) {
+    const next = [...callbacks, { insurerId, phone, requestedAt: new Date().toISOString() }]
+    await saveProfile(buildStoredProfile(currentInput({ callbacks: next })))
+    setCallbacks(next)
   }
 
   async function reset() {
@@ -120,15 +200,26 @@ function App() {
       return
     }
     clearDraft()
+    clearAboutDraft()
+    saveJourneyDraft(null)
     setOnboarded(false)
     setSeenMatches(false)
     setConnections({})
     setProfile({ answers: null })
-    navigate(`${ONBOARDING_VALUES_PATH}/1`, { replace: true })
+    setAboutYou(null)
+    setJourney(null)
+    setHasInsurance(null)
+    setCallbacks([])
+    navigate(LANDING_PATH, { replace: true })
   }
 
   const onboardedOnly = (element: ReactNode) =>
-    onboarded ? element : <Navigate to={`${ONBOARDING_VALUES_PATH}/1`} replace />
+    onboarded ? element : <Navigate to={LANDING_PATH} replace />
+  const newCustomerOnly = (element: ReactNode) =>
+    onboarded ? <Navigate to="/profil" replace /> : element
+
+  // «Del x av y»: Om deg, verdiprofil and, when checking existing insurances, the upload step.
+  const totalParts = journey === 'ny' ? 2 : 3
 
   return (
     <Theme theme="light" hasBackground className="app-theme">
@@ -146,12 +237,48 @@ function App() {
         </div>
       ) : (
         <Routes>
-          <Route path="/" element={<Navigate to={onboarded ? '/profil' : `${ONBOARDING_VALUES_PATH}/1`} replace />} />
-          <Route path={`${ONBOARDING_VALUES_PATH}/:spm`} element={onboarded ? <Navigate to="/profil" replace /> : (
+          <Route path="/" element={<Navigate to={onboarded ? '/profil' : LANDING_PATH} replace />} />
+          <Route path={LANDING_PATH} element={newCustomerOnly(<LandingPage onStart={() => navigate(ABOUT_PATH)} />)} />
+          <Route path={ABOUT_PATH} element={newCustomerOnly(
+            <AboutYouPage
+              initialValue={aboutYou}
+              stepLabel={`Del 1 av ${totalParts}`}
+              onBack={() => navigate(LANDING_PATH)}
+              onDone={finishAbout}
+              onSkip={() => finishAbout(null)}
+            />
+          )} />
+          <Route path={HAS_INSURANCE_PATH} element={newCustomerOnly(
+            <ChoiceQuestion
+              {...BRANCH_QUESTIONS.hasInsurance}
+              initialValue={hasInsurance}
+              onBack={() => navigate(ABOUT_PATH)}
+              onAnswer={answerHasInsurance}
+            />
+          )} />
+          <Route path={CHECK_EXISTING_PATH} element={newCustomerOnly(
+            <ChoiceQuestion
+              {...BRANCH_QUESTIONS.checkExisting}
+              initialValue={journey === 'sjekk' ? true : null}
+              onBack={() => navigate(HAS_INSURANCE_PATH)}
+              onAnswer={(yes) => yes ? chooseJourney('sjekk') : navigate(FIND_NEW_PATH)}
+            />
+          )} />
+          <Route path={FIND_NEW_PATH} element={newCustomerOnly(
+            <ChoiceQuestion
+              {...BRANCH_QUESTIONS.findNew}
+              initialValue={journey === 'ny' ? true : null}
+              onBack={() => navigate(hasInsurance ? CHECK_EXISTING_PATH : HAS_INSURANCE_PATH)}
+              onAnswer={(yes) => yes ? chooseJourney('ny') : completeOnboarding({ journey: null })}
+            />
+          )} />
+          <Route path={`${ONBOARDING_VALUES_PATH}/:spm`} element={newCustomerOnly(
             <ValuesRoute
               basePath={ONBOARDING_VALUES_PATH}
               initialAnswers={profile.answers}
               doneLabel="Neste"
+              stepLabel={`Del 2 av ${totalParts}`}
+              onBack={() => navigate(journey === 'ny' ? FIND_NEW_PATH : CHECK_EXISTING_PATH)}
               onDone={finishOnboardingValues}
               onSkip={() => finishOnboardingValues(null)}
             />
@@ -159,6 +286,7 @@ function App() {
           <Route path="/forsikringer" element={
             <Onboarding
               initialConnections={connections}
+              stepLabel={onboarded ? undefined : 'Del 3 av 3'}
               onBack={onboarded ? undefined : () => navigate(`${ONBOARDING_VALUES_PATH}/${questionParam(QUESTIONS.length - 1)}`)}
               onDone={finishInsurers}
               onSkip={() => finishInsurers(connections)}
@@ -168,12 +296,22 @@ function App() {
             <ProfilePage
               connections={connections}
               profile={profile}
+              aboutYou={aboutYou}
+              onEditAbout={editAbout}
               onAddInsurers={() => navigate('/forsikringer')}
               onEditProfile={() => editValues()}
               onReset={() => void reset()}
               onContinue={() => navigate(seenMatches ? '/vern' : '/matcher')}
               continueLabel={seenMatches ? 'Se forslagene dine' : 'Finn matchen din'}
               onShowMatches={seenMatches ? () => navigate('/matcher') : undefined}
+            />
+          )} />
+          <Route path={EDIT_ABOUT_PATH} element={onboardedOnly(
+            <AboutYouPage
+              initialValue={aboutYou}
+              onBack={() => navigate('/profil')}
+              onDone={finishEditedAbout}
+              onSkip={() => finishEditedAbout(null)}
             />
           )} />
           <Route path={`${EDIT_VALUES_PATH}/:spm`} element={onboardedOnly(
@@ -189,10 +327,16 @@ function App() {
             <MatchPage
               connections={connections}
               profile={profile}
+              journey={journey}
               onBack={() => navigate('/profil')}
               onContinue={() => navigate('/vern')}
               onCreateProfile={() => editValues('?tilbake=/matcher')}
+              onRequestCallback={(insurerId) => navigate(`${CALLBACK_PATH}/${encodeURIComponent(insurerId)}`)}
+              callbackRequestedFor={callbacks.map((callback) => callback.insurerId)}
             />
+          )} />
+          <Route path={`${CALLBACK_PATH}/:selskap`} element={onboardedOnly(
+            <CallbackRoute onSubmit={requestCallback} onBack={() => navigate('/matcher')} />
           )} />
           <Route path="/vern" element={onboardedOnly(<Recommendations onBack={() => navigate('/profil')} onProfileChange={syncSavedProfile} />)} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -200,6 +344,13 @@ function App() {
       )}
     </Theme>
   )
+}
+
+// Reads the insurer from the URL; unknown insurers go back to the matches.
+function CallbackRoute({ onSubmit, onBack }: { onSubmit: (insurerId: string, phone: string) => Promise<void>; onBack: () => void }) {
+  const { selskap } = useParams()
+  if (!selskap || !getInsurer(selskap)) return <Navigate to="/matcher" replace />
+  return <CallbackForm insurerId={selskap} onSubmit={(phone) => onSubmit(selskap, phone)} onBack={onBack} />
 }
 
 type ValuesRouteProps = { basePath: string } & Omit<ComponentProps<typeof ValueProfileFlow>, 'step' | 'onStepChange'>

@@ -8,6 +8,9 @@ import { DIMENSIONS, DIMENSION_ORDER, type Dimension, type UserProfile } from '.
 import { usePrefersReducedMotion } from '../useMediaQuery.ts'
 import { buildMatchRequest, fetchMatches, friendlyError } from './api.ts'
 import VernHeader from '../onboarding/VernHeader.tsx'
+import CallbackOffer from '../journey/CallbackOffer.tsx'
+import { pickCallbackInsurer } from '../journey/callback.ts'
+import type { Journey } from '../journey/types.ts'
 import { coverageTopics, formatScore, highlightLines, scoreLabel } from './score.ts'
 import type { InsurerMatch, MatchRequest } from './types.ts'
 import '../onboarding/onboarding.css'
@@ -23,6 +26,12 @@ type Props = {
   onBack: () => void
   onContinue: () => void
   onCreateProfile: () => void
+  /** 'sjekk' shows how the customer's current insurers match first; 'ny' talks about recommendations. */
+  journey?: Journey | null
+  /** Shows «Vil du bli ringt opp av X?» below the top matches. */
+  onRequestCallback?: (insurerId: string) => void
+  /** Insurer ids the customer has already asked to call them. */
+  callbackRequestedFor?: string[]
 }
 
 type Result = { request: MatchRequest; attempt: number; matches?: InsurerMatch[]; error?: string }
@@ -276,7 +285,39 @@ function LoadingState() {
   )
 }
 
-export default function MatchPage({ connections, profile, onBack, onContinue, onCreateProfile }: Props) {
+function CurrentMatches({ matches }: { matches: InsurerMatch[] }) {
+  const current = matches.filter((match) => match.isCurrent)
+  if (!current.length) return null
+  return (
+    <section className="match-stack" aria-labelledby="current-heading">
+      <div className="match-section-head">
+        <BodyShort size="small" className="match-muted">Det du har i dag</BodyShort>
+        <Heading id="current-heading" level="2" size="medium">Slik matcher forsikringene dine i dag</Heading>
+      </div>
+      <ul className="match-stack match-cards">
+        {current.map((match) => (
+          <MatchCard
+            key={match.insurerId}
+            match={match}
+            highlight={`${scoreLabel(match.score)}, nr. ${matches.indexOf(match) + 1} av ${matches.length}`}
+          />
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function introText(matches: InsurerMatch[] | undefined, journey: Journey | null | undefined): string {
+  if (journey === 'ny') return 'Her er selskapene vi anbefaler for deg, ut fra det som betyr noe for deg.'
+  if (journey === 'sjekk' && matches && matches.length > 1 && matches.some((match) => match.isCurrent)) {
+    return `Vi har sjekket hvor godt forsikringene dine passer deg, og sammenlignet med ${matches.length - 1} andre selskaper.`
+  }
+  return matches && matches.length > 1
+    ? `Vi har sammenlignet ${matches.length} selskaper ut fra det som betyr noe for deg.`
+    : 'Vi sammenligner selskapene ut fra det som betyr noe for deg.'
+}
+
+export default function MatchPage({ connections, profile, onBack, onContinue, onCreateProfile, journey, onRequestCallback, callbackRequestedFor }: Props) {
   const request = useMemo(() => buildMatchRequest(profile, connections), [profile, connections])
   const { matches, error, loading, retry } = useMatches(request)
   const [best, ...others] = matches ?? []
@@ -284,6 +325,7 @@ export default function MatchPage({ connections, profile, onBack, onContinue, on
   const rest = others.slice(TOP - 1)
   const highlights = matches ? highlightLines(matches.slice(0, TOP), matches) : []
   const covered = coverageTopics(connections)
+  const callbackInsurerId = matches && onRequestCallback ? pickCallbackInsurer(matches) : null
 
   return (
     <main className="match-page">
@@ -292,11 +334,7 @@ export default function MatchPage({ connections, profile, onBack, onContinue, on
 
         <div className="match-intro">
           <Heading level="1" size="large">Matchen din</Heading>
-          <BodyLong>
-            {matches && matches.length > 1
-              ? `Vi har sammenlignet ${matches.length} selskaper ut fra det som betyr noe for deg.`
-              : 'Vi sammenligner selskapene ut fra det som betyr noe for deg.'}
-          </BodyLong>
+          <BodyLong>{introText(matches, journey)}</BodyLong>
         </div>
 
         {covered && (
@@ -344,6 +382,8 @@ export default function MatchPage({ connections, profile, onBack, onContinue, on
           </section>
         )}
 
+        {matches && journey === 'sjekk' && <CurrentMatches matches={matches} />}
+
         {best && (
           <section className="match-stack" aria-labelledby="top-heading">
             <div className="match-section-head">
@@ -357,6 +397,14 @@ export default function MatchPage({ connections, profile, onBack, onContinue, on
               </ol>
             )}
           </section>
+        )}
+
+        {callbackInsurerId && onRequestCallback && (
+          <CallbackOffer
+            insurerId={callbackInsurerId}
+            requested={callbackRequestedFor?.includes(callbackInsurerId)}
+            onAccept={() => onRequestCallback(callbackInsurerId)}
+          />
         )}
 
         {rest.length > 0 && (
