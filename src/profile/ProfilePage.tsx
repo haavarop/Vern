@@ -2,6 +2,8 @@ import { BodyLong, BodyShort, Box, Button, Detail, Heading, HStack, Tag, VStack 
 import { Buildings2Icon, PencilIcon, PersonCircleIcon, PlusIcon, ShieldCheckmarkIcon, StarIcon } from '@navikt/aksel-icons'
 import PolicySummary from '../onboarding/PolicySummary.tsx'
 import type { ConnectionState } from '../onboarding/types.ts'
+import { PersonaTraits } from '../persona/PersonaImport.tsx'
+import type { PersonaPass } from '../persona/pass.ts'
 import { DIMENSIONS, rankDimensions, scoreProfile, type UserProfile } from './types.ts'
 import '../onboarding/onboarding.css'
 import './profile.css'
@@ -9,6 +11,10 @@ import './profile.css'
 type Props = {
   connections: ConnectionState
   profile: UserProfile
+  /** Traits shared from The Digital You, if any. */
+  persona: PersonaPass | null
+  /** Forgets the Persona Pass: Vern stops using the traits. */
+  onStopSharing: () => void
   onAddInsurers: () => void
   onEditProfile: () => void
   /** Deletes the stored profile and restarts onboarding as a new customer. */
@@ -70,7 +76,25 @@ function ValueProfile({ profile, onEdit }: { profile: UserProfile; onEdit: () =>
   )
 }
 
-export default function ProfilePage({ connections, profile, onAddInsurers, onEditProfile, onReset, onContinue, continueLabel = 'Gå til Vern', onShowMatches }: Props) {
+function PersonaSection({ persona, onStopSharing }: { persona: PersonaPass; onStopSharing: () => void }) {
+  return (
+    <Box as="section" aria-labelledby="persona-heading" background="raised" borderRadius="12" padding="space-16" borderWidth="1" borderColor="neutral-subtle">
+      <VStack gap="space-12">
+        <HStack justify="space-between" align="center" gap="space-8">
+          <Heading id="persona-heading" level="2" size="xsmall">Persona Pass</Heading>
+          <Tag size="small" variant="moderate" data-color="success">Delt fra {persona.issuer}</Tag>
+        </HStack>
+        <BodyShort>
+          Du deler {persona.traits.length} egenskaper med Vern. Vi bruker dem til å finne forsikringer som passer livet ditt, ikke bare prisen.
+        </BodyShort>
+        <PersonaTraits pass={persona} />
+        <Button variant="secondary" onClick={onStopSharing} className="onboarding__add">Slutt å dele</Button>
+      </VStack>
+    </Box>
+  )
+}
+
+export default function ProfilePage({ connections, profile, persona, onStopSharing, onAddInsurers, onEditProfile, onReset, onContinue, continueLabel = 'Gå til Vern', onShowMatches }: Props) {
   const hasConnections = Object.keys(connections).length > 0
 
   return (
@@ -95,6 +119,8 @@ export default function ProfilePage({ connections, profile, onAddInsurers, onEdi
             <ValueProfile profile={profile} onEdit={onEditProfile} />
           </VStack>
         </Box>
+
+        {persona && <PersonaSection persona={persona} onStopSharing={onStopSharing} />}
 
         <VStack gap="space-12" as="section" aria-labelledby="policies-heading">
           <Heading id="policies-heading" level="2" size="xsmall">Dine forsikringer</Heading>

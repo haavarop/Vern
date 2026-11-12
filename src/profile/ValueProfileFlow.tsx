@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { Box, Button, Detail, Heading, HelpText, HStack, Radio, RadioGroup, VStack } from '@navikt/ds-react'
-import { ArrowLeftIcon, ArrowRightIcon, ShieldCheckmarkIcon } from '@navikt/aksel-icons'
+import { BodyShort, Box, Button, Detail, Heading, HelpText, HStack, InfoCard, Radio, RadioGroup, Tag, VStack } from '@navikt/ds-react'
+import { ArrowLeftIcon, ArrowRightIcon, PersonCircleIcon, ShieldCheckmarkIcon } from '@navikt/aksel-icons'
 import { QUESTIONS, emptyAnswers, type Answers } from './types.ts'
 import { firstUnansweredBefore, loadDraft, saveDraft } from './draft.ts'
+import type { ValueProfileSuggestion } from '../persona/pass.ts'
 import '../onboarding/onboarding.css'
 import './profile.css'
 
 type Props = {
   initialAnswers?: Answers | null
+  /** Answers suggested from a Persona Pass, shown with the reason for each. */
+  suggestion?: ValueProfileSuggestion | null
   /** Label on the final button. */
   doneLabel?: string
   /** 0-based question index, from the URL. */
@@ -17,11 +20,13 @@ type Props = {
   onSkip: () => void
 }
 
-export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', step, onStepChange, onDone, onSkip }: Props) {
+export default function ValueProfileFlow({ initialAnswers, suggestion, doneLabel = 'Lagre', step, onStepChange, onDone, onSkip }: Props) {
   const [answers, setAnswers] = useState<Answers>(() => loadDraft() ?? initialAnswers ?? emptyAnswers())
   const headingRef = useRef<HTMLHeadingElement>(null)
   const question = QUESTIONS[step]
   const value = answers[question.id] ?? null
+  const suggested = suggestion?.answers[question.id] ?? null
+  const hint = suggestion?.reasons[question.id]
   const isLast = step === QUESTIONS.length - 1
 
   // Move focus to the new question so screen readers announce it.
@@ -70,6 +75,17 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
             <HelpText title="Hvorfor spør vi om dette?" placement="left" className="vp-step__help">{question.help}</HelpText>
           </HStack>
 
+          {hint && (
+            <InfoCard data-color="info" size="small">
+              <InfoCard.Header icon={<PersonCircleIcon aria-hidden />}>
+                <InfoCard.Title as="h2">{suggested === null ? 'Persona Pass sier ikke noe om dette' : 'Forslag fra Persona Pass'}</InfoCard.Title>
+              </InfoCard.Header>
+              <InfoCard.Content>
+                <BodyShort size="small">{hint}</BodyShort>
+              </InfoCard.Content>
+            </InfoCard>
+          )}
+
           <RadioGroup
             legend={question.title}
             hideLegend
@@ -79,7 +95,10 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
           >
             <div className="vp-q__options">
               {question.options.map((option, i) => (
-                <Radio key={option.label} value={String(i)} className="vp-q__option">{option.label}</Radio>
+                <Radio key={option.label} value={String(i)} className="vp-q__option">
+                  {option.label}
+                  {i === suggested && <Tag size="xsmall" variant="moderate" data-color="info" className="vp-q__suggested">Forslag</Tag>}
+                </Radio>
               ))}
             </div>
           </RadioGroup>

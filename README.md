@@ -3,15 +3,28 @@ An app that monitors customers’ prices with competing providers and highlights
 
 ## Run locally
 
-Install Node.js and the Azure CLI, then sign in with an account that has access to the Azure OpenAI deployment:
+Install Node.js 22.12 or newer (Vite 8 and its native bindings need it; with an older Node, npm silently skips the bindings and `vite` fails with "Cannot find native binding"). Put an Anthropic API key in `.env.local`, which Git ignores:
 
 ```sh
+echo 'ANTHROPIC_API_KEY=sk-ant-…' > .env.local
 npm install
-az login
 npm run dev
 ```
 
-Open the Vite URL printed in the terminal. The local API uses Azure CLI credentials on the server and listens on `127.0.0.1:3001`; Vite proxies API requests to it. The configured deployment is `gpt-6-luna` at `https://genai.gjensidige.io`.
+Open the Vite URL printed in the terminal. The local API listens on `127.0.0.1:3001`; Vite proxies API requests to it. The API calls Claude Opus 5.5 (`claude-opus-5-5`) through LangChain's Anthropic integration (`ChatAnthropic` from `@langchain/anthropic`), with low effort to keep waits short and structured outputs for the JSON answers. If Claude declines a request, the API's server-side fallback re-runs it on another model. A key already in the environment overrides `.env.local`.
+
+## Persona Pass
+
+Customers can bring a Persona Pass from The Digital You instead of starting from scratch. A Persona Pass is the list of traits the customer chose to share there, such as "You have a dog" or "You recently moved", most important first. It contains no evidence, sources or raw data.
+
+The Digital You links to `/persona#pass=<base64url JSON>`. The pass is in the URL fragment, which browsers never send to a server; the page removes it from the address bar once read, shows what was shared and asks before using it. Then:
+
+1. `POST /api/persona/value-profile` asks Claude to answer the four value-profile questions from the traits, with a reason for each. Questions the traits say nothing about are left for the customer. The flow shows each suggestion and its reason, and the customer can change any answer.
+2. The pass is saved with the profile (`persona` in `data/profile.json`) and added to the recommendation prompt, so each pick explains why it fits beyond price.
+3. `/vern` also lists up to three insurances the customer seems to lack (`gaps`). Each must be a catalogue product the customer doesn't already have and must quote a trait the customer actually shared; the server drops any that don't.
+4. **Slutt å dele** on `/profil` deletes the pass. Recommendations stop using it.
+
+The contract is in `src/persona/pass.ts`.
 
 Run `npm test` for the tests and `npm run build` to type-check and build the frontend. The Vite preview server does not run or proxy the API; use `npm run dev` for local recommendations.
 

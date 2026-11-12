@@ -71,3 +71,5 @@
   .vp-step { animation: none; }
   .vp-dim__bar > span, .vp-q__option, .vp-progress span { transition: none; }
 }
+
+.vp-q__suggested { margin-left: var(--ax-space-12); flex-shrink: 0; }

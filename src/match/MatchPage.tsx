@@ -139,7 +139,7 @@ function DimensionBars({ dimensions }: { dimensions: Record<Dimension, number> }
 
 export function MatchHero({ match, recommendation }: {
   match?: InsurerMatch
-  recommendation?: { insurance: string; company: string; price: number; insurerId?: string; fallback?: boolean }
+  recommendation?: { insurance: string; company: string; price: number; reason?: string; insurerId?: string; fallback?: boolean }
 }) {
   const headingId = useId()
   const name = recommendation?.company ?? (match ? insurerName(match.insurerId) : '')
@@ -172,6 +172,7 @@ export function MatchHero({ match, recommendation }: {
             {match ? <BodyShort weight="semibold" textColor="subtle">{scoreLabel(match.score)}</BodyShort> : <BodyShort textColor="subtle">Matchscore er ikke tilgjengelig.</BodyShort>}
           </VStack>
         </div>
+        {recommendation?.reason && <BodyLong weight="semibold">{recommendation.reason}</BodyLong>}
         {match && <BodyLong>{match.reason}</BodyLong>}
         {match && <DimensionBars dimensions={match.dimensions} />}
       </VStack>

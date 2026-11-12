@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ComponentProps, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
-import { Alert, BodyShort, Button, Heading, HStack, Loader, Skeleton, Theme, VStack } from '@navikt/ds-react'
+import { Alert, BodyLong, BodyShort, Box, Button, Detail, Heading, HStack, Loader, Skeleton, Tag, Theme, VStack } from '@navikt/ds-react'
 import { ArrowLeftIcon } from '@navikt/aksel-icons'
 import Onboarding from './onboarding/Onboarding.tsx'
 import { INSURERS, normalize } from './onboarding/insurers.ts'
@@ -8,15 +8,16 @@ import ProfilePage from './profile/ProfilePage.tsx'
 import ValueProfileFlow from './profile/ValueProfileFlow.tsx'
 import { QUESTIONS, type Answers, type UserProfile } from './profile/types.ts'
 import { buildStoredProfile, deleteProfile, fetchProfile, isNewCustomer, saveProfile, type StoredProfile } from './profile/storage.ts'
-import { clearDraft, loadDraft, parseQuestionParam, questionParam } from './profile/draft.ts'
+import { clearDraft, loadDraft, parseQuestionParam, questionParam, saveDraft } from './profile/draft.ts'
 import MatchPage, { MatchHero } from './match/MatchPage.tsx'
 import { buildMatchRequest, fetchMatches } from './match/api.ts'
-import type { InsurerMatch } from './match/types.ts'
+import type { CoverageGap, InsurerMatch, Recommendation } from './match/types.ts'
 import type { ConnectionState } from './onboarding/types.ts'
+import PersonaImport from './persona/PersonaImport.tsx'
+import { parsePersonaPass, type PersonaPass, type ValueProfileSuggestion } from './persona/pass.ts'
 import { usePrefersDark } from './useMediaQuery.ts'
 import './App.css'
-
-type Recommendation = { insurance: string; company: string; price: number; fallback?: boolean }
+import './persona/persona.css'
 
 const ONBOARDING_VALUES_PATH = '/verdiprofil'
 const EDIT_VALUES_PATH = '/profil/verdiprofil'
@@ -36,6 +37,9 @@ function App() {
   const [seenMatches, setSeenMatches] = useState(false)
   const [connections, setConnections] = useState<ConnectionState>({})
   const [profile, setProfile] = useState<UserProfile>({ answers: null })
+  // Traits shared from The Digital You, and the answers Vern suggested from them in this session.
+  const [persona, setPersona] = useState<PersonaPass | null>(null)
+  const [suggestion, setSuggestion] = useState<ValueProfileSuggestion | null>(null)
   const [saveError, setSaveError] = useState('')
   const prefersDark = usePrefersDark()
   const navigate = useNavigate()
@@ -46,6 +50,7 @@ function App() {
     setOnboarded(!isNewCustomer(stored))
     setProfile({ answers: stored.valueProfile?.answers ?? null })
     setConnections(stored.insurances ?? {})
+    setPersona(parsePersonaPass(stored.persona))
   }, [])
 
   useEffect(() => {
@@ -61,6 +66,7 @@ function App() {
           setSeenMatches(true)
           setProfile({ answers: stored.valueProfile?.answers ?? null })
           setConnections(stored.insurances ?? {})
+          setPersona(parsePersonaPass(stored.persona))
         }
         setLoaded(true)
       })
@@ -75,11 +81,30 @@ function App() {
 
   if (loaded && onboarded && !seenMatches && pathname === '/matcher') setSeenMatches(true)
 
-  function persist(answers: Answers | null, insurances: ConnectionState) {
+  function persist(answers: Answers | null, insurances: ConnectionState, sharedPersona = persona) {
     setSaveError('')
     clearDraft()
-    saveProfile(buildStoredProfile(answers, insurances))
+    saveProfile(buildStoredProfile(answers, insurances, sharedPersona))
       .catch((error: unknown) => setSaveError(error instanceof Error ? error.message : 'Kunne ikke lagre profilen.'))
+  }
+
+  // A Persona Pass pre-fills the value-profile questions. New customers continue onboarding from there;
+  // returning customers review the suggested answers, and the pass is saved right away.
+  function importPersona(pass: PersonaPass, suggested: ValueProfileSuggestion | null) {
+    setPersona(pass)
+    setSuggestion(suggested)
+    if (onboarded) persist(profile.answers, connections, pass)
+    // The questions start from the draft, so the suggested answers replace any earlier one.
+    clearDraft()
+    if (suggested) saveDraft(suggested.answers)
+    navigate(`${onboarded ? EDIT_VALUES_PATH : ONBOARDING_VALUES_PATH}/1`)
+  }
+
+  // Revocation: Vern forgets the traits and stops using them for recommendations.
+  function stopSharing() {
+    setPersona(null)
+    setSuggestion(null)
+    persist(profile.answers, connections, null)
   }
 
   // During first-time onboarding, step 1 continues to step 2. The answers are saved together with the insurers.
@@ -121,6 +146,8 @@ function App() {
     setSeenMatches(false)
     setConnections({})
     setProfile({ answers: null })
+    setPersona(null)
+    setSuggestion(null)
     navigate(`${ONBOARDING_VALUES_PATH}/1`, { replace: true })
   }
 
@@ -139,10 +166,12 @@ function App() {
       ) : (
         <Routes>
           <Route path="/" element={<Navigate to={onboarded ? '/profil' : `${ONBOARDING_VALUES_PATH}/1`} replace />} />
+          <Route path="/persona" element={<PersonaImport onImport={importPersona} onCancel={() => navigate('/', { replace: true })} />} />
           <Route path={`${ONBOARDING_VALUES_PATH}/:spm`} element={onboarded ? <Navigate to="/profil" replace /> : (
             <ValuesRoute
               basePath={ONBOARDING_VALUES_PATH}
               initialAnswers={profile.answers}
+              suggestion={suggestion}
               doneLabel="Neste: hent forsikringer"
               onDone={finishOnboardingValues}
               onSkip={() => finishOnboardingValues(null)}
@@ -160,6 +189,8 @@ function App() {
             <ProfilePage
               connections={connections}
               profile={profile}
+              persona={persona}
+              onStopSharing={stopSharing}
               onAddInsurers={() => navigate('/forsikringer')}
               onEditProfile={() => editValues()}
               onReset={() => void reset()}
@@ -172,6 +203,7 @@ function App() {
             <ValuesRoute
               basePath={EDIT_VALUES_PATH}
               initialAnswers={profile.answers}
+              suggestion={suggestion}
               doneLabel="Lagre"
               onDone={finishEditedValues}
               onSkip={() => finishEditedValues(null)}
@@ -218,6 +250,7 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
   const [syncError, setSyncError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null)
+  const [gaps, setGaps] = useState<CoverageGap[]>([])
   const [matches, setMatches] = useState<InsurerMatch[] | null>(null)
 
   useEffect(() => {
@@ -230,6 +263,7 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
       setLoading(true)
       setError('')
       setRecommendations(null)
+      setGaps([])
       setMatches(null)
       try {
         const connections = stored.insurances ?? {}
@@ -248,6 +282,7 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
             'insurance' in item && typeof item.insurance === 'string' && item.insurance.trim() &&
             'company' in item && typeof item.company === 'string' && item.company.trim() &&
             'price' in item && typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0 &&
+            (!('reason' in item) || typeof item.reason === 'string') &&
             (!('fallback' in item) || typeof item.fallback === 'boolean'))) {
           throw new Error('Fikk et ugyldig svar. Prøv igjen.')
         }
@@ -257,6 +292,7 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
         }
         if (stopped || signal.aborted) return
         setRecommendations(data.recommendations as Recommendation[])
+        setGaps('gaps' in data && Array.isArray(data.gaps) ? data.gaps.filter(isGap) : [])
         setMatches(matchResults)
       } catch (caught) {
         if (!stopped && !signal.aborted) setError(caught instanceof Error ? caught.message : 'Kunne ikke hente forslagene. Prøv igjen.')
@@ -304,6 +340,15 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
         {recommendations !== null && (
           <section className="recommendations" aria-label="Forsikringsforslag">
             <Alert variant="info" size="small">Simulerte forslag, priser og matchscorer. Matchscoren gjelder selskapet, ikke den enkelte forsikringen.</Alert>
+            {gaps.length > 0 && (
+              <VStack as="section" gap="space-12" aria-labelledby="gaps-heading" className="gaps">
+                <VStack gap="space-4">
+                  <Heading id="gaps-heading" level="2" size="small">Dette ser ut til å mangle</Heading>
+                  <BodyShort textColor="subtle">Ut fra det du deler i Persona Pass.</BodyShort>
+                </VStack>
+                {gaps.map((gap) => <GapCard key={gap.product} gap={gap} />)}
+              </VStack>
+            )}
             {recommendations.length === 0 && <BodyShort>Ingen forsikringer er registrert i profilen.</BodyShort>}
             {recommendations.map((recommendation, index) => {
               const company = normalize(recommendation.company)
@@ -327,6 +372,33 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
         {error && <Alert variant="error" size="small">{error} <Button type="button" variant="secondary" size="small" onClick={() => setAttempt((value) => value + 1)}>Prøv igjen</Button></Alert>}
       </div>
     </main>
+  )
+}
+
+function isGap(value: unknown): value is CoverageGap {
+  return !!value && typeof value === 'object' &&
+    'product' in value && typeof value.product === 'string' &&
+    'segment' in value && typeof value.segment === 'string' &&
+    'reason' in value && typeof value.reason === 'string' &&
+    'lookFor' in value && typeof value.lookFor === 'string' &&
+    'basedOn' in value && Array.isArray(value.basedOn) && value.basedOn.every((item: unknown) => typeof item === 'string')
+}
+
+function GapCard({ gap }: { gap: CoverageGap }) {
+  return (
+    <Box as="article" background="raised" borderRadius="12" padding="space-20" borderWidth="1" borderColor="neutral-subtle" className="gap-card">
+      <VStack gap="space-8">
+        <Heading level="3" size="small">{gap.product}</Heading>
+        <BodyLong>{gap.reason}</BodyLong>
+        <BodyShort size="small"><strong>Sammenlign utover pris:</strong> {gap.lookFor}</BodyShort>
+        <Detail textColor="subtle">Bygger på dette du deler:</Detail>
+        <ul className="gap-card__traits">
+          {gap.basedOn.map((trait) => (
+            <li key={trait}><Tag size="xsmall" variant="moderate" data-color="neutral" lang="en">{trait}</Tag></li>
+          ))}
+        </ul>
+      </VStack>
+    </Box>
   )
 }
 

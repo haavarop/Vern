@@ -29,3 +29,30 @@ export type MatchResponse = {
   /** Sorted by score, best match first. */
   matches: InsurerMatch[]
 }
+
+/** Vern's pick among the demo alternatives for one of the customer's policies. */
+export type Recommendation = {
+  insurance: string
+  company: string
+  /** Simulated NOK per month. */
+  price: number
+  /** Short Norwegian explanation of why the pick fits beyond price. */
+  reason?: string
+  /** Not chosen by the model: the customer's current policy is shown instead. */
+  fallback?: true
+}
+
+/** An insurance the customer seems to lack, inferred only from traits they shared in a Persona Pass. */
+export type CoverageGap = {
+  product: string
+  segment: Segment
+  /** Why it matters for this customer. */
+  reason: string
+  /** What to compare besides price. */
+  lookFor: string
+  /** The shared trait values it is based on, verbatim. */
+  basedOn: string[]
+}
+
+/** Contract for POST /api/recommendations. */
+export type RecommendationResponse = { recommendations: Recommendation[]; gaps: CoverageGap[] }
