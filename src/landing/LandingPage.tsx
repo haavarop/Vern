@@ -1,5 +1,5 @@
 import { BodyLong, BodyShort, Box, Button, Heading, VStack } from '@navikt/ds-react'
-import { ArrowRight, Clock, Scale, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Clock, Scale, ShieldCheck, Sparkles } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { VernSymbol } from '../brand/VernLogo.tsx'
 import VernHeader from '../onboarding/VernHeader.tsx'
@@ -12,6 +12,7 @@ type Props = {
 
 const POINTS: { icon: LucideIcon; title: string; text: string }[] = [
   { icon: Scale, title: 'Mer enn pris', text: 'Vi ser også på dekning, hjelp når noe skjer og hvor enkelt det er.' },
+  { icon: Sparkles, title: 'Personlig match', text: 'AI-agenten vår matcher det som er viktig for deg, med ekte data og erfaringer fra andre forsikringskunder.' },
   { icon: ShieldCheck, title: 'Uavhengig', text: 'Vi selger ingen forsikringer og tjener ikke på hva du velger.' },
   { icon: Clock, title: 'Gratis og raskt', text: 'Svar på noen korte spørsmål. Det tar bare noen minutter og koster ingenting.' },
 ]
