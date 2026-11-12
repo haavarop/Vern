@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Policy } from '../onboarding/types.ts'
 import type { InsurerMatch } from './types.ts'
-import { coverageTopics, formatScore, highlightLines, scoreLabel } from './score.ts'
+import { coverageTopics, formatScore, highlightLines, isStrictlyHigherMatch, scoreLabel } from './score.ts'
 
 test('formatScore uses a non-breaking space before %', () => {
   assert.equal(formatScore(87), '87\u00a0%')
@@ -14,6 +14,14 @@ test('scoreLabel uses inclusive thresholds', () => {
   assert.equal(scoreLabel(65), 'God match')
   assert.equal(scoreLabel(50), 'Grei match')
   assert.equal(scoreLabel(49), 'Svakere match')
+})
+
+test('a recommended change requires a strictly higher available match score', () => {
+  assert.equal(isStrictlyHigherMatch(68, 82), true)
+  assert.equal(isStrictlyHigherMatch(68, 68), false)
+  assert.equal(isStrictlyHigherMatch(82, 68), false)
+  assert.equal(isStrictlyHigherMatch(undefined, 82), false)
+  assert.equal(isStrictlyHigherMatch(68, undefined), false)
 })
 
 const match = (insurerId: string, pris: number, dekning: number, hjelp: number, enkelhet: number): InsurerMatch =>

@@ -14,6 +14,10 @@ export function scoreLabel(score: number): string {
   return 'Svakere match'
 }
 
+export function isStrictlyHigherMatch(currentScore: number | undefined, suggestedScore: number | undefined): boolean {
+  return currentScore !== undefined && suggestedScore !== undefined && suggestedScore > currentScore
+}
+
 const BEST: Record<Dimension, string> = {
   pris: 'Lavest pris',
   dekning: 'Bredest dekning',

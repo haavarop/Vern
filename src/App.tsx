@@ -16,6 +16,7 @@ import MatchPage, { ScoreRing } from './match/MatchPage.tsx'
 import VernHeader from './onboarding/VernHeader.tsx'
 import { buildMatchRequest, fetchMatches, friendlyError } from './match/api.ts'
 import type { InsurerMatch } from './match/types.ts'
+import { isStrictlyHigherMatch } from './match/score.ts'
 import type { ConnectionState } from './onboarding/types.ts'
 import './App.css'
 
@@ -314,10 +315,11 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
     const suggestedMatch = matches?.find((item) => item.insurerId === suggestedInsurer?.id)
     const currentMatch = currentPolicy && matches?.find((item) => item.insurerId === currentPolicy.insurerId)
     const sameCompany = !!currentPolicy && (currentPolicy.insurerId === suggestedInsurer?.id || normalize(currentPolicy.insurer) === normalizedCompany)
-    return { recommendation, index, currentPolicy, suggestedInsurer, suggestedMatch, currentMatch, sameCompany }
+    const requiresChange = !sameCompany && isStrictlyHigherMatch(currentMatch?.score, suggestedMatch?.score)
+    return { recommendation, index, currentPolicy, suggestedInsurer, suggestedMatch, currentMatch, sameCompany, requiresChange }
   }).sort((left, right) => (right.suggestedMatch?.score ?? -1) - (left.suggestedMatch?.score ?? -1) || left.index - right.index)
-  const recommendedChanges = rankedRecommendations.filter((item) => !item.sameCompany)
-  const unchangedRecommendations = rankedRecommendations.filter((item) => item.sameCompany)
+  const recommendedChanges = rankedRecommendations.filter((item) => item.requiresChange)
+  const unchangedRecommendations = rankedRecommendations.filter((item) => !item.requiresChange)
 
   const renderRecommendationGroup = (title: string, items: typeof rankedRecommendations, unchanged: boolean) => (
     <section className="recommendation-group" aria-labelledby={unchanged ? 'recommendation-unchanged-title' : 'recommendation-changes-title'}>
@@ -326,7 +328,7 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
         <BodyShort className="vern-card">{unchanged ? 'Ingen forslag uten endring akkurat nå.' : 'Ingen anbefalte endringer akkurat nå.'}</BodyShort>
       ) : (
         <ol className="recommendation-list" aria-label={`${title} sortert etter match`}>
-          {items.map(({ recommendation, currentPolicy, suggestedInsurer, currentMatch, suggestedMatch, index }) => (
+          {items.map(({ recommendation, currentPolicy, suggestedInsurer, currentMatch, suggestedMatch, sameCompany, index }) => (
             <li className="recommendation-pair" key={currentPolicy?.id ?? `${recommendation.insurance}-${index}`}>
               <Heading level="3" size="small" className="recommendation-pair__title">{recommendation.insurance}</Heading>
               {unchanged ? (
@@ -336,8 +338,8 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
                     {currentPolicy && <Monogram id={currentPolicy.insurerId} name={currentPolicy.insurer} size="small" />}
                     <BodyShort weight="semibold" className="recommendation-company__name">{currentPolicy?.insurer ?? recommendation.company}</BodyShort>
                   </div>
-                  <ScoreRing score={suggestedMatch?.score ?? currentMatch?.score} compact showMatchLabel />
-                  <BodyShort size="small" className="match-muted">Selskapet ditt er fortsatt anbefalt</BodyShort>
+                  <ScoreRing score={currentMatch?.score} compact showMatchLabel />
+                  <BodyShort size="small" className="match-muted">{sameCompany ? 'Selskapet ditt er fortsatt anbefalt' : 'Forslaget har ikke høyere match enn selskapet ditt'}</BodyShort>
                 </article>
               ) : (
                 <div className="recommendation-pair__companies">
