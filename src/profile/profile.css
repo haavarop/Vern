@@ -87,3 +87,8 @@
 }
 .vp-rank li.is-top .vp-rank__num { background: var(--vern-forest); color: var(--vern-text-on-inverse); }
 .vp-rank__score { font-variant-numeric: tabular-nums; }
+
+/* «Om deg» summary on the profile page */
+.about-summary { display: grid; gap: var(--vern-space-sm); margin: 0; }
+.about-summary__row { display: grid; grid-template-columns: minmax(7rem, auto) 1fr; gap: var(--vern-space-md); }
+.about-summary dd { margin: 0; overflow-wrap: anywhere; }

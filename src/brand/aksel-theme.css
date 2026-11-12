@@ -253,6 +253,13 @@
     background-color: var(--vern-mint);
   }
 
+  /* Aksel paints the popover with --ax-bg-moderate, which is transparent in this neutral scale. */
+  .aksel-help-text__popover.aksel-popover {
+    background-color: var(--vern-surface);
+    border: 1px solid var(--vern-border);
+    color: var(--vern-text-primary);
+  }
+
   .aksel-dropzone__area-release__icon {
     background-color: var(--vern-mint);
   }
