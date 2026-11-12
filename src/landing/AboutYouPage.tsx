@@ -163,7 +163,6 @@ export default function AboutYouPage({ initialValue, onDone, onSkip, onBack }: P
       <div className="cta-bar">
         <div className={onBack ? 'cta-bar__actions cta-bar__actions--stack' : 'cta-bar__actions'}>
           {onBack && <Button variant="tertiary" icon={<ArrowLeft size="1em" aria-hidden />} onClick={onBack}>Tilbake</Button>}
-          <Button variant="tertiary" onClick={onSkip}>Hopp over</Button>
           <Button type="submit" form={FORM_ID} icon={<ArrowRight size="1em" aria-hidden />} iconPosition="right">Neste</Button>
         </div>
       </div>
