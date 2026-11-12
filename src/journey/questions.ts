@@ -17,8 +17,6 @@ export const BRANCH_QUESTIONS = {
   },
   checkExisting: {
     title: 'Skal vi sjekke om de passer deg?',
-    description: 'Du legger til forsikringsbeviset ditt, så ser vi hvor godt forsikringene dine passer det som betyr noe for deg.',
-    help: 'Vi leser bare dokumentene du selv legger til. Vern selger ingenting, så du bestemmer helt selv hva du gjør etterpå.',
     yesLabel: 'Ja, sjekk dem',
     noLabel: 'Nei, ikke nå',
   },
