@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { once } from 'node:events'
 import { test } from 'node:test'
-import { buildMockCandidates, buildRecommendationPrompt, createChatServer, loadRecommendationPrompt, recommend, resolveRecommendations } from './server.ts'
+import { buildMockCandidates, buildRecommendationPrompt, createAppServer, loadRecommendationPrompt, recommend, resolveRecommendations } from './server.ts'
 import { insuranceData } from './insurance-data.ts'
 
 test('recommendation candidates use only matching mock products and prices', async () => {
@@ -66,8 +66,30 @@ test('model failures keep one labeled fallback for every saved policy', async ()
   }
 })
 
+test('recommendations use the latest saved profile on each run', async () => {
+  const { mkdtemp, writeFile, rm } = await import('node:fs/promises')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const dir = await mkdtemp(join(tmpdir(), 'vern-recommendation-refresh-'))
+  const profilePath = join(dir, 'profile.json')
+  const insurancePath = join(dir, 'insurance.json')
+  const car = { product: 'Bilforsikring', insurer: 'If', premium: 500 }
+  const house = { product: 'Husforsikring', insurer: 'If', premium: 700 }
+  try {
+    await writeFile(insurancePath, JSON.stringify({ kategorier: {} }))
+    await writeFile(profilePath, JSON.stringify({ insurances: { if: [car] } }))
+    const first = await recommend(profilePath, insurancePath, async () => ({ selections: [{ policyIndex: 0, candidateIndex: 0 }] }))
+    assert.deepEqual(first.map((item) => item.insurance), ['Bilforsikring'])
+    await writeFile(profilePath, JSON.stringify({ insurances: { if: [car, house] } }))
+    const second = await recommend(profilePath, insurancePath, async () => ({ selections: [{ policyIndex: 0, candidateIndex: 0 }, { policyIndex: 1, candidateIndex: 0 }] }))
+    assert.deepEqual(second.map((item) => item.insurance), ['Bilforsikring', 'Husforsikring'])
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
 test('recommendation endpoint returns structured cards', async () => {
-  const server = createChatServer(undefined, undefined, undefined, undefined, async () => [{ insurance: 'Bilforsikring', company: 'If', price: 500 }])
+  const server = createAppServer(undefined, undefined, undefined, async () => [{ insurance: 'Bilforsikring', company: 'If', price: 500 }])
   server.listen(0, '127.0.0.1')
   await once(server, 'listening')
   const address = server.address()
@@ -84,7 +106,7 @@ test('recommendation endpoint returns structured cards', async () => {
 })
 
 test('malformed model output is an upstream failure', async () => {
-  const server = createChatServer(undefined, undefined, undefined, undefined, async () => { throw new SyntaxError('model response') })
+  const server = createAppServer(undefined, undefined, undefined, async () => { throw new SyntaxError('model response') })
   server.listen(0, '127.0.0.1')
   await once(server, 'listening')
   const address = server.address()
@@ -132,8 +154,8 @@ test('recommendation prompt reads the current profile and insurance data from di
   }
 })
 
-test('chat API forwards conversation and validates requests', async () => {
-  const server = createChatServer(async (messages) => `Received: ${messages.at(-1)?.content}`, async () => ({
+test('insurance data remains available and chat API is removed', async () => {
+  const server = createAppServer(async () => ({
     ...insuranceData,
     observations: insuranceData.observations.map((observation) => ({ ...observation, dataStatus: 'snapshot' as const })),
     generatedAt: '2026-11-11T00:00:00.000Z',
@@ -144,7 +166,6 @@ test('chat API forwards conversation and validates requests', async () => {
   await once(server, 'listening')
   const address = server.address()
   assert.ok(address && typeof address !== 'string')
-  const url = `http://127.0.0.1:${address.port}/api/chat`
   try {
     const dataResponse = await fetch(`http://127.0.0.1:${address.port}/api/insurance-data`)
     assert.equal(dataResponse.status, 200)
@@ -152,19 +173,8 @@ test('chat API forwards conversation and validates requests', async () => {
     assert.ok(data.companies.includes('Gjensidige'))
     assert.ok(data.observations.length > 0)
     assert.equal(data.registry.source, 'test')
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: [{ role: 'user', content: 'Hello' }] }),
-    })
-    assert.equal(response.status, 200)
-    assert.deepEqual(await response.json(), { reply: 'Received: Hello' })
-    const invalid = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [] }) })
-    assert.equal(invalid.status, 400)
-    const malformed = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{' })
-    assert.equal(malformed.status, 400)
-    const wrongType = await fetch(url, { method: 'POST', body: '{}' })
-    assert.equal(wrongType.status, 415)
+    const response = await fetch(`http://127.0.0.1:${address.port}/api/chat`, { method: 'POST' })
+    assert.equal(response.status, 404)
   } finally {
     server.close()
   }
@@ -175,7 +185,7 @@ test('profile API returns {} for new customers and persists saved profiles', asy
   const { join } = await import('node:path')
   const dir = await mkdtemp(join(tmpdir(), 'vern-profile-'))
   const path = join(dir, 'nested', 'profile.json')
-  const server = createChatServer(async () => '', undefined, path)
+  const server = createAppServer(undefined, path)
   server.listen(0, '127.0.0.1')
   await once(server, 'listening')
   const address = server.address()
@@ -202,7 +212,7 @@ test('profile API returns {} for new customers and persists saved profiles', asy
 })
 
 test('match API returns sorted matches and validates requests', async () => {
-  const server = createChatServer(async () => '')
+  const server = createAppServer()
   server.listen(0, '127.0.0.1')
   await once(server, 'listening')
   const address = server.address()
@@ -258,7 +268,7 @@ test('document API extracts PDF text, sends it to the model and returns validate
     seenText = documentText
     return JSON.stringify({ insurer: 'Gjensidige Forsikring ASA', policies: [{ product: 'Innbo Ung', category: 'skade', annualPremium: 1980, deductible: 3000 }] })
   }
-  const server = createChatServer(undefined, undefined, undefined, undefined, undefined, extract)
+  const server = createAppServer(undefined, undefined, undefined, undefined, extract)
   server.listen(0, '127.0.0.1')
   await once(server, 'listening')
   const address = server.address()

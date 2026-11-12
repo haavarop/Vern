@@ -12,8 +12,6 @@ import { DIMENSION_ORDER } from './src/profile/types.ts'
 import { INSURERS } from './src/onboarding/insurers.ts'
 import { generatePolicies } from './src/onboarding/mockPolicies.ts'
 
-type Message = { role: 'user' | 'assistant'; content: string }
-type Chat = (messages: Message[]) => Promise<string>
 type Match = (request: MatchRequest) => InsurerMatch[] | Promise<InsurerMatch[]>
 type Recommendation = { insurance: string; company: string; price: number; fallback?: true }
 
@@ -111,15 +109,6 @@ const extractWithModel: ExtractModel = async (instructions, documentText) => {
   const response = await extractionModel.invoke([['system', instructions], ['human', documentText]], {
     response_format: { type: 'json_object' },
   })
-  return response.text
-}
-
-async function chat(messages: Message[], profilePath: string) {
-  const context = await loadRecommendationPrompt(profilePath)
-  const response = await model.invoke([
-    ['system', context],
-    ...messages.map(({ role, content }): ['ai' | 'human', string] => [role === 'assistant' ? 'ai' : 'human', content]),
-  ])
   return response.text
 }
 
@@ -282,7 +271,7 @@ async function handleDocumentAnalysis(request: IncomingMessage, response: Server
   }
 }
 
-async function handle(request: IncomingMessage, response: ServerResponse, invoke: Chat, loadData: typeof getInsuranceData, profilePath: string, match: Match, getRecommendations: () => Promise<Recommendation[]>, extract: ExtractModel) {
+async function handle(request: IncomingMessage, response: ServerResponse, loadData: typeof getInsuranceData, profilePath: string, match: Match, getRecommendations: () => Promise<Recommendation[]>, extract: ExtractModel) {
   if (request.url === '/api/profile') {
     await handleProfile(request, response, profilePath)
     return
@@ -330,8 +319,7 @@ async function handle(request: IncomingMessage, response: ServerResponse, invoke
     }
     return
   }
-  const route = request.method === 'POST' ? request.url : undefined
-  if (route !== '/api/chat' && route !== '/api/match') {
+  if (request.method !== 'POST' || request.url !== '/api/match') {
     send(response, 404, { error: 'Not found' })
     return
   }
@@ -352,53 +340,32 @@ async function handle(request: IncomingMessage, response: ServerResponse, invoke
       throw error
     }
     const data: unknown = JSON.parse(body)
-    if (route === '/api/match') {
-      if (!isMatchRequest(data)) {
-        send(response, 400, { error: 'Please provide weights for every dimension (0–100), segments and currentInsurerIds.' })
-        return
-      }
-      send(response, 200, { matches: await match(data) })
+    if (!isMatchRequest(data)) {
+      send(response, 400, { error: 'Please provide weights for every dimension (0–100), segments and currentInsurerIds.' })
       return
     }
-    if (!data || typeof data !== 'object' || !('messages' in data) || !Array.isArray(data.messages) ||
-      data.messages.length === 0 || data.messages.length > 100 ||
-      !data.messages.every((message: unknown) => message && typeof message === 'object' &&
-        'role' in message && (message.role === 'user' || message.role === 'assistant') &&
-        'content' in message && typeof message.content === 'string' && message.content.trim().length > 0) ||
-      data.messages.at(-1).role !== 'user') {
-      send(response, 400, { error: 'Please provide a valid conversation ending with a user message.' })
-      return
-    }
-    const reply = await invoke(data.messages as Message[])
-    send(response, 200, { reply })
+    send(response, 200, { matches: await match(data) })
   } catch (error) {
     if (error instanceof SyntaxError) {
       send(response, 400, { error: 'Invalid JSON request.' })
       return
     }
-    if (route === '/api/match') {
-      console.error('Match request failed:', error)
-      send(response, 500, { error: 'Could not compute matches.' })
-      return
-    }
-    console.error('Azure chat request failed:', error)
-    send(response, 502, { error: 'Could not reach Azure OpenAI. Check your Azure CLI login and access, then try again.' })
+    console.error('Match request failed:', error)
+    send(response, 500, { error: 'Could not compute matches.' })
   }
 }
 
-export function createChatServer(
-  invoke: Chat | undefined = undefined,
+export function createAppServer(
   loadData: typeof getInsuranceData = getInsuranceData,
   profilePath = process.env.PROFILE_PATH || DEFAULT_PROFILE_PATH,
   match: Match = mockMatches,
   getRecommendations: () => Promise<Recommendation[]> = () => recommend(profilePath),
   extract: ExtractModel = extractWithModel,
 ) {
-  const invokeChat = invoke ?? ((messages: Message[]) => chat(messages, profilePath))
-  return createServer((request, response) => { void handle(request, response, invokeChat, loadData, profilePath, match, getRecommendations, extract) })
+  return createServer((request, response) => { void handle(request, response, loadData, profilePath, match, getRecommendations, extract) })
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const port = Number(process.env.API_PORT || 3001)
-  createChatServer().listen(port, '127.0.0.1', () => console.log(`Chat API listening on http://127.0.0.1:${port}`))
+  createAppServer().listen(port, '127.0.0.1', () => console.log(`API listening on http://127.0.0.1:${port}`))
 }

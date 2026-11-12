@@ -1,13 +1,13 @@
-import { useEffect, useState, type ComponentProps, type FormEvent, type KeyboardEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ComponentProps, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
-import { ArrowUp } from 'lucide-react'
-import { Alert, BodyShort, Button, HStack, Loader, Theme } from '@navikt/ds-react'
+import { Alert, BodyShort, Button, Heading, HStack, Loader, Skeleton, Theme, VStack } from '@navikt/ds-react'
+import { ArrowLeftIcon } from '@navikt/aksel-icons'
 import Onboarding from './onboarding/Onboarding.tsx'
 import { INSURERS, normalize } from './onboarding/insurers.ts'
 import ProfilePage from './profile/ProfilePage.tsx'
 import ValueProfileFlow from './profile/ValueProfileFlow.tsx'
 import { QUESTIONS, type Answers, type UserProfile } from './profile/types.ts'
-import { buildStoredProfile, deleteProfile, fetchProfile, isNewCustomer, saveProfile } from './profile/storage.ts'
+import { buildStoredProfile, deleteProfile, fetchProfile, isNewCustomer, saveProfile, type StoredProfile } from './profile/storage.ts'
 import { clearDraft, loadDraft, parseQuestionParam, questionParam } from './profile/draft.ts'
 import MatchPage, { MatchHero } from './match/MatchPage.tsx'
 import { buildMatchRequest, fetchMatches } from './match/api.ts'
@@ -16,7 +16,6 @@ import type { ConnectionState } from './onboarding/types.ts'
 import { usePrefersDark } from './useMediaQuery.ts'
 import './App.css'
 
-type Message = { role: 'user' | 'assistant'; content: string }
 type Recommendation = { insurance: string; company: string; price: number; fallback?: boolean }
 
 const ONBOARDING_VALUES_PATH = '/verdiprofil'
@@ -42,6 +41,12 @@ function App() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [searchParams] = useSearchParams()
+
+  const syncSavedProfile = useCallback((stored: Partial<StoredProfile>) => {
+    setOnboarded(!isNewCustomer(stored))
+    setProfile({ answers: stored.valueProfile?.answers ?? null })
+    setConnections(stored.insurances ?? {})
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -181,7 +186,7 @@ function App() {
               onCreateProfile={() => editValues('?tilbake=/matcher')}
             />
           )} />
-          <Route path="/vern" element={onboardedOnly(<Chat profile={profile} connections={connections} />)} />
+          <Route path="/vern" element={onboardedOnly(<Recommendations onBack={() => navigate('/profil')} onProfileChange={syncSavedProfile} />)} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       )}
@@ -207,102 +212,95 @@ function ValuesRoute({ basePath, ...props }: ValuesRouteProps) {
   )
 }
 
-function Chat({ profile, connections }: { profile: UserProfile; connections: ConnectionState }) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [prompt, setPrompt] = useState('')
-  const [loading, setLoading] = useState(false)
+function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onProfileChange: (profile: Partial<StoredProfile>) => void }) {
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [syncError, setSyncError] = useState('')
+  const [attempt, setAttempt] = useState(0)
   const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null)
   const [matches, setMatches] = useState<InsurerMatch[] | null>(null)
 
-  async function getRecommendations() {
-    if (loading) return
-    setError('')
-    setRecommendations(null)
-    setMatches(null)
-    setLoading(true)
-    try {
-      const [response, matchResults] = await Promise.all([
-        fetch('/api/recommendations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}),
-        }),
-        fetchMatches(buildMatchRequest(profile, connections)).catch(() => null),
-      ])
-      const data: unknown = await response.json()
-      if (!response.ok) {
-        throw new Error(data && typeof data === 'object' && 'error' in data && typeof data.error === 'string'
-          ? data.error : 'Kunne ikke hente forslagene. Prøv igjen.')
-      }
-      if (!data || typeof data !== 'object' || !('recommendations' in data) || !Array.isArray(data.recommendations) ||
-        !data.recommendations.every((item: unknown) => item && typeof item === 'object' &&
-          'insurance' in item && typeof item.insurance === 'string' && item.insurance.trim() &&
-          'company' in item && typeof item.company === 'string' && item.company.trim() &&
-          'price' in item && typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0 &&
-          (!('fallback' in item) || typeof item.fallback === 'boolean'))) {
-        throw new Error('Fikk et ugyldig svar. Prøv igjen.')
-      }
-      const policies = Object.values(connections).flat()
-      if (data.recommendations.length !== policies.length || data.recommendations.some((item: Recommendation, index: number) => item.insurance !== policies[index].product)) {
-        throw new Error('Forslagene samsvarer ikke med profilen. Kontroller at profilen er lagret og prøv igjen.')
-      }
-      setRecommendations(data.recommendations as Recommendation[])
-      setMatches(matchResults)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Kunne ikke hente forslagene. Prøv igjen.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  useEffect(() => {
+    let stopped = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let controller: AbortController | undefined
+    let lastProfile: string | undefined
 
-  async function sendPrompt(value: string) {
-    const content = value.trim()
-    if (!content || loading) return
-    const nextMessages: Message[] = [...messages, { role: 'user', content }]
-    setMessages(nextMessages)
-    setPrompt('')
-    setError('')
-    setLoading(true)
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextMessages }),
-      })
-      const data: unknown = await response.json()
-      if (!response.ok) {
-        throw new Error(data && typeof data === 'object' && 'error' in data && typeof data.error === 'string'
-          ? data.error : 'Noe gikk galt. Prøv igjen.')
+    async function update(stored: Partial<StoredProfile>, signal: AbortSignal) {
+      setLoading(true)
+      setError('')
+      setRecommendations(null)
+      setMatches(null)
+      try {
+        const connections = stored.insurances ?? {}
+        const profile: UserProfile = { answers: stored.valueProfile?.answers ?? null }
+        const [response, matchResults] = await Promise.all([
+          fetch('/api/recommendations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}', signal }),
+          fetchMatches(buildMatchRequest(profile, connections), signal).catch(() => null),
+        ])
+        const data: unknown = await response.json()
+        if (!response.ok) {
+          throw new Error(data && typeof data === 'object' && 'error' in data && typeof data.error === 'string'
+            ? data.error : 'Kunne ikke hente forslagene. Prøv igjen.')
+        }
+        if (!data || typeof data !== 'object' || !('recommendations' in data) || !Array.isArray(data.recommendations) ||
+          !data.recommendations.every((item: unknown) => item && typeof item === 'object' &&
+            'insurance' in item && typeof item.insurance === 'string' && item.insurance.trim() &&
+            'company' in item && typeof item.company === 'string' && item.company.trim() &&
+            'price' in item && typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0 &&
+            (!('fallback' in item) || typeof item.fallback === 'boolean'))) {
+          throw new Error('Fikk et ugyldig svar. Prøv igjen.')
+        }
+        const policies = Object.values(connections).flat()
+        if (data.recommendations.length !== policies.length || data.recommendations.some((item: Recommendation, index: number) => item.insurance !== policies[index].product)) {
+          throw new Error('Forslagene samsvarer ikke med profilen. Kontroller at profilen er lagret og prøv igjen.')
+        }
+        if (stopped || signal.aborted) return
+        setRecommendations(data.recommendations as Recommendation[])
+        setMatches(matchResults)
+      } catch (caught) {
+        if (!stopped && !signal.aborted) setError(caught instanceof Error ? caught.message : 'Kunne ikke hente forslagene. Prøv igjen.')
+      } finally {
+        if (!stopped && !signal.aborted) setLoading(false)
       }
-      if (!data || typeof data !== 'object' || !('reply' in data) || typeof data.reply !== 'string' || !data.reply.trim()) {
-        throw new Error('Fikk et tomt svar. Prøv igjen.')
+    }
+
+    async function syncProfile() {
+      try {
+        const stored = await fetchProfile({ attempts: 1 })
+        if (stopped) return
+        setSyncError('')
+        const currentProfile = JSON.stringify(stored)
+        if (currentProfile !== lastProfile) {
+          lastProfile = currentProfile
+          onProfileChange(stored)
+          controller?.abort()
+          controller = new AbortController()
+          void update(stored, controller.signal)
+        }
+      } catch {
+        if (!stopped) {
+          setSyncError('Kunne ikke kontrollere profilen. Prøver igjen automatisk.')
+          if (lastProfile === undefined) setLoading(false)
+        }
+      } finally {
+        if (!stopped) timer = setTimeout(() => void syncProfile(), 2000)
       }
-      setMessages([...nextMessages, { role: 'assistant', content: data.reply }])
-    } catch (caught) {
-      setMessages(messages)
-      setPrompt(content)
-      setError(caught instanceof Error ? caught.message : 'Noe gikk galt. Prøv igjen.')
-    } finally {
-      setLoading(false)
     }
-  }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    void sendPrompt(prompt)
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-      event.preventDefault()
-      void sendPrompt(prompt)
+    void syncProfile()
+    return () => {
+      stopped = true
+      controller?.abort()
+      if (timer) clearTimeout(timer)
     }
-  }
+  }, [attempt, onProfileChange])
 
   return (
-    <main className="chat">
-      <div className="conversation" aria-live="polite">
+    <main className="recommendation-page">
+      <Button type="button" variant="tertiary" icon={<ArrowLeftIcon aria-hidden />} onClick={onBack}>Tilbake til profil</Button>
+      <div aria-live="polite">
+        {syncError && <Alert variant="warning" size="small">{syncError}</Alert>}
         {recommendations !== null && (
           <section className="recommendations" aria-label="Forsikringsforslag">
             <Alert variant="info" size="small">Simulerte forslag, priser og matchscorer. Matchscoren gjelder selskapet, ikke den enkelte forsikringen.</Alert>
@@ -315,24 +313,19 @@ function Chat({ profile, connections }: { profile: UserProfile; connections: Con
             })}
           </section>
         )}
-        {messages.length === 0 && (
-          <Button type="button" variant="secondary" size="small" disabled={loading} onClick={() => void getRecommendations()}>
-            {recommendations === null ? 'Vurder forsikringene mine' : 'Oppdater forslag'}
-          </Button>
+        {loading && (
+          <VStack gap="space-16" className="recommendation-loading" aria-busy="true">
+            <Heading level="1" size="medium">Dine forsikringsforslag</Heading>
+            <HStack gap="space-12" align="center" role="status">
+              <Loader size="small" title="Laster" />
+              <BodyShort>Vi finner forslag til forsikringene dine…</BodyShort>
+            </HStack>
+            <Skeleton variant="rounded" height={220} />
+            <Skeleton variant="rounded" height={220} />
+          </VStack>
         )}
-        {messages.map((message, index) => (
-          <div className="message" key={index}>
-            <strong>{message.role === 'user' ? 'Du' : 'Vern'}</strong>
-            <p>{message.content}</p>
-          </div>
-        ))}
-        {loading && <p role="status">Tenker…</p>}
+        {error && <Alert variant="error" size="small">{error} <Button type="button" variant="secondary" size="small" onClick={() => setAttempt((value) => value + 1)}>Prøv igjen</Button></Alert>}
       </div>
-      {error && <p className="error" role="alert">{error}</p>}
-      <form className="composer" onSubmit={submit}>
-        <textarea aria-label="Melding" placeholder="Skriv en melding…" value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={handleKeyDown} rows={3} disabled={loading} />
-        <button type="submit" disabled={loading || !prompt.trim()} aria-label="Send melding" title="Send melding"><ArrowUp size={20} /></button>
-      </form>
     </main>
   )
 }
