@@ -1,7 +1,7 @@
 import type { Answers } from '../profile/types.ts'
 
 /**
- * Persona Pass: the traits a customer chose to share from The Digital You. It reaches Vern in a
+ * Persona Pass: the traits a customer chose to share from DigiU. It reaches Vern in a
  * link's URL fragment (#pass=…), which browsers never send to a server, as base64url-encoded JSON.
  * Only what the customer shared is included: no evidence, sources or raw data.
  */

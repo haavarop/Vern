@@ -78,7 +78,7 @@ export default function ValueProfileFlow({ initialAnswers, suggestion, doneLabel
           {hint && (
             <InfoCard data-color="info" size="small">
               <InfoCard.Header icon={<PersonCircleIcon aria-hidden />}>
-                <InfoCard.Title as="h2">{suggested === null ? 'Persona Pass sier ikke noe om dette' : 'Forslag fra Persona Pass'}</InfoCard.Title>
+                <InfoCard.Title as="h2">{suggested === null ? 'DigiU-profilen sier ikke noe om dette' : 'Forslag fra DigiU'}</InfoCard.Title>
               </InfoCard.Header>
               <InfoCard.Content>
                 <BodyShort size="small">{hint}</BodyShort>

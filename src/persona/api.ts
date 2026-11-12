@@ -1,7 +1,7 @@
 import { QUESTIONS } from '../profile/types.ts'
 import type { PersonaPass, ValueProfileSuggestion } from './pass.ts'
 
-const FALLBACK_ERROR = 'Vern klarte ikke å lese Persona Pass akkurat nå. Prøv igjen, eller svar på spørsmålene selv.'
+const FALLBACK_ERROR = 'Vern klarte ikke å lese DigiU-profilen akkurat nå. Prøv igjen, eller svar på spørsmålene selv.'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)

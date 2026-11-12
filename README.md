@@ -13,11 +13,11 @@ npm run dev
 
 Open the Vite URL printed in the terminal. The local API listens on `127.0.0.1:3001`; Vite proxies API requests to it. The API calls Claude Opus 5.5 (`claude-opus-5-5`) through LangChain's Anthropic integration (`ChatAnthropic` from `@langchain/anthropic`), with low effort to keep waits short and structured outputs for the JSON answers. If Claude declines a request, the API's server-side fallback re-runs it on another model. A key already in the environment overrides `.env.local`.
 
-## Persona Pass
+## DigiU profile
 
-Customers can bring a Persona Pass from The Digital You instead of starting from scratch. A Persona Pass is the list of traits the customer chose to share there, such as "You have a dog" or "You recently moved", most important first. It contains no evidence, sources or raw data.
+Customers can bring their DigiU profile instead of starting from scratch. DigiU sends it as a Persona Pass (format `persona-pass/v1`): the traits the customer chose to share there, such as "You have a dog" or "You recently moved", most important first. It contains no evidence, sources or raw data.
 
-The Digital You links to `/persona#pass=<base64url JSON>`. The pass is in the URL fragment, which browsers never send to a server; the page removes it from the address bar once read, shows what was shared and asks before using it. Then:
+DigiU links to `/persona#pass=<base64url JSON>`. The pass is in the URL fragment, which browsers never send to a server; the page removes it from the address bar once read, shows what was shared and asks before using it. Then:
 
 1. `POST /api/persona/value-profile` asks Claude to answer the four value-profile questions from the traits, with a reason for each. Questions the traits say nothing about are left for the customer. The flow shows each suggestion and its reason, and the customer can change any answer.
 2. The pass is saved with the profile (`persona` in `data/profile.json`) and added to the recommendation prompt, so each pick explains why it fits beyond price.

@@ -37,7 +37,7 @@ function App() {
   const [seenMatches, setSeenMatches] = useState(false)
   const [connections, setConnections] = useState<ConnectionState>({})
   const [profile, setProfile] = useState<UserProfile>({ answers: null })
-  // Traits shared from The Digital You, and the answers Vern suggested from them in this session.
+  // Traits shared from DigiU, and the answers Vern suggested from them in this session.
   const [persona, setPersona] = useState<PersonaPass | null>(null)
   const [suggestion, setSuggestion] = useState<ValueProfileSuggestion | null>(null)
   const [saveError, setSaveError] = useState('')
@@ -344,7 +344,7 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
               <VStack as="section" gap="space-12" aria-labelledby="gaps-heading" className="gaps">
                 <VStack gap="space-4">
                   <Heading id="gaps-heading" level="2" size="small">Dette ser ut til å mangle</Heading>
-                  <BodyShort textColor="subtle">Ut fra det du deler i Persona Pass.</BodyShort>
+                  <BodyShort textColor="subtle">Ut fra det du deler fra DigiU.</BodyShort>
                 </VStack>
                 {gaps.map((gap) => <GapCard key={gap.product} gap={gap} />)}
               </VStack>

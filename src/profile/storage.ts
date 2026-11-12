@@ -22,7 +22,7 @@ export type StoredProfile = {
   } | null
   /** Fetched insurances keyed by insurer id. */
   insurances: ConnectionState
-  /** Traits the customer shares from The Digital You, or null when they share none. */
+  /** Traits the customer shares from DigiU, or null when they share none. */
   persona: PersonaPass | null
 }
 

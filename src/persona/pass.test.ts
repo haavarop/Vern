@@ -4,7 +4,7 @@ import { decodePersonaPass, encodePersonaPass, parsePersonaPass, type PersonaPas
 
 const pass: PersonaPass = {
   format: 'persona-pass/v1',
-  issuer: 'The Digital You',
+  issuer: 'DigiU',
   name: 'Sofie',
   issuedAt: '2026-11-11T20:00:00.000Z',
   traits: [

@@ -244,7 +244,7 @@ test('match API returns sorted matches and validates requests', async () => {
 
 const persona: PersonaPass = {
   format: 'persona-pass/v1',
-  issuer: 'The Digital You',
+  issuer: 'DigiU',
   name: 'Sofie',
   issuedAt: '2026-11-11T20:00:00.000Z',
   traits: [
@@ -277,7 +277,7 @@ test('gaps must be new catalogue products that quote a shared trait', () => {
 
 test('a shared Persona Pass reaches the recommendation prompt, and gaps work without policies', async () => {
   assert.match(buildRecommendationPrompt({ persona }, {}), /You have a dog/)
-  assert.doesNotMatch(buildRecommendationPrompt({}, {}), /Persona Pass/)
+  assert.doesNotMatch(buildRecommendationPrompt({}, {}), /DigiU/)
   const { mkdtemp, writeFile, rm } = await import('node:fs/promises')
   const { tmpdir } = await import('node:os')
   const { join } = await import('node:path')
@@ -303,11 +303,11 @@ test('a shared Persona Pass reaches the recommendation prompt, and gaps work wit
 test('value-profile suggestions keep valid options and deliberate nulls only', async () => {
   const suggestion = resolveValueProfileSuggestion({
     viktigst: { option: 1, reason: 'Du har nettopp flyttet.' },
-    utsagn: { option: null, reason: 'Persona Pass sier ikke noe om dette.' },
+    utsagn: { option: null, reason: 'DigiU-profilen sier ikke noe om dette.' },
     skade: { option: 9, reason: 'Ugyldig.' },
   })
   assert.deepEqual(suggestion.answers, { viktigst: 1, utsagn: null, skade: null, handtere: null })
-  assert.deepEqual(suggestion.reasons, { viktigst: 'Du har nettopp flyttet.', utsagn: 'Persona Pass sier ikke noe om dette.' })
+  assert.deepEqual(suggestion.reasons, { viktigst: 'Du har nettopp flyttet.', utsagn: 'DigiU-profilen sier ikke noe om dette.' })
 
   let request = ''
   await suggestValueProfile(persona, async (_system, text) => { request = text; return {} })
