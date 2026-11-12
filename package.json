@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@azure/identity": "4.14.1",
+    "@langchain/anthropic": "1.6.3",
     "@langchain/openai": "1.8.3",
     "@navikt/aksel-icons": "8.22.1",
     "@navikt/ds-css": "8.22.1",

@@ -31,6 +31,10 @@ const CATALOGUE: Record<Segment, Product[]> = {
   rettshjelp: [{ name: 'Rettshjelpsforsikring', min: 60, max: 180 }],
 }
 
+/** Every product in the demo catalogue with its segment. */
+export const PRODUCTS: readonly { name: string; segment: Segment }[] = Object.entries(CATALOGUE)
+  .flatMap(([segment, products]) => products.map((product) => ({ name: product.name, segment: segment as Segment })))
+
 const COVERAGES = ['Super', 'Pluss', 'Standard', 'Kasko', 'Basis']
 const BASE_DATE = Date.UTC(2026, 0, 1)
 const DAY_MS = 24 * 60 * 60 * 1000

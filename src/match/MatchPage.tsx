@@ -163,7 +163,7 @@ function WhyToggle({ match }: { match: InsurerMatch }) {
 
 export function MatchHero({ match, recommendation, highlight, compact = false }: {
   match?: InsurerMatch
-  recommendation?: { insurance: string; company: string; price: number; insurerId?: string; fallback?: boolean }
+  recommendation?: { insurance: string; company: string; price: number; reason?: string; insurerId?: string; fallback?: boolean }
   highlight?: string
   /** Shows the score as a small pill instead of the ring, so only the first card gets the apricot ring. */
   compact?: boolean
@@ -195,6 +195,7 @@ export function MatchHero({ match, recommendation, highlight, compact = false }:
           {!match && <BodyShort size="small" className="match-muted">Matchen er ikke klar ennå.</BodyShort>}
         </div>
       </div>
+      {recommendation?.reason && <BodyLong weight="semibold">{recommendation.reason}</BodyLong>}
       {recommendation?.fallback && <BodyShort size="small" className="match-muted">Vern har ikke vurdert denne ennå, så du ser forsikringen du har i dag.</BodyShort>}
       {match && <WhyToggle match={match} />}
     </section>

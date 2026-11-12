@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { once } from 'node:events'
 import { test } from 'node:test'
-import { buildMockCandidates, buildRecommendationPrompt, createAppServer, loadRecommendationPrompt, recommend, resolveRecommendations } from './server.ts'
+import { buildMockCandidates, buildRecommendationPrompt, createAppServer, loadRecommendationPrompt, recommend, resolveGaps, resolveRecommendations, resolveValueProfileSuggestion, suggestValueProfile } from './server.ts'
+import type { PersonaPass } from './src/persona/pass.ts'
 import { insuranceData } from './insurance-data.ts'
 
 test('recommendation candidates use only matching mock products and prices', async () => {
@@ -57,7 +58,8 @@ test('model failures keep one labeled fallback for every saved policy', async ()
     ] } }))
     await writeFile(insurancePath, JSON.stringify({ kategorier: {} }))
     const results = await recommend(profilePath, insurancePath, async () => { throw new Error('test failure') })
-    assert.deepEqual(results, [
+    assert.deepEqual(results.gaps, [])
+    assert.deepEqual(results.recommendations, [
       { insurance: 'Bilforsikring', company: 'If', price: 500, fallback: true },
       { insurance: 'Husforsikring', company: 'If', price: 700, fallback: true },
     ])
@@ -79,17 +81,17 @@ test('recommendations use the latest saved profile on each run', async () => {
     await writeFile(insurancePath, JSON.stringify({ kategorier: {} }))
     await writeFile(profilePath, JSON.stringify({ insurances: { if: [car] } }))
     const first = await recommend(profilePath, insurancePath, async () => ({ selections: [{ policyIndex: 0, candidateIndex: 0 }] }))
-    assert.deepEqual(first.map((item) => item.insurance), ['Bilforsikring'])
+    assert.deepEqual(first.recommendations.map((item) => item.insurance), ['Bilforsikring'])
     await writeFile(profilePath, JSON.stringify({ insurances: { if: [car, house] } }))
     const second = await recommend(profilePath, insurancePath, async () => ({ selections: [{ policyIndex: 0, candidateIndex: 0 }, { policyIndex: 1, candidateIndex: 0 }] }))
-    assert.deepEqual(second.map((item) => item.insurance), ['Bilforsikring', 'Husforsikring'])
+    assert.deepEqual(second.recommendations.map((item) => item.insurance), ['Bilforsikring', 'Husforsikring'])
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
 })
 
 test('recommendation endpoint returns structured cards', async () => {
-  const server = createAppServer(undefined, undefined, undefined, async () => [{ insurance: 'Bilforsikring', company: 'If', price: 500 }])
+  const server = createAppServer(undefined, undefined, undefined, async () => ({ recommendations: [{ insurance: 'Bilforsikring', company: 'If', price: 500 }], gaps: [] }))
   server.listen(0, '127.0.0.1')
   await once(server, 'listening')
   const address = server.address()
@@ -97,7 +99,7 @@ test('recommendation endpoint returns structured cards', async () => {
   try {
     const response = await fetch(`http://127.0.0.1:${address.port}/api/recommendations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
     assert.equal(response.status, 200)
-    assert.deepEqual(await response.json(), { recommendations: [{ insurance: 'Bilforsikring', company: 'If', price: 500 }] })
+    assert.deepEqual(await response.json(), { recommendations: [{ insurance: 'Bilforsikring', company: 'If', price: 500 }], gaps: [] })
     const invalid = await fetch(`http://127.0.0.1:${address.port}/api/recommendations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{' })
     assert.equal(invalid.status, 400)
   } finally {
@@ -303,6 +305,102 @@ test('document API extracts PDF text, sends it to the model and returns validate
     const empty = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/pdf' }, body: makePdf(['Hei']) })
     assert.equal(empty.status, 422)
     assert.match((await empty.json() as { error: string }).error, /lesbar tekst/)
+  } finally {
+    server.close()
+  }
+})
+
+const persona: PersonaPass = {
+  format: 'persona-pass/v1',
+  issuer: 'DigiU',
+  name: 'Sofie',
+  issuedAt: '2026-11-11T20:00:00.000Z',
+  traits: [
+    { category: 'Home', value: 'You recently moved and are furnishing your home', confidence: 'strong' },
+    { category: 'Pets', value: 'You have a dog', confidence: 'likely' },
+  ],
+}
+
+test('picks keep the model reason only for a valid, unambiguous selection', () => {
+  const candidates = [{ policyIndex: 0, insurance: 'Bilforsikring', candidates: [{ company: 'If', price: 500 }, { company: 'Tryg', price: 700 }] }]
+  assert.deepEqual(resolveRecommendations(candidates, { selections: [{ policyIndex: 0, candidateIndex: 1, reason: '  Best skadeoppgjør. ' }] }),
+    [{ insurance: 'Bilforsikring', company: 'Tryg', price: 700, reason: 'Best skadeoppgjør.' }])
+  assert.deepEqual(resolveRecommendations(candidates, { selections: [{ policyIndex: 0, candidateIndex: 0, reason: 'A' }, { policyIndex: 0, candidateIndex: 1, reason: 'B' }] }),
+    [{ insurance: 'Bilforsikring', company: 'If', price: 500, fallback: true }])
+})
+
+test('gaps must be new catalogue products that quote a shared trait', () => {
+  const result = { gaps: [
+    { product: 'Hundeforsikring', reason: 'Du har hund.', lookFor: 'Veterinærutgifter.', basedOn: ['you have a dog', 'You own a horse'] },
+    { product: 'Hundeforsikring', reason: 'Igjen.', lookFor: 'Igjen.', basedOn: ['You have a dog'] },
+    { product: 'Innboforsikring', reason: 'Nytt hjem.', lookFor: 'Forsikringssum.', basedOn: ['You recently moved and are furnishing your home'] },
+    { product: 'Romforsikring', reason: 'Finnes ikke.', lookFor: 'x', basedOn: ['You have a dog'] },
+    { product: 'Reiseforsikring (helårs)', reason: 'Ingen grunnlag.', lookFor: 'x', basedOn: ['You travel a lot'] },
+  ] }
+  assert.deepEqual(resolveGaps(result, ['Innboforsikring'], persona), [
+    { product: 'Hundeforsikring', segment: 'dyr', reason: 'Du har hund.', lookFor: 'Veterinærutgifter.', basedOn: ['You have a dog'] },
+  ])
+  assert.deepEqual(resolveGaps(result, [], null), [])
+})
+
+test('a shared Persona Pass reaches the recommendation prompt, and gaps work without policies', async () => {
+  assert.match(buildRecommendationPrompt({ persona }, {}), /You have a dog/)
+  assert.doesNotMatch(buildRecommendationPrompt({}, {}), /DigiU/)
+  const { mkdtemp, writeFile, rm } = await import('node:fs/promises')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const dir = await mkdtemp(join(tmpdir(), 'vern-persona-'))
+  const profilePath = join(dir, 'profile.json')
+  const insurancePath = join(dir, 'insurance.json')
+  try {
+    await writeFile(insurancePath, JSON.stringify({ kategorier: {} }))
+    await writeFile(profilePath, JSON.stringify({ persona }))
+    let prompt = ''
+    const result = await recommend(profilePath, insurancePath, async (text) => {
+      prompt = text
+      return { selections: [], gaps: [{ product: 'Hundeforsikring', reason: 'Du har hund.', lookFor: 'Veterinær.', basedOn: ['You have a dog'] }] }
+    })
+    assert.match(prompt, /opptil tre forsikringer/)
+    assert.deepEqual(result.recommendations, [])
+    assert.deepEqual(result.gaps.map((gap) => gap.product), ['Hundeforsikring'])
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('value-profile suggestions keep valid options and deliberate nulls only', async () => {
+  const suggestion = resolveValueProfileSuggestion({
+    viktigst: { option: 1, reason: 'Du har nettopp flyttet.' },
+    utsagn: { option: null, reason: 'DigiU-profilen sier ikke noe om dette.' },
+    skade: { option: 9, reason: 'Ugyldig.' },
+  })
+  assert.deepEqual(suggestion.answers, { viktigst: 1, utsagn: null, skade: null, handtere: null })
+  assert.deepEqual(suggestion.reasons, { viktigst: 'Du har nettopp flyttet.', utsagn: 'DigiU-profilen sier ikke noe om dette.' })
+
+  let request = ''
+  await suggestValueProfile(persona, async (_system, text) => { request = text; return {} })
+  assert.match(request, /You have a dog/)
+  assert.doesNotMatch(request, /Sofie/)
+})
+
+test('persona endpoint validates the pass before asking the model', async () => {
+  let asked = 0
+  const server = createAppServer(undefined, undefined, undefined, undefined, undefined, async () => {
+    asked += 1
+    return { answers: { viktigst: 1, utsagn: null, skade: null, handtere: null }, reasons: { viktigst: 'Grunn.' } }
+  })
+  server.listen(0, '127.0.0.1')
+  await once(server, 'listening')
+  const address = server.address()
+  assert.ok(address && typeof address !== 'string')
+  const url = `http://127.0.0.1:${address.port}/api/persona/value-profile`
+  try {
+    const ok = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(persona) })
+    assert.equal(ok.status, 200)
+    assert.equal((await ok.json() as { answers: Record<string, number | null> }).answers.viktigst, 1)
+    const invalid = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...persona, traits: [] }) })
+    assert.equal(invalid.status, 400)
+    assert.equal(asked, 1)
   } finally {
     server.close()
   }

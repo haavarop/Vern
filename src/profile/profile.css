@@ -81,3 +81,5 @@
 }
 .vp-rank li.is-top .vp-rank__num { background: var(--vern-forest); color: var(--vern-text-on-inverse); }
 .vp-rank__score { font-variant-numeric: tabular-nums; }
+
+.vp-q__suggested { margin-left: var(--ax-space-12); flex-shrink: 0; }

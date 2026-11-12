@@ -1,4 +1,5 @@
 import type { ConnectionState } from '../onboarding/types.ts'
+import type { PersonaPass } from '../persona/pass.ts'
 import { isAnswered, rankDimensions, scoreProfile, type Answers, type Dimension } from './types.ts'
 
 /**
@@ -21,20 +22,22 @@ export type StoredProfile = {
   } | null
   /** Fetched insurances keyed by insurer id. */
   insurances: ConnectionState
+  /** Traits the customer shares from DigiU, or null when they share none. */
+  persona: PersonaPass | null
 }
 
 export function isNewCustomer(stored: Partial<StoredProfile>): boolean {
   return !stored.onboarded
 }
 
-export function buildStoredProfile(answers: Answers | null, insurances: ConnectionState): StoredProfile {
+export function buildStoredProfile(answers: Answers | null, insurances: ConnectionState, persona: PersonaPass | null = null): StoredProfile {
   const valueProfile = isAnswered(answers)
     ? (() => {
         const scores = scoreProfile(answers)
         return { answers, scores, ranked: rankDimensions(scores) }
       })()
     : null
-  return { version: 1, updatedAt: new Date().toISOString(), onboarded: true, valueProfile, insurances }
+  return { version: 1, updatedAt: new Date().toISOString(), onboarded: true, valueProfile, insurances, persona }
 }
 
 // In dev the web server is often ready before the API, so network errors and 5xx (Vite proxy errors) are retried.

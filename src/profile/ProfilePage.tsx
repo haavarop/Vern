@@ -5,6 +5,8 @@ import VernHeader from '../onboarding/VernHeader.tsx'
 import type { ConnectionState } from '../onboarding/types.ts'
 import { RadarChart } from '../onboarding/charts.tsx'
 import { DIMENSION_ORDER, DIMENSIONS, rankDimensions, scoreProfile, type Dimension, type UserProfile } from './types.ts'
+import { DigiUMark, PersonaTraits } from '../persona/PersonaImport.tsx'
+import type { PersonaPass } from '../persona/pass.ts'
 import '../onboarding/onboarding.css'
 import './profile.css'
 
@@ -13,6 +15,10 @@ const SHORT_LABELS: Record<Dimension, string> = { pris: 'Pris', dekning: 'Deknin
 type Props = {
   connections: ConnectionState
   profile: UserProfile
+  /** Traits shared from DigiU, if any. */
+  persona: PersonaPass | null
+  /** Forgets the Persona Pass: Vern stops using the traits. */
+  onStopSharing: () => void
   onAddInsurers: () => void
   onEditProfile: () => void
   /** Deletes the stored profile and restarts onboarding as a new customer. */
@@ -68,7 +74,28 @@ function ValueProfile({ profile, onEdit }: { profile: UserProfile; onEdit: () =>
   )
 }
 
-export default function ProfilePage({ connections, profile, onAddInsurers, onEditProfile, onReset, onContinue, continueLabel = 'Se forslagene dine', onShowMatches }: Props) {
+function PersonaSection({ persona, onStopSharing }: { persona: PersonaPass; onStopSharing: () => void }) {
+  return (
+    <section aria-labelledby="persona-heading" className="vern-card">
+      <VStack gap="space-16">
+        <HStack justify="space-between" align="center" gap="space-8">
+          <HStack gap="space-8" align="center">
+            <DigiUMark />
+            <Heading id="persona-heading" level="2" size="small">DigiU-profil</Heading>
+          </HStack>
+          <Tag size="small" variant="moderate" data-color="success">Delt fra DigiU</Tag>
+        </HStack>
+        <BodyShort>
+          Du deler {persona.traits.length} egenskaper med Vern. Vi bruker dem til å finne forsikringer som passer livet ditt, ikke bare prisen.
+        </BodyShort>
+        <PersonaTraits pass={persona} />
+        <Button variant="secondary" onClick={onStopSharing} className="onboarding__add">Slutt å dele</Button>
+      </VStack>
+    </section>
+  )
+}
+
+export default function ProfilePage({ connections, profile, persona, onStopSharing, onAddInsurers, onEditProfile, onReset, onContinue, continueLabel = 'Se forslagene dine', onShowMatches }: Props) {
   const hasConnections = Object.keys(connections).length > 0
 
   return (
@@ -90,6 +117,8 @@ export default function ProfilePage({ connections, profile, onAddInsurers, onEdi
             <ValueProfile profile={profile} onEdit={onEditProfile} />
           </VStack>
         </section>
+
+        {persona && <PersonaSection persona={persona} onStopSharing={onStopSharing} />}
 
         <VStack gap="space-16" as="section" aria-labelledby="policies-heading">
           <Heading id="policies-heading" level="2" size="small">Forsikringene dine</Heading>
