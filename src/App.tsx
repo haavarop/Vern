@@ -16,6 +16,7 @@ import AboutYouPage from './landing/AboutYouPage.tsx'
 import { clearAboutDraft, loadAboutDraft } from './landing/aboutDraft.ts'
 import ChoiceQuestion from './journey/ChoiceQuestion.tsx'
 import CallbackForm from './journey/CallbackForm.tsx'
+import PreparePage from './journey/PreparePage.tsx'
 import { BRANCH_QUESTIONS } from './journey/questions.ts'
 import { loadJourneyDraft, parseCallbacks, parseJourney, saveJourneyDraft } from './journey/journeyDraft.ts'
 import { isAboutYouFilled, parseAboutYou, type AboutYou, type CallbackRequest, type Journey } from './journey/types.ts'
@@ -36,6 +37,7 @@ const EDIT_ABOUT_PATH = '/profil/om-deg'
 const HAS_INSURANCE_PATH = '/forsikringer-i-dag'
 const CHECK_EXISTING_PATH = '/sjekke'
 const FIND_NEW_PATH = '/ny-match'
+const PREPARE_PATH = '/forbered'
 const ONBOARDING_VALUES_PATH = '/verdiprofil'
 const EDIT_VALUES_PATH = '/profil/verdiprofil'
 const CALLBACK_PATH = '/ring-meg'
@@ -48,7 +50,7 @@ function returnPath(value: string | null): string {
 
 function App() {
   // New customers start on the landing page and go through onboarding as full pages:
-  // /start → /om-deg → /forsikringer-i-dag → (/sjekke | /ny-match) → /verdiprofil/:spm → (/forsikringer, only when checking
+  // /start → /om-deg → /forsikringer-i-dag → (/sjekke → /forbered | /ny-match) → /verdiprofil/:spm → (/forsikringer, only when checking
   // existing insurances) → /profil → /matcher → /ring-meg/:selskap.
   // Returning customers (data/profile.json is filled in) go straight to /profil. The URL only holds where the user is;
   // the profile data lives here.
@@ -136,10 +138,11 @@ function App() {
     navigate(yes ? CHECK_EXISTING_PATH : FIND_NEW_PATH)
   }
 
+  // Checking existing insurances first shows what to expect and what to have ready.
   function chooseJourney(next: Journey) {
     setJourney(next)
     saveJourneyDraft(next)
-    navigate(`${ONBOARDING_VALUES_PATH}/1`)
+    navigate(next === 'sjekk' ? PREPARE_PATH : `${ONBOARDING_VALUES_PATH}/1`)
   }
 
   // Only the «check my insurances» branch continues to the upload step; a new match goes straight to the profile.
@@ -264,6 +267,9 @@ function App() {
               onAnswer={(yes) => yes ? chooseJourney('sjekk') : navigate(FIND_NEW_PATH)}
             />
           )} />
+          <Route path={PREPARE_PATH} element={newCustomerOnly(
+            <PreparePage onBack={() => navigate(CHECK_EXISTING_PATH)} onContinue={() => navigate(`${ONBOARDING_VALUES_PATH}/1`)} />
+          )} />
           <Route path={FIND_NEW_PATH} element={newCustomerOnly(
             <ChoiceQuestion
               {...BRANCH_QUESTIONS.findNew}
@@ -278,7 +284,7 @@ function App() {
               initialAnswers={profile.answers}
               doneLabel="Neste"
               stepLabel={`Del 2 av ${totalParts}`}
-              onBack={() => navigate(journey === 'ny' ? FIND_NEW_PATH : CHECK_EXISTING_PATH)}
+              onBack={() => navigate(journey === 'ny' ? FIND_NEW_PATH : PREPARE_PATH)}
               onDone={finishOnboardingValues}
               onSkip={() => finishOnboardingValues(null)}
             />

@@ -22,7 +22,7 @@ When the user enters Vern, recommendations are generated automatically using the
 Nye kunder starter på landingssiden (`/start`) og går gjennom:
 
 1. **Om deg** (`/om-deg`): alder, jobb, barn og hva de vil forsikre. Alle spørsmålene er valgfrie, og hele siden kan hoppes over.
-2. **Har du noen forsikringer i dag?** Ja → «Skal vi sjekke om de passer deg?». Nei (eller nei til sjekk) → «Skal vi finne en ny match til deg?».
+2. **Har du noen forsikringer i dag?** Ja → «Skal vi sjekke om de passer deg?». Ja til sjekk → **Før vi starter** (`/forbered`), som forklarer hvorfor vi spør og ber kunden ha forsikringsbeviset klart. Nei (eller nei til sjekk) → «Skal vi finne en ny match til deg?».
 3. **Verdiprofil** (`/verdiprofil/:spm`).
 4. Kun når kunden vil sjekke forsikringene sine (`journey: "sjekk"`): **last opp forsikringsbevis** (`/forsikringer`).
 5. **Profilen din** (`/profil`) → **Matchen din** (`/matcher`). Ved «sjekk» vises først hvordan dagens forsikringer matcher, deretter andre selskaper.
