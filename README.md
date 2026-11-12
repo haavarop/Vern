@@ -26,7 +26,7 @@ Nye kunder starter på landingssiden (`/start`) og går gjennom:
 3. **Verdiprofil** (`/verdiprofil/:spm`).
 4. Kun når kunden vil sjekke forsikringene sine (`journey: "sjekk"`): **last opp forsikringsbevis** (`/forsikringer`).
 5. **Profilen din** (`/profil`) → `/vern`. Har kunden lagt inn forsikringer, vises **Forslagene dine**: øverst står det tydelig om Vern anbefaler endringer eller ikke, deretter forslagene per forsikring og til slutt hvordan alle selskapene matcher. Uten forsikringer vises **Matchen din**. Ved «sjekk» vises først hvordan dagens forsikringer matcher, deretter andre selskaper. Gamle lenker til `/matcher` sendes videre til `/vern`.
-6. **Ring meg**: hver av de tre beste matchene på «Matchen din» har en «Ring meg»-knapp (ikke for selskaper kunden allerede er kunde hos). Knappen åpner telefonskjemaet (`/ring-meg/:selskap`). Forespørselen lagres i profilen, men sendes ikke til selskapet (demo).
+6. **Ring meg**: hver av de tre beste matchene på `/vern` har en «Ring meg»-knapp, både med og uten forsikringer (ikke for selskaper kunden allerede er kunde hos). Knappen åpner telefonskjemaet (`/ring-meg/:selskap`). Forespørselen lagres i profilen, men sendes ikke til selskapet (demo).
 
 «Om deg», valgt kundereise og ringeforespørsler lagres i `data/profile.json` (`aboutYou`, `journey`, `callbacks`). «Om deg» og kundereisen sendes også med som kontekst til anbefalingene.
 

@@ -188,6 +188,10 @@ function App() {
     }
   }
 
+  function openCallback(insurerId: string) {
+    navigate(`${CALLBACK_PATH}/${encodeURIComponent(insurerId)}`)
+  }
+
   async function requestCallback(insurerId: string, phone: string) {
     const next = [...callbacks, { insurerId, phone, requestedAt: new Date().toISOString() }]
     await saveProfile(buildStoredProfile(currentInput({ callbacks: next })))
@@ -327,7 +331,12 @@ function App() {
             />
           )} />
           <Route path={VERN_PATH} element={onboardedOnly(hasInsurances(connections) ? (
-            <Recommendations onBack={() => navigate('/profil')} onProfileChange={syncSavedProfile} />
+            <Recommendations
+              onBack={() => navigate('/profil')}
+              onProfileChange={syncSavedProfile}
+              onRequestCallback={openCallback}
+              callbackRequestedFor={callbacks.map((callback) => callback.insurerId)}
+            />
           ) : (
             <MatchPage
               connections={connections}
@@ -335,7 +344,7 @@ function App() {
               journey={journey}
               onBack={() => navigate('/profil')}
               onCreateProfile={() => editValues(`?tilbake=${VERN_PATH}`)}
-              onRequestCallback={(insurerId) => navigate(`${CALLBACK_PATH}/${encodeURIComponent(insurerId)}`)}
+              onRequestCallback={openCallback}
               callbackRequestedFor={callbacks.map((callback) => callback.insurerId)}
             />
           ))} />
@@ -411,7 +420,14 @@ function ChangeSummary({ changes }: { changes: Change[] }) {
   )
 }
 
-function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onProfileChange: (profile: Partial<StoredProfile>) => void }) {
+type RecommendationsProps = {
+  onBack: () => void
+  onProfileChange: (profile: Partial<StoredProfile>) => void
+  onRequestCallback: (insurerId: string) => void
+  callbackRequestedFor: string[]
+}
+
+function Recommendations({ onBack, onProfileChange, onRequestCallback, callbackRequestedFor }: RecommendationsProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [syncError, setSyncError] = useState('')
@@ -593,7 +609,15 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
               {renderRecommendationGroup('Krever ikke endring', unchangedRecommendations, true)}
             </div>}
             {matches && matches.length > 0
-              ? <div className="recommendation-matches"><MatchResults matches={matches} eyebrow="Alle selskapene" title="Slik matcher selskapene deg" /></div>
+              ? <div className="recommendation-matches">
+                <MatchResults
+                  matches={matches}
+                  eyebrow="Alle selskapene"
+                  title="Slik matcher selskapene deg"
+                  onRequestCallback={onRequestCallback}
+                  callbackRequestedFor={callbackRequestedFor}
+                />
+              </div>
               : <BodyShort className="vern-card">Vi fikk ikke hentet matchene med selskapene akkurat nå.</BodyShort>}
           </section>
         )}
