@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useId, useMemo, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { BodyLong, BodyShort, Button, Heading, Loader, Skeleton } from '@navikt/ds-react'
-import { ArrowLeft, ArrowRight, ChevronDown, CircleAlert, CircleCheck, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronDown, CircleAlert, CircleCheck, Phone, Sparkles } from 'lucide-react'
 import Monogram from '../onboarding/Monogram.tsx'
 import { getInsurer } from '../onboarding/insurers.ts'
 import type { ConnectionState } from '../onboarding/types.ts'
@@ -8,6 +8,7 @@ import { DIMENSIONS, DIMENSION_ORDER, type Dimension, type UserProfile } from '.
 import { usePrefersReducedMotion } from '../useMediaQuery.ts'
 import { buildMatchRequest, fetchMatches, friendlyError } from './api.ts'
 import VernHeader from '../onboarding/VernHeader.tsx'
+import type { Journey } from '../journey/types.ts'
 import { coverageTopics, formatScore, highlightLines, scoreLabel } from './score.ts'
 import type { InsurerMatch, MatchRequest } from './types.ts'
 import '../onboarding/onboarding.css'
@@ -17,12 +18,22 @@ const MIN_LOADING_MS = 900
 const COUNT_UP_MS = 1200
 const TOP = 3
 
+type HeadingLevel = '2' | '3' | '4'
+
 type Props = {
   connections: ConnectionState
   profile: UserProfile
   onBack: () => void
-  onContinue: () => void
+  onContinue?: () => void
   onCreateProfile: () => void
+  /** 'sjekk' shows how the customer's current insurers match first; 'ny' talks about recommendations. */
+  journey?: Journey | null
+  /** Shows a «Ring meg» button on each of the top matches. */
+  onRequestCallback?: (insurerId: string) => void
+  /** Insurer ids the customer has already asked to call them. */
+  callbackRequestedFor?: string[]
+  /** Shown above the matches, such as insurances the customer seems to lack. */
+  children?: ReactNode
 }
 
 type Result = { request: MatchRequest; attempt: number; matches?: InsurerMatch[]; error?: string }
@@ -95,24 +106,27 @@ function useRevealedUpTo(): [(node: HTMLOListElement | null) => (() => void) | u
 const insurerName = (id: string) => getInsurer(id)?.name ?? id
 
 /** Brand match ring: apricot ring on a light track, white fill, forest score in the middle. */
-function ScoreRing({ score }: { score: number }) {
-  const shown = useCountUp(score)
+export function ScoreRing({ score, compact = false, showMatchLabel = false }: { score?: number; compact?: boolean; showMatchLabel?: boolean }) {
+  const shown = useCountUp(score ?? 0)
   return (
     <div
-      className="match-ring"
-      role="meter"
-      aria-label="Hvor godt selskapet passer deg"
-      aria-valuemin={0}
-      aria-valuemax={100}
+      className={`match-ring${compact ? ' match-ring--compact' : ''}`}
+      role={score === undefined ? 'img' : 'meter'}
+      aria-label={score === undefined ? 'Match ikke tilgjengelig' : `Match ${score} prosent`}
+      aria-valuemin={score === undefined ? undefined : 0}
+      aria-valuemax={score === undefined ? undefined : 100}
       aria-valuenow={score}
-      aria-valuetext={`${score} prosent, ${scoreLabel(score).toLowerCase()}`}
+      aria-valuetext={score === undefined ? undefined : `${score} prosent, ${scoreLabel(score).toLowerCase()}`}
     >
       <svg viewBox="0 0 128 128" aria-hidden>
         <circle className="match-ring__fill" cx="64" cy="64" r="64" />
         <circle className="match-ring__track" cx="64" cy="64" r="56" pathLength={100} />
-        <circle className="match-ring__value" cx="64" cy="64" r="56" pathLength={100} style={{ strokeDashoffset: 100 - score }} />
+        <circle className="match-ring__value" cx="64" cy="64" r="56" pathLength={100} style={{ strokeDashoffset: 100 - (score ?? 0) }} />
       </svg>
-      <span className="match-ring__label" aria-hidden>{formatScore(shown)}</span>
+      <span className={`match-ring__label${compact ? ' match-ring__label--compact' : ''}`} aria-hidden>
+        {score === undefined ? '–' : formatScore(shown)}
+        {showMatchLabel && <span className="match-ring__caption">match</span>}
+      </span>
     </div>
   )
 }
@@ -161,12 +175,34 @@ function WhyToggle({ match }: { match: InsurerMatch }) {
   )
 }
 
-export function MatchHero({ match, recommendation, highlight, compact = false }: {
+/** «Ring meg» on a match card, or a quiet confirmation once the customer has asked. An offer, never a push. */
+function CallbackAction({ insurerId, requested, onRequest }: { insurerId: string; requested: boolean; onRequest: () => void }) {
+  const name = insurerName(insurerId)
+  if (requested) {
+    return (
+      <p className="match-callback match-callback--done vern-body-small">
+        <CircleCheck aria-hidden size={20} strokeWidth={2} />
+        <span>Du har bedt {name} om å ringe deg</span>
+      </p>
+    )
+  }
+  return (
+    <div className="match-callback">
+      <Button size="small" icon={<Phone aria-hidden size={18} strokeWidth={2} />} onClick={onRequest} aria-label={`Ring meg, ${name}`}>
+        Ring meg
+      </Button>
+    </div>
+  )
+}
+
+export function MatchHero({ match, recommendation, highlight, compact = false, action, level = '2' }: {
   match?: InsurerMatch
   recommendation?: { insurance: string; company: string; price: number; reason?: string; insurerId?: string; fallback?: boolean }
   highlight?: string
   /** Shows the score as a small pill instead of the ring, so only the first card gets the apricot ring. */
   compact?: boolean
+  action?: ReactNode
+  level?: HeadingLevel
 }) {
   const headingId = useId()
   const name = recommendation?.company ?? (match ? insurerName(match.insurerId) : '')
@@ -188,21 +224,22 @@ export function MatchHero({ match, recommendation, highlight, compact = false }:
         {match && (compact ? <ScorePill score={match.score} /> : <ScoreRing score={match.score} />)}
         <div className="match-hero__name">
           {insurerId && <Monogram id={insurerId} name={name} />}
-          <Heading id={headingId} level="2" size="medium">{recommendation?.insurance ?? name}</Heading>
+          <Heading id={headingId} level={level} size="medium">{recommendation?.insurance ?? name}</Heading>
           {recommendation && <BodyShort weight="semibold">{name}</BodyShort>}
           {highlight && <BodyShort weight="semibold">{highlight}</BodyShort>}
-          {recommendation && <BodyShort size="small">{`Demopris ${new Intl.NumberFormat('nb-NO').format(recommendation.price)}\u00a0kr per måned`}</BodyShort>}
+          {recommendation && <BodyShort size="small">{`${new Intl.NumberFormat('nb-NO').format(recommendation.price)}\u00a0kr per måned`}</BodyShort>}
           {!match && <BodyShort size="small" className="match-muted">Matchen er ikke klar ennå.</BodyShort>}
         </div>
       </div>
       {recommendation?.reason && <BodyLong weight="semibold">{recommendation.reason}</BodyLong>}
       {recommendation?.fallback && <BodyShort size="small" className="match-muted">Vern har ikke vurdert denne ennå, så du ser forsikringen du har i dag.</BodyShort>}
+      {action}
       {match && <WhyToggle match={match} />}
     </section>
   )
 }
 
-function MatchCard({ match, highlight }: { match: InsurerMatch; highlight: string }) {
+function MatchCard({ match, highlight, action, level = '3' }: { match: InsurerMatch; highlight: string; action?: ReactNode; level?: HeadingLevel }) {
   const headingId = useId()
   const name = insurerName(match.insurerId)
   return (
@@ -210,12 +247,13 @@ function MatchCard({ match, highlight }: { match: InsurerMatch; highlight: strin
       <div className="match-card__top">
         <Monogram id={match.insurerId} name={name} />
         <div className="match-card__text">
-          <Heading id={headingId} level="3" size="small">{name}</Heading>
+          <Heading id={headingId} level={level} size="small">{name}</Heading>
           <BodyShort size="small">{highlight}</BodyShort>
           {match.isCurrent && <CurrentBadge />}
         </div>
         <ScorePill score={match.score} />
       </div>
+      {action}
       <WhyToggle match={match} />
     </li>
   )
@@ -274,13 +312,97 @@ function LoadingState() {
   )
 }
 
-export default function MatchPage({ connections, profile, onBack, onContinue, onCreateProfile }: Props) {
-  const request = useMemo(() => buildMatchRequest(profile, connections), [profile, connections])
-  const { matches, error, loading, retry } = useMatches(request)
-  const [best, ...others] = matches ?? []
+function CurrentMatches({ matches }: { matches: InsurerMatch[] }) {
+  const current = matches.filter((match) => match.isCurrent)
+  if (!current.length) return null
+  return (
+    <section className="match-stack" aria-labelledby="current-heading">
+      <div className="match-section-head">
+        <BodyShort size="small" className="match-muted">Det du har i dag</BodyShort>
+        <Heading id="current-heading" level="2" size="medium">Slik matcher forsikringene dine i dag</Heading>
+      </div>
+      <ul className="match-stack match-cards">
+        {current.map((match) => (
+          <MatchCard
+            key={match.insurerId}
+            match={match}
+            highlight={`${scoreLabel(match.score)}, nr. ${matches.indexOf(match) + 1} av ${matches.length}`}
+          />
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function introText(matches: InsurerMatch[] | undefined, journey: Journey | null | undefined): string {
+  if (journey === 'ny') return 'Her er selskapene vi anbefaler for deg, ut fra det som betyr noe for deg.'
+  if (journey === 'sjekk' && matches && matches.length > 1 && matches.some((match) => match.isCurrent)) {
+    return `Vi har sjekket hvor godt forsikringene dine passer deg, og sammenlignet med ${matches.length - 1} andre selskaper.`
+  }
+  return matches && matches.length > 1
+    ? `Vi har sammenlignet ${matches.length} selskaper ut fra det som betyr noe for deg.`
+    : 'Vi sammenligner selskapene ut fra det som betyr noe for deg.'
+}
+
+type MatchResultsProps = {
+  matches: InsurerMatch[]
+  eyebrow?: string
+  title?: string
+  /** Heading level for «Topp 3» and «Flere selskaper», so the list can sit under another section heading. */
+  headingLevel?: '2' | '3'
+  /** Shows «Ring meg» on each of the top matches, except the customer's current insurers. */
+  onRequestCallback?: (insurerId: string) => void
+  callbackRequestedFor?: string[]
+}
+
+/** Top 3 as cards, the rest as a compact list. */
+export function MatchResults({ matches, eyebrow = 'Dine beste matcher', title, headingLevel = '2', onRequestCallback, callbackRequestedFor }: MatchResultsProps) {
+  const topId = useId()
+  const othersId = useId()
+  const [best, ...others] = matches
+  if (!best) return null
   const top = others.slice(0, TOP - 1)
   const rest = others.slice(TOP - 1)
-  const highlights = matches ? highlightLines(matches.slice(0, TOP), matches) : []
+  const highlights = highlightLines(matches.slice(0, TOP), matches)
+  const itemLevel = headingLevel === '2' ? '3' : '4'
+  const action = (match: InsurerMatch) => onRequestCallback && !match.isCurrent ? (
+    <CallbackAction
+      insurerId={match.insurerId}
+      requested={!!callbackRequestedFor?.includes(match.insurerId)}
+      onRequest={() => onRequestCallback(match.insurerId)}
+    />
+  ) : undefined
+
+  return (
+    <>
+      <section className="match-stack" aria-labelledby={topId}>
+        <div className="match-section-head">
+          <BodyShort size="small" className="match-muted">{eyebrow}</BodyShort>
+          <Heading id={topId} level={headingLevel} size="medium">{title ?? `Topp ${Math.min(TOP, matches.length)}`}</Heading>
+          {onRequestCallback && <BodyShort size="small">Vil du snakke med et av selskapene? Trykk «Ring meg». Helt uforpliktende, og Vern selger ingenting.</BodyShort>}
+        </div>
+        <MatchHero match={best} highlight={highlights[0]} action={action(best)} level={itemLevel} />
+        {top.length > 0 && (
+          <ol className="match-stack match-cards" start={2}>
+            {top.map((match, index) => <MatchCard key={match.insurerId} match={match} highlight={highlights[index + 1]} action={action(match)} level={itemLevel} />)}
+          </ol>
+        )}
+      </section>
+
+      {rest.length > 0 && (
+        <section className="match-stack" aria-labelledby={othersId}>
+          <Heading id={othersId} level={headingLevel} size="small">Flere selskaper</Heading>
+          <MatchList matches={rest} startRank={TOP + 1} />
+        </section>
+      )}
+    </>
+  )
+}
+
+export default function MatchPage({ connections, profile, onBack, onContinue, onCreateProfile, journey, onRequestCallback, callbackRequestedFor, children }: Props) {
+  const request = useMemo(() => buildMatchRequest(profile, connections), [profile, connections])
+  const { matches, error, loading, retry } = useMatches(request)
+  const best = matches?.[0]
   const covered = coverageTopics(connections)
 
   return (
@@ -290,11 +412,7 @@ export default function MatchPage({ connections, profile, onBack, onContinue, on
 
         <div className="match-intro">
           <Heading level="1" size="large">Matchen din</Heading>
-          <BodyLong>
-            {matches && matches.length > 1
-              ? `Vi har sammenlignet ${matches.length} selskaper ut fra det som betyr noe for deg.`
-              : 'Vi sammenligner selskapene ut fra det som betyr noe for deg.'}
-          </BodyLong>
+          <BodyLong>{introText(matches, journey)}</BodyLong>
         </div>
 
         {covered && (
@@ -342,27 +460,11 @@ export default function MatchPage({ connections, profile, onBack, onContinue, on
           </section>
         )}
 
-        {best && (
-          <section className="match-stack" aria-labelledby="top-heading">
-            <div className="match-section-head">
-              <BodyShort size="small" className="match-muted">Dine beste matcher</BodyShort>
-              <Heading id="top-heading" level="2" size="medium">Topp {Math.min(TOP, matches!.length)}</Heading>
-            </div>
-            <MatchHero match={best} highlight={highlights[0]} />
-            {top.length > 0 && (
-              <ol className="match-stack match-cards" start={2}>
-                {top.map((match, index) => <MatchCard key={match.insurerId} match={match} highlight={highlights[index + 1]} />)}
-              </ol>
-            )}
-          </section>
-        )}
+        {matches && journey === 'sjekk' && <CurrentMatches matches={matches} />}
 
-        {rest.length > 0 && (
-          <section className="match-stack" aria-labelledby="others-heading">
-            <Heading id="others-heading" level="2" size="small">Flere selskaper</Heading>
-            <MatchList matches={rest} startRank={TOP + 1} />
-          </section>
-        )}
+        {children}
+
+        {matches && <MatchResults matches={matches} onRequestCallback={onRequestCallback} callbackRequestedFor={callbackRequestedFor} />}
 
         {best && <p className="match-footer vern-body-small">Vern er uavhengig. Rekkefølgen bygger på det du har fortalt oss og hvordan selskapene scorer.</p>}
       </div>
@@ -370,7 +472,7 @@ export default function MatchPage({ connections, profile, onBack, onContinue, on
       <div className="match-actions">
         <div className="match-actions__inner">
           <Button variant="tertiary" icon={<ArrowLeft aria-hidden size={20} strokeWidth={2} />} onClick={onBack}>Tilbake</Button>
-          <Button icon={<ArrowRight aria-hidden size={20} strokeWidth={2} />} iconPosition="right" onClick={onContinue}>Se forslagene dine</Button>
+          {onContinue && <Button icon={<ArrowRight aria-hidden size={20} strokeWidth={2} />} iconPosition="right" onClick={onContinue}>Se forslagene dine</Button>}
         </div>
       </div>
     </main>

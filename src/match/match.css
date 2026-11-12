@@ -113,6 +113,7 @@
   flex-shrink: 0;
 }
 
+.match-ring--compact { width: 96px; height: 96px; }
 .match-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .match-ring__fill { fill: var(--vern-surface); }
 
@@ -144,6 +145,9 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+.match-ring__label--compact { font-size: 1.125rem; }
+.match-ring__caption { font-family: var(--vern-font-body); font-size: var(--vern-font-size-body-small); line-height: 1.1; }
 
 @keyframes match-ring-fill {
   from { stroke-dashoffset: 100; }
@@ -219,6 +223,14 @@
 }
 
 .match-card__text { display: grid; gap: var(--vern-space-xs); justify-items: start; min-width: 0; overflow-wrap: anywhere; }
+
+/* «Ring meg» on the top matches. Cream on the forest card so it stays visible. */
+.match-callback { display: flex; }
+.match-callback--done { align-items: flex-start; gap: var(--vern-space-sm); margin: 0; color: var(--vern-text-brand); }
+.match-callback--done svg { flex-shrink: 0; }
+.match-hero--best .match-callback--done { color: var(--vern-cream); }
+.match-hero--best .match-callback .aksel-button { background: var(--vern-cream); color: var(--vern-forest); box-shadow: none; }
+.match-hero--best .match-callback .aksel-button:hover { background: var(--vern-white); }
 
 .match-score-pill {
   padding: var(--vern-space-xs) var(--vern-space-md);

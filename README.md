@@ -36,9 +36,22 @@ Run `npm test` for the tests and `npm run build` to type-check and build the fro
 
 When the user enters Vern, recommendations are generated automatically using the saved profile and insurance data. While that page is open, it checks the profile approximately every two seconds and regenerates results when the profile changes. Prices, policies, and match scores are simulated; if the model cannot make a selection, the current demo policy is shown as an explicitly labeled fallback.
 
+## Kundereisen
+
+Nye kunder starter på landingssiden (`/start`) og går gjennom:
+
+1. **Om deg** (`/om-deg`): alder, jobb, barn og hva de vil forsikre. Alle spørsmålene er valgfrie, og hele siden kan hoppes over.
+2. **Har du noen forsikringer i dag?** Ja → «Skal vi sjekke om de passer deg?». Ja til sjekk → **Før vi starter** (`/forbered`), som forklarer hvorfor vi spør og ber kunden ha forsikringsbeviset klart. Nei (eller nei til sjekk) → «Skal vi finne en ny match til deg?».
+3. **Verdiprofil** (`/verdiprofil/:spm`).
+4. Kun når kunden vil sjekke forsikringene sine (`journey: "sjekk"`): **last opp forsikringsbevis** (`/forsikringer`).
+5. **Profilen din** (`/profil`) → `/vern`. Har kunden lagt inn forsikringer, vises **Forslagene dine**: øverst står det tydelig om Vern anbefaler endringer eller ikke, deretter forslagene per forsikring og til slutt en egen del, «Skal du kjøpe en ny forsikring?», som viser hvilke selskaper som passer kunden best for nye forsikringer. Uten forsikringer vises **Matchen din**. Ved «sjekk» vises først hvordan dagens forsikringer matcher, deretter andre selskaper. Gamle lenker til `/matcher` sendes videre til `/vern`.
+6. **Ring meg**: hver av de tre beste matchene på `/vern` har en «Ring meg»-knapp, både med og uten forsikringer (ikke for selskaper kunden allerede er kunde hos). Knappen åpner telefonskjemaet (`/ring-meg/:selskap`). Forespørselen lagres i profilen, men sendes ikke til selskapet (demo).
+
+«Om deg», valgt kundereise og ringeforespørsler lagres i `data/profile.json` (`aboutYou`, `journey`, `callbacks`). «Om deg» og kundereisen sendes også med som kontekst til anbefalingene.
+
 ## Forsikringsdokumenter
 
-I onboardingens steg 2 laster kunden opp forsikringsdokumentet sitt (PDF). `POST /api/documents/analyze?filnavn=…` med PDF-en som body (`Content-Type: application/pdf`, maks 15 MB):
+I onboardingens opplastingssteg laster kunden opp forsikringsdokumentet sitt (PDF). `POST /api/documents/analyze?filnavn=…` med PDF-en som body (`Content-Type: application/pdf`, maks 15 MB):
 
 1. henter ut teksten med `unpdf` (skannede PDF-er uten tekstlag avvises med 422),
 2. sender de kundespesifikke sidene (oversikt, forsikringsbevis, priser, egenandeler) til Claude (`claude-opus-5-5`),

@@ -158,6 +158,11 @@
   border-radius: var(--vern-radius-lg);
   background: var(--vern-surface);
 }
+.policy-card__details { display: grid; gap: var(--vern-space-md); }
+.policy-card__price { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.policy-card__chevron { transition: transform 150ms ease; }
+.policy-card__chevron.is-open { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .policy-card__chevron { transition: none; } }
 .key-figure { padding: var(--vern-space-sm) var(--vern-space-md); border-radius: var(--vern-radius-md); background: var(--vern-cream); min-width: 0; }
 .key-figure p { overflow-wrap: anywhere; }
 /* Coverage lines: one grid (name | covered up to | you pay yourself), so the columns line up on every width. */

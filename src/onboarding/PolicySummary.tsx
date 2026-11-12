@@ -1,6 +1,8 @@
 import { BodyShort, Button, Detail, ExpansionCard, HGrid, HStack, Tag, VStack } from '@navikt/ds-react'
-import { Banknote, Building2, FileText, Shield, Trash2 } from 'lucide-react'
+import { Banknote, Building2, ChevronDown, FileText, Shield, Trash2 } from 'lucide-react'
+import { useId, useState } from 'react'
 import { getInsurer } from './insurers.ts'
+import Monogram from './Monogram.tsx'
 import { formatKr, sumPremium } from './format.ts'
 import { DonutChart } from './charts.tsx'
 import { CHART_COLORS, groupForChart } from './chartColors.ts'
@@ -34,8 +36,10 @@ function KeyFigure({ label, value }: { label: string; value: string }) {
   )
 }
 
-function PolicyCard({ policy, color, onRemove }: { policy: Policy; color: string; onRemove?: () => void }) {
+function PolicyCard({ policy, color, onRemove, collapsible }: { policy: Policy; color: string; onRemove?: () => void; collapsible?: boolean }) {
   const lines = policy.coverages ?? []
+  const [open, setOpen] = useState(!collapsible)
+  const detailsId = useId()
 
   return (
     <li className="policy-card">
@@ -44,9 +48,14 @@ function PolicyCard({ policy, color, onRemove }: { policy: Policy; color: string
           <span className="chart-legend__dot" style={{ background: color }} aria-hidden />
           <BodyShort weight="semibold">{policy.product}</BodyShort>
         </HStack>
-        {onRemove && <Button variant="tertiary" size="small" icon={<Trash2 size="1em" aria-hidden />} aria-label={`Fjern ${policy.product}`} onClick={onRemove} />}
+        <HStack gap="space-8" align="center" wrap={false}>
+          {collapsible && !open && policy.premium ? <BodyShort weight="semibold" className="policy-card__price">{formatKr(policy.premium)}<Detail as="span" textColor="subtle">/mnd</Detail></BodyShort> : null}
+          {onRemove && <Button variant="tertiary" size="small" icon={<Trash2 size="1em" aria-hidden />} aria-label={`Fjern ${policy.product}`} onClick={onRemove} />}
+        </HStack>
       </HStack>
 
+      {open && (
+      <div id={detailsId} className="policy-card__details">
       <HGrid columns={{ xs: 1, sm: 3 }} gap="space-8" className="policy-card__figures">
         <KeyFigure label="Per måned" value={policy.premium ? formatKr(policy.premium) : '–'} />
         <KeyFigure label="Du betaler selv" value={policy.deductible !== undefined ? formatKr(policy.deductible) : '–'} />
@@ -107,17 +116,33 @@ function PolicyCard({ policy, color, onRemove }: { policy: Policy; color: string
         <Tag size="xsmall" variant="neutral">Fornyes {formatDate(policy.renewalDate)}</Tag>
         {policy.source?.type === 'document' && <Tag size="xsmall" variant="neutral" icon={<FileText size="1em" aria-hidden />}>{policy.source.fileName}</Tag>}
       </HStack>
+      </div>
+      )}
+
+      {collapsible && (
+        <div>
+          <Button variant="tertiary" size="small" aria-expanded={open} aria-controls={open ? detailsId : undefined}
+            icon={<ChevronDown size="1em" aria-hidden className={open ? 'policy-card__chevron is-open' : 'policy-card__chevron'} />}
+            iconPosition="right" onClick={() => setOpen((value) => !value)}>
+            {open ? 'Skjul detaljer' : 'Vis detaljer'}
+          </Button>
+        </div>
+      )}
     </li>
   )
 }
+
+const insurerName = (insurerId: string, policies: Policy[]) => getInsurer(insurerId)?.name ?? policies[0]?.insurer ?? insurerId
 
 type Props = {
   connections: ConnectionState
   /** Shows a remove button per policy. */
   onRemovePolicy?: (policy: Policy) => void
+  /** Starts each policy collapsed behind a «Vis detaljer» toggle and shows insurer logos. */
+  collapsible?: boolean
 }
 
-export default function PolicySummary({ connections, onRemovePolicy }: Props) {
+export default function PolicySummary({ connections, onRemovePolicy, collapsible }: Props) {
   const entries = Object.entries(connections)
   const all = entries.flatMap(([, policies]) => policies)
   const monthly = sumPremium(all)
@@ -151,11 +176,18 @@ export default function PolicySummary({ connections, onRemovePolicy }: Props) {
 
       {entries.map(([insurerId, policies]) => (
         <VStack key={insurerId} gap="space-8">
-          <Detail weight="semibold" className="insurer-label">{getInsurer(insurerId)?.name ?? policies[0]?.insurer ?? insurerId}</Detail>
+          {collapsible ? (
+            <HStack gap="space-8" align="center" wrap={false}>
+              <Monogram id={insurerId} name={insurerName(insurerId, policies)} size="small" />
+              <BodyShort weight="semibold" className="insurer-label">{insurerName(insurerId, policies)}</BodyShort>
+            </HStack>
+          ) : (
+            <Detail weight="semibold" className="insurer-label">{insurerName(insurerId, policies)}</Detail>
+          )}
           <VStack as="ul" gap="space-12" className="policy-list">
             {policies.map((policy) => (
               <PolicyCard key={policy.id} policy={policy} color={colorOf.get(policy.id) ?? CHART_COLORS[0]}
-                onRemove={onRemovePolicy ? () => onRemovePolicy(policy) : undefined} />
+                onRemove={onRemovePolicy ? () => onRemovePolicy(policy) : undefined} collapsible={collapsible} />
             ))}
           </VStack>
         </VStack>

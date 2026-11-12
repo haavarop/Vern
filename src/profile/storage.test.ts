@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { fetchProfile } from './storage.ts'
+import { buildStoredProfile, fetchProfile } from './storage.ts'
 
 function sequence(...steps: Array<Response | Error>): typeof fetch {
   let call = 0
@@ -26,4 +26,13 @@ test('fetchProfile does not retry client errors', async () => {
   const fetcher = (async () => { calls++; return new Response('', { status: 404 }) }) as typeof fetch
   await assert.rejects(fetchProfile({ delayMs: 0, fetcher }))
   assert.equal(calls, 1)
+})
+
+test('buildStoredProfile stores «Om deg» only when something is filled in', () => {
+  const empty = buildStoredProfile({ answers: null, insurances: {}, aboutYou: { age: null, occupation: null, hasChildren: null, interests: [] } })
+  assert.equal(empty.aboutYou, null)
+  assert.deepEqual(empty.callbacks, [])
+  const filled = buildStoredProfile({ answers: null, insurances: {}, journey: 'ny', aboutYou: { age: 30, occupation: null, hasChildren: null, interests: ['bil'] } })
+  assert.deepEqual(filled.aboutYou, { age: 30, occupation: null, hasChildren: null, interests: ['bil'] })
+  assert.equal(filled.journey, 'ny')
 })

@@ -1,3 +1,4 @@
+import { isAboutYouFilled, type AboutYou, type CallbackRequest, type Journey } from '../journey/types.ts'
 import type { ConnectionState } from '../onboarding/types.ts'
 import type { PersonaPass } from '../persona/pass.ts'
 import { isAnswered, rankDimensions, scoreProfile, type Answers, type Dimension } from './types.ts'
@@ -22,22 +23,48 @@ export type StoredProfile = {
   } | null
   /** Fetched insurances keyed by insurer id. */
   insurances: ConnectionState
-  /** Traits the customer shares from DigiU, or null when they share none. */
-  persona: PersonaPass | null
+  /** «Om deg». Null if every question was skipped. Missing in profiles saved before the field existed. */
+  aboutYou?: AboutYou | null
+  /** Which branch the customer chose after the landing page. Missing in older profiles. */
+  journey?: Journey | null
+  /** Callback requests, newest last. */
+  callbacks?: CallbackRequest[]
+  /** Traits the customer shares from DigiU, or null when they share none. Missing in older profiles. */
+  persona?: PersonaPass | null
+}
+
+export type ProfileInput = {
+  answers: Answers | null
+  insurances: ConnectionState
+  aboutYou?: AboutYou | null
+  journey?: Journey | null
+  callbacks?: CallbackRequest[]
+  /** Traits shared from DigiU. Null stops sharing. */
+  persona?: PersonaPass | null
 }
 
 export function isNewCustomer(stored: Partial<StoredProfile>): boolean {
   return !stored.onboarded
 }
 
-export function buildStoredProfile(answers: Answers | null, insurances: ConnectionState, persona: PersonaPass | null = null): StoredProfile {
+export function buildStoredProfile({ answers, insurances, aboutYou = null, journey = null, callbacks = [], persona = null }: ProfileInput): StoredProfile {
   const valueProfile = isAnswered(answers)
     ? (() => {
         const scores = scoreProfile(answers)
         return { answers, scores, ranked: rankDimensions(scores) }
       })()
     : null
-  return { version: 1, updatedAt: new Date().toISOString(), onboarded: true, valueProfile, insurances, persona }
+  return {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    onboarded: true,
+    valueProfile,
+    insurances,
+    aboutYou: isAboutYouFilled(aboutYou) ? aboutYou : null,
+    journey,
+    callbacks,
+    persona,
+  }
 }
 
 // In dev the web server is often ready before the API, so network errors and 5xx (Vite proxy errors) are retried.
