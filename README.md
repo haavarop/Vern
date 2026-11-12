@@ -25,8 +25,8 @@ Nye kunder starter på landingssiden (`/start`) og går gjennom:
 2. **Har du noen forsikringer i dag?** Ja → «Skal vi sjekke om de passer deg?». Ja til sjekk → **Før vi starter** (`/forbered`), som forklarer hvorfor vi spør og ber kunden ha forsikringsbeviset klart. Nei (eller nei til sjekk) → «Skal vi finne en ny match til deg?».
 3. **Verdiprofil** (`/verdiprofil/:spm`).
 4. Kun når kunden vil sjekke forsikringene sine (`journey: "sjekk"`): **last opp forsikringsbevis** (`/forsikringer`).
-5. **Profilen din** (`/profil`) → `/vern`. Har kunden lagt inn forsikringer, vises **Forslagene dine**; ellers vises **Matchen din**. Ved «sjekk» vises først hvordan dagens forsikringer matcher, deretter andre selskaper. Gamle lenker til `/matcher` sendes videre til `/vern`.
-6. **Vil du bli ringt opp av X?** X er beste match som kunden ikke allerede er kunde hos. «Ja» åpner telefonskjemaet (`/ring-meg/:selskap`). Forespørselen lagres i profilen, men sendes ikke til selskapet (demo).
+5. **Profilen din** (`/profil`) → `/vern`. Har kunden lagt inn forsikringer, vises **Forslagene dine**: øverst står det tydelig om Vern anbefaler endringer eller ikke, deretter forslagene per forsikring og til slutt hvordan alle selskapene matcher. Uten forsikringer vises **Matchen din**. Ved «sjekk» vises først hvordan dagens forsikringer matcher, deretter andre selskaper. Gamle lenker til `/matcher` sendes videre til `/vern`.
+6. **Ring meg**: hver av de tre beste matchene på «Matchen din» har en «Ring meg»-knapp (ikke for selskaper kunden allerede er kunde hos). Knappen åpner telefonskjemaet (`/ring-meg/:selskap`). Forespørselen lagres i profilen, men sendes ikke til selskapet (demo).
 
 «Om deg», valgt kundereise og ringeforespørsler lagres i `data/profile.json` (`aboutYou`, `journey`, `callbacks`). «Om deg» og kundereisen sendes også med som kontekst til anbefalingene.
 

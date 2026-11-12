@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ComponentProps, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { BodyLong, BodyShort, Button, Heading, Loader, Skeleton, Theme } from '@navikt/ds-react'
-import { ArrowLeft, CircleAlert, Info, RefreshCw, X } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, CircleAlert, CircleCheck, Info, RefreshCw, X } from 'lucide-react'
 import { VernSymbol } from './brand/VernLogo.tsx'
 import Onboarding from './onboarding/Onboarding.tsx'
 import { getInsurer, INSURERS, normalize } from './onboarding/insurers.ts'
@@ -21,7 +21,7 @@ import { BRANCH_QUESTIONS } from './journey/questions.ts'
 import { loadJourneyDraft, parseCallbacks, parseJourney, saveJourneyDraft } from './journey/journeyDraft.ts'
 import { isAboutYouFilled, parseAboutYou, type AboutYou, type CallbackRequest, type Journey } from './journey/types.ts'
 import { clearDraft, loadDraft, parseQuestionParam, questionParam } from './profile/draft.ts'
-import MatchPage, { ScoreRing } from './match/MatchPage.tsx'
+import MatchPage, { MatchResults, ScoreRing } from './match/MatchPage.tsx'
 import VernHeader from './onboarding/VernHeader.tsx'
 import { buildMatchRequest, fetchMatches, friendlyError } from './match/api.ts'
 import type { InsurerMatch } from './match/types.ts'
@@ -375,6 +375,42 @@ function ValuesRoute({ basePath, ...props }: ValuesRouteProps) {
   )
 }
 
+type Change = { insurance: string; from: string; to: string }
+
+/** The first thing on the recommendations page: whether the customer should change anything. */
+function ChangeSummary({ changes }: { changes: Change[] }) {
+  if (changes.length === 0) {
+    return (
+      <section className="change-summary vern-status-positive" aria-labelledby="change-summary-title">
+        <CircleCheck aria-hidden size={32} strokeWidth={2} className="change-summary__icon" />
+        <div className="change-summary__text">
+          <Heading id="change-summary-title" level="2" size="medium">Du trenger ikke endre noe</Heading>
+          <BodyShort>Vi har sett på forsikringene dine, og alle passer deg godt. Du kan beholde det du har.</BodyShort>
+        </div>
+      </section>
+    )
+  }
+  return (
+    <section className="change-summary change-summary--action vern-card" aria-labelledby="change-summary-title">
+      <ArrowLeftRight aria-hidden size={32} strokeWidth={2} className="change-summary__icon" />
+      <div className="change-summary__text">
+        <Heading id="change-summary-title" level="2" size="medium">
+          {changes.length === 1 ? 'Vi anbefaler 1 endring' : `Vi anbefaler ${changes.length} endringer`}
+        </Heading>
+        <BodyShort>Et annet selskap matcher deg bedre for:</BodyShort>
+        <ul className="change-summary__list">
+          {changes.map((change, index) => (
+            <li key={`${change.insurance}-${index}`}>
+              <BodyShort as="span" weight="semibold">{change.insurance}</BodyShort>
+              <BodyShort as="span">{`: fra ${change.from} til ${change.to}`}</BodyShort>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
 function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onProfileChange: (profile: Partial<StoredProfile>) => void }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -476,13 +512,10 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
   const recommendedChanges = rankedRecommendations.filter((item) => item.requiresChange)
   const unchangedRecommendations = rankedRecommendations.filter((item) => !item.requiresChange)
 
-  const renderRecommendationGroup = (title: string, items: typeof rankedRecommendations, unchanged: boolean) => (
+  const renderRecommendationGroup = (title: string, items: typeof rankedRecommendations, unchanged: boolean) => items.length > 0 && (
     <section className="recommendation-group" aria-labelledby={unchanged ? 'recommendation-unchanged-title' : 'recommendation-changes-title'}>
       <Heading id={unchanged ? 'recommendation-unchanged-title' : 'recommendation-changes-title'} level="2" size="large" className="recommendation-group__title">{title}</Heading>
-      {items.length === 0 ? (
-        <BodyShort className="vern-card">{unchanged ? 'Ingen forslag uten endring akkurat nå.' : 'Ingen anbefalte endringer akkurat nå.'}</BodyShort>
-      ) : (
-        <ol className="recommendation-list" aria-label={`${title} sortert etter match`}>
+      <ol className="recommendation-list" aria-label={`${title} sortert etter match`}>
           {items.map(({ recommendation, currentPolicy, suggestedInsurer, currentMatch, suggestedMatch, sameCompany, index }) => (
             <li className="recommendation-pair" key={currentPolicy?.id ?? `${recommendation.insurance}-${index}`}>
               <Heading level="3" size="small" className="recommendation-pair__title">{recommendation.insurance}</Heading>
@@ -524,7 +557,6 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
             </li>
           ))}
         </ol>
-      )}
     </section>
   )
 
@@ -546,15 +578,23 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
         )}
         {recommendations !== null && (
           <section className="recommendations">
+            {recommendations.length === 0 && <BodyShort className="vern-card">Du har ikke lagt til noen forsikringer ennå. Legg dem til i profilen din, så ser vi på dem sammen.</BodyShort>}
+            {recommendations.length > 0 && <ChangeSummary changes={recommendedChanges.map(({ recommendation, currentPolicy }) => ({
+              insurance: recommendation.insurance,
+              from: currentPolicy?.insurer ?? 'selskapet du har i dag',
+              to: recommendation.company,
+            }))} />}
             <div className="app-notice">
               <Info aria-hidden size={24} strokeWidth={2} />
               <BodyShort size="small" className="app-notice__text">Dette er en demo med simulerte priser. Matchen gjelder selskapet, ikke hver enkelt forsikring.</BodyShort>
             </div>
-            {recommendations.length === 0 && <BodyShort className="vern-card">Du har ikke lagt til noen forsikringer ennå. Legg dem til i profilen din, så ser vi på dem sammen.</BodyShort>}
             {recommendations.length > 0 && <div className="recommendation-groups">
               {renderRecommendationGroup('Anbefalte endringer', recommendedChanges, false)}
               {renderRecommendationGroup('Krever ikke endring', unchangedRecommendations, true)}
             </div>}
+            {matches && matches.length > 0
+              ? <div className="recommendation-matches"><MatchResults matches={matches} eyebrow="Alle selskapene" title="Slik matcher selskapene deg" /></div>
+              : <BodyShort className="vern-card">Vi fikk ikke hentet matchene med selskapene akkurat nå.</BodyShort>}
           </section>
         )}
         {loading && (

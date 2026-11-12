@@ -71,6 +71,15 @@
 .recommendation-intro .aksel-body-long { color: var(--vern-text-primary); }
 .recommendation-body { display: grid; gap: var(--vern-space-md); }
 .recommendations { display: grid; gap: var(--vern-space-md); }
+/* The answer to «should I change anything?» comes first: mint when nothing needs changing, apricot accent when something does. */
+.change-summary { display: flex; align-items: flex-start; gap: var(--vern-space-md); }
+.change-summary__icon { flex-shrink: 0; color: var(--vern-forest); }
+.change-summary__text { display: grid; gap: var(--vern-space-sm); min-width: 0; }
+.change-summary__text .aksel-heading { color: var(--vern-text-brand); }
+.change-summary--action { border-inline-start: 6px solid var(--vern-accent-match); }
+.change-summary--action .change-summary__icon { color: var(--vern-accent-match); }
+.change-summary__list { display: grid; gap: var(--vern-space-xs); margin: 0; padding-inline-start: var(--vern-space-lg); }
+.recommendation-matches { display: grid; gap: var(--vern-space-xl); margin-block-start: var(--vern-space-xl); }
 .recommendation-groups { display: grid; gap: var(--vern-space-xl); }
 .recommendation-group { display: grid; gap: var(--vern-space-md); min-width: 0; }
 .recommendation-group__title { padding-inline-start: var(--vern-space-sm); border-inline-start: 4px solid var(--vern-accent-match); color: var(--vern-text-primary); font-size: var(--vern-font-size-h1); line-height: var(--vern-line-height-h1); }

@@ -8,7 +8,6 @@ import { friendlyError } from '../match/api.ts'
 import { formatPhone, normalizePhone } from './phone.ts'
 import '../onboarding/onboarding.css'
 import '../profile/profile.css'
-import './journey.css'
 
 type Props = {
   insurerId: string

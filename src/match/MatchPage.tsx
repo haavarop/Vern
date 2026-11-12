@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useId, useMemo, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { BodyLong, BodyShort, Button, Heading, Loader, Skeleton } from '@navikt/ds-react'
-import { ArrowLeft, ArrowRight, ChevronDown, CircleAlert, CircleCheck, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronDown, CircleAlert, CircleCheck, Phone, Sparkles } from 'lucide-react'
 import Monogram from '../onboarding/Monogram.tsx'
 import { getInsurer } from '../onboarding/insurers.ts'
 import type { ConnectionState } from '../onboarding/types.ts'
@@ -8,8 +8,6 @@ import { DIMENSIONS, DIMENSION_ORDER, type Dimension, type UserProfile } from '.
 import { usePrefersReducedMotion } from '../useMediaQuery.ts'
 import { buildMatchRequest, fetchMatches, friendlyError } from './api.ts'
 import VernHeader from '../onboarding/VernHeader.tsx'
-import CallbackOffer from '../journey/CallbackOffer.tsx'
-import { pickCallbackInsurer } from '../journey/callback.ts'
 import type { Journey } from '../journey/types.ts'
 import { coverageTopics, formatScore, highlightLines, scoreLabel } from './score.ts'
 import type { InsurerMatch, MatchRequest } from './types.ts'
@@ -28,7 +26,7 @@ type Props = {
   onCreateProfile: () => void
   /** 'sjekk' shows how the customer's current insurers match first; 'ny' talks about recommendations. */
   journey?: Journey | null
-  /** Shows «Vil du bli ringt opp av X?» below the top matches. */
+  /** Shows a «Ring meg» button on each of the top matches. */
   onRequestCallback?: (insurerId: string) => void
   /** Insurer ids the customer has already asked to call them. */
   callbackRequestedFor?: string[]
@@ -173,12 +171,33 @@ function WhyToggle({ match }: { match: InsurerMatch }) {
   )
 }
 
-export function MatchHero({ match, recommendation, highlight, compact = false }: {
+/** «Ring meg» on a match card, or a quiet confirmation once the customer has asked. An offer, never a push. */
+function CallbackAction({ insurerId, requested, onRequest }: { insurerId: string; requested: boolean; onRequest: () => void }) {
+  const name = insurerName(insurerId)
+  if (requested) {
+    return (
+      <p className="match-callback match-callback--done vern-body-small">
+        <CircleCheck aria-hidden size={20} strokeWidth={2} />
+        <span>Du har bedt {name} om å ringe deg</span>
+      </p>
+    )
+  }
+  return (
+    <div className="match-callback">
+      <Button size="small" icon={<Phone aria-hidden size={18} strokeWidth={2} />} onClick={onRequest} aria-label={`Ring meg, ${name}`}>
+        Ring meg
+      </Button>
+    </div>
+  )
+}
+
+export function MatchHero({ match, recommendation, highlight, compact = false, action }: {
   match?: InsurerMatch
   recommendation?: { insurance: string; company: string; price: number; insurerId?: string; fallback?: boolean }
   highlight?: string
   /** Shows the score as a small pill instead of the ring, so only the first card gets the apricot ring. */
   compact?: boolean
+  action?: ReactNode
 }) {
   const headingId = useId()
   const name = recommendation?.company ?? (match ? insurerName(match.insurerId) : '')
@@ -208,12 +227,13 @@ export function MatchHero({ match, recommendation, highlight, compact = false }:
         </div>
       </div>
       {recommendation?.fallback && <BodyShort size="small" className="match-muted">Vern har ikke vurdert denne ennå, så du ser forsikringen du har i dag.</BodyShort>}
+      {action}
       {match && <WhyToggle match={match} />}
     </section>
   )
 }
 
-function MatchCard({ match, highlight }: { match: InsurerMatch; highlight: string }) {
+function MatchCard({ match, highlight, action }: { match: InsurerMatch; highlight: string; action?: ReactNode }) {
   const headingId = useId()
   const name = insurerName(match.insurerId)
   return (
@@ -227,6 +247,7 @@ function MatchCard({ match, highlight }: { match: InsurerMatch; highlight: strin
         </div>
         <ScorePill score={match.score} />
       </div>
+      {action}
       <WhyToggle match={match} />
     </li>
   )
@@ -317,15 +338,63 @@ function introText(matches: InsurerMatch[] | undefined, journey: Journey | null 
     : 'Vi sammenligner selskapene ut fra det som betyr noe for deg.'
 }
 
+type MatchResultsProps = {
+  matches: InsurerMatch[]
+  eyebrow?: string
+  title?: string
+  /** Shows «Ring meg» on each of the top matches, except the customer's current insurers. */
+  onRequestCallback?: (insurerId: string) => void
+  callbackRequestedFor?: string[]
+}
+
+/** Top 3 as cards, the rest as a compact list. */
+export function MatchResults({ matches, eyebrow = 'Dine beste matcher', title, onRequestCallback, callbackRequestedFor }: MatchResultsProps) {
+  const topId = useId()
+  const othersId = useId()
+  const [best, ...others] = matches
+  if (!best) return null
+  const top = others.slice(0, TOP - 1)
+  const rest = others.slice(TOP - 1)
+  const highlights = highlightLines(matches.slice(0, TOP), matches)
+  const action = (match: InsurerMatch) => onRequestCallback && !match.isCurrent ? (
+    <CallbackAction
+      insurerId={match.insurerId}
+      requested={!!callbackRequestedFor?.includes(match.insurerId)}
+      onRequest={() => onRequestCallback(match.insurerId)}
+    />
+  ) : undefined
+
+  return (
+    <>
+      <section className="match-stack" aria-labelledby={topId}>
+        <div className="match-section-head">
+          <BodyShort size="small" className="match-muted">{eyebrow}</BodyShort>
+          <Heading id={topId} level="2" size="medium">{title ?? `Topp ${Math.min(TOP, matches.length)}`}</Heading>
+          {onRequestCallback && <BodyShort size="small">Vil du snakke med et av selskapene? Trykk «Ring meg». Helt uforpliktende, og Vern selger ingenting.</BodyShort>}
+        </div>
+        <MatchHero match={best} highlight={highlights[0]} action={action(best)} />
+        {top.length > 0 && (
+          <ol className="match-stack match-cards" start={2}>
+            {top.map((match, index) => <MatchCard key={match.insurerId} match={match} highlight={highlights[index + 1]} action={action(match)} />)}
+          </ol>
+        )}
+      </section>
+
+      {rest.length > 0 && (
+        <section className="match-stack" aria-labelledby={othersId}>
+          <Heading id={othersId} level="2" size="small">Flere selskaper</Heading>
+          <MatchList matches={rest} startRank={TOP + 1} />
+        </section>
+      )}
+    </>
+  )
+}
+
 export default function MatchPage({ connections, profile, onBack, onContinue, onCreateProfile, journey, onRequestCallback, callbackRequestedFor }: Props) {
   const request = useMemo(() => buildMatchRequest(profile, connections), [profile, connections])
   const { matches, error, loading, retry } = useMatches(request)
-  const [best, ...others] = matches ?? []
-  const top = others.slice(0, TOP - 1)
-  const rest = others.slice(TOP - 1)
-  const highlights = matches ? highlightLines(matches.slice(0, TOP), matches) : []
+  const best = matches?.[0]
   const covered = coverageTopics(connections)
-  const callbackInsurerId = matches && onRequestCallback ? pickCallbackInsurer(matches) : null
 
   return (
     <main className="match-page">
@@ -384,35 +453,7 @@ export default function MatchPage({ connections, profile, onBack, onContinue, on
 
         {matches && journey === 'sjekk' && <CurrentMatches matches={matches} />}
 
-        {best && (
-          <section className="match-stack" aria-labelledby="top-heading">
-            <div className="match-section-head">
-              <BodyShort size="small" className="match-muted">Dine beste matcher</BodyShort>
-              <Heading id="top-heading" level="2" size="medium">Topp {Math.min(TOP, matches!.length)}</Heading>
-            </div>
-            <MatchHero match={best} highlight={highlights[0]} />
-            {top.length > 0 && (
-              <ol className="match-stack match-cards" start={2}>
-                {top.map((match, index) => <MatchCard key={match.insurerId} match={match} highlight={highlights[index + 1]} />)}
-              </ol>
-            )}
-          </section>
-        )}
-
-        {callbackInsurerId && onRequestCallback && (
-          <CallbackOffer
-            insurerId={callbackInsurerId}
-            requested={callbackRequestedFor?.includes(callbackInsurerId)}
-            onAccept={() => onRequestCallback(callbackInsurerId)}
-          />
-        )}
-
-        {rest.length > 0 && (
-          <section className="match-stack" aria-labelledby="others-heading">
-            <Heading id="others-heading" level="2" size="small">Flere selskaper</Heading>
-            <MatchList matches={rest} startRank={TOP + 1} />
-          </section>
-        )}
+        {matches && <MatchResults matches={matches} onRequestCallback={onRequestCallback} callbackRequestedFor={callbackRequestedFor} />}
 
         {best && <p className="match-footer vern-body-small">Vern er uavhengig. Rekkefølgen bygger på det du har fortalt oss og hvordan selskapene scorer.</p>}
       </div>
