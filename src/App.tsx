@@ -13,7 +13,7 @@ import { QUESTIONS, type Answers, type UserProfile } from './profile/types.ts'
 import { buildStoredProfile, deleteProfile, fetchProfile, isNewCustomer, saveProfile, type ProfileInput, type StoredProfile } from './profile/storage.ts'
 import LandingPage from './landing/LandingPage.tsx'
 import AboutYouPage from './landing/AboutYouPage.tsx'
-import { clearAboutDraft, loadAboutDraft } from './landing/aboutDraft.ts'
+import { clearAboutDraft, loadAboutDraft, saveAboutDraft } from './landing/aboutDraft.ts'
 import ChoiceQuestion from './journey/ChoiceQuestion.tsx'
 import CallbackForm from './journey/CallbackForm.tsx'
 import PreparePage from './journey/PreparePage.tsx'
@@ -139,6 +139,11 @@ function App() {
     // The questions start from the draft, so the suggested answers replace any earlier one.
     clearDraft()
     if (suggested) saveDraft(suggested.answers)
+    // New customers start at «Om deg», which also starts from its draft.
+    if (!onboarded && suggested?.about) {
+      saveAboutDraft(suggested.about)
+      setAboutYou(suggested.about)
+    }
     navigate(onboarded ? `${EDIT_VALUES_PATH}/1` : ABOUT_PATH)
   }
 
@@ -274,6 +279,7 @@ function App() {
           <Route path={ABOUT_PATH} element={newCustomerOnly(
             <AboutYouPage
               initialValue={aboutYou}
+              hint={suggestion?.about ? suggestion.aboutReason ?? 'Vi har fylt ut det DigiU-profilen din sier. Sjekk at det stemmer.' : undefined}
               stepLabel={`Del 1 av ${totalParts}`}
               onBack={() => navigate(LANDING_PATH)}
               onDone={finishAbout}

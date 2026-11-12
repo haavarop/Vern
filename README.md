@@ -25,7 +25,7 @@ Customers can bring their DigiU profile instead of starting from scratch. DigiU 
 
 DigiU links to `/persona#pass=<base64url JSON>`. The pass is in the URL fragment, which browsers never send to a server; the page removes it from the address bar once read, shows what was shared and asks before using it. Then:
 
-1. `POST /api/persona/value-profile` asks Claude to answer the four value-profile questions from the traits, with a reason for each. Questions the traits say nothing about are left for the customer. The flow shows each suggestion and its reason, and the customer can change any answer.
+1. `POST /api/persona/value-profile` asks Claude to answer the value-profile questions from the traits, with a reason for each, and to fill in «Om deg» (age, occupation, children, what to insure) only with what the traits say outright. Questions the traits say nothing about are left for the customer. New customers start at «Om deg» with those answers filled in, then meet the suggested value-profile answers; every suggestion shows its reason and can be changed.
 2. The pass is saved with the profile (`persona` in `data/profile.json`) and added to the recommendation prompt, so each pick explains why it fits beyond price.
 3. `/vern` also lists up to three insurances the customer seems to lack (`gaps`). Each must be a catalogue product the customer doesn't already have and must quote a trait the customer actually shared; the server drops any that don't.
 4. **Slutt å dele** on `/profil` deletes the pass. Recommendations stop using it.

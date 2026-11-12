@@ -1,6 +1,6 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { BodyLong, Box, Button, Checkbox, CheckboxGroup, Heading, HStack, Radio, RadioGroup, TextField, VStack } from '@navikt/ds-react'
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { BodyLong, BodyShort, Box, Button, Checkbox, CheckboxGroup, Heading, HStack, InfoCard, Radio, RadioGroup, TextField, VStack } from '@navikt/ds-react'
+import { ArrowLeft, ArrowRight, Check, UserRound } from 'lucide-react'
 import VernHeader from '../onboarding/VernHeader.tsx'
 import { INTERESTS, INTEREST_LABELS, MAX_AGE, MAX_OCCUPATION_LENGTH, MIN_AGE, emptyAboutYou, parseAboutYou, type AboutYou, type Interest } from '../journey/types.ts'
 import { loadAboutDraft, saveAboutDraft } from './aboutDraft.ts'
@@ -15,6 +15,8 @@ type Props = {
   onBack?: () => void
   /** Shown in the header, e.g. "Del 1 av 3". */
   stepLabel?: string
+  /** Why some answers are already filled in, when they came from a DigiU profile. */
+  hint?: string
 }
 
 /** '' = not answered yet; 'vil-ikke' = chose not to answer. Both are stored as null. */
@@ -30,7 +32,7 @@ function parseAge(text: string): number | null | 'invalid' {
   return age >= MIN_AGE && age <= MAX_AGE ? age : 'invalid'
 }
 
-export default function AboutYouPage({ initialValue, onDone, onSkip, onBack }: Props) {
+export default function AboutYouPage({ initialValue, onDone, onSkip, onBack, hint }: Props) {
   const [initial] = useState<AboutYou>(() => loadAboutDraft() ?? parseAboutYou(initialValue) ?? emptyAboutYou())
   const [ageText, setAgeText] = useState(initial.age === null ? '' : String(initial.age))
   const [ageError, setAgeError] = useState<string | undefined>()
@@ -77,6 +79,17 @@ export default function AboutYouPage({ initialValue, onDone, onSkip, onBack }: P
           <BodyLong>Fortell oss litt om livet ditt, så kan vi lettere matche deg med riktig selskap.</BodyLong>
           <BodyLong textColor="subtle">Alle spørsmålene er valgfrie. Hopp over det du ikke vil svare på.</BodyLong>
         </VStack>
+
+        {hint && (
+          <InfoCard data-color="info" size="small">
+            <InfoCard.Header icon={<UserRound aria-hidden size="1em" />}>
+              <InfoCard.Title as="h2">Forslag fra DigiU</InfoCard.Title>
+            </InfoCard.Header>
+            <InfoCard.Content>
+              <BodyShort size="small">{hint}</BodyShort>
+            </InfoCard.Content>
+          </InfoCard>
+        )}
 
         <form id={FORM_ID} onSubmit={submit} noValidate>
           <VStack gap="space-32">

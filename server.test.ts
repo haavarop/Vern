@@ -408,6 +408,18 @@ test('value-profile suggestions keep valid options and deliberate nulls only', a
   assert.doesNotMatch(request, /Sofie/)
 })
 
+test('value-profile suggestions fill in «Om deg» only with valid, non-empty values', () => {
+  const filled = resolveValueProfileSuggestion({
+    omDeg: { age: null, occupation: ' Utvikler ', hasChildren: null, interests: ['reise', 'romskip', 'ulykke'], reason: 'Du jobber med programvare og reiser mye.' },
+  })
+  assert.deepEqual(filled.about, { age: null, occupation: 'Utvikler', hasChildren: null, interests: ['ulykke', 'reise'] })
+  assert.equal(filled.aboutReason, 'Du jobber med programvare og reiser mye.')
+
+  const empty = resolveValueProfileSuggestion({ omDeg: { age: 7, occupation: '', hasChildren: null, interests: [], reason: 'Ingenting.' } })
+  assert.equal(empty.about, undefined)
+  assert.equal(empty.aboutReason, undefined)
+})
+
 test('persona endpoint validates the pass before asking the model', async () => {
   let asked = 0
   const server = createAppServer(undefined, undefined, undefined, undefined, undefined, async () => {

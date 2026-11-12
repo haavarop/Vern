@@ -1,3 +1,4 @@
+import { isAboutYouFilled, parseAboutYou } from '../journey/types.ts'
 import { QUESTIONS } from '../profile/types.ts'
 import type { PersonaPass, ValueProfileSuggestion } from './pass.ts'
 
@@ -32,5 +33,12 @@ export async function fetchValueProfileSuggestion(pass: PersonaPass, signal?: Ab
   const data: unknown = await response.json().catch(() => null)
   if (!response.ok) throw new Error(isRecord(data) && typeof data.error === 'string' ? data.error : FALLBACK_ERROR)
   if (!isSuggestion(data)) throw new Error(FALLBACK_ERROR)
-  return data
+  // «Om deg» is a bonus: drop it rather than fail when it doesn't look right.
+  const about = parseAboutYou(data.about)
+  const aboutReason = typeof data.aboutReason === 'string' && data.aboutReason.trim() ? data.aboutReason.trim() : undefined
+  return {
+    answers: data.answers,
+    reasons: data.reasons,
+    ...(isAboutYouFilled(about) ? { about, ...(aboutReason ? { aboutReason } : {}) } : {}),
+  }
 }

@@ -1,3 +1,4 @@
+import type { AboutYou } from '../journey/types.ts'
 import type { Answers } from '../profile/types.ts'
 
 /**
@@ -25,7 +26,13 @@ export type PersonaPass = {
 }
 
 /** Vern's value-profile answers suggested from a Persona Pass, with the reason for each. */
-export type ValueProfileSuggestion = { answers: Answers; reasons: Record<string, string> }
+export type ValueProfileSuggestion = {
+  answers: Answers
+  reasons: Record<string, string>
+  /** «Om deg» filled in from what the traits say outright. Missing when they say nothing. */
+  about?: AboutYou
+  aboutReason?: string
+}
 
 const MAX_TRAITS = 30
 const MAX_ENCODED_LENGTH = 20_000
