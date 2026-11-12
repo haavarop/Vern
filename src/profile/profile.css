@@ -71,3 +71,18 @@
   .vp-step { animation: none; }
   .vp-dim__bar > span, .vp-q__option, .vp-progress span { transition: none; }
 }
+
+/* Value profile summary */
+.vp-summary { justify-content: center; }
+.vp-summary__side { flex: 1; min-width: 200px; }
+.chart-radar { flex-shrink: 0; max-width: 100%; height: auto; }
+.chart-radar__grid { fill: none; stroke: var(--ax-border-neutral-subtle); stroke-width: 0.4; }
+.chart-radar__area { fill: var(--ax-bg-accent-strong); fill-opacity: 0.2; stroke: var(--ax-bg-accent-strong); stroke-width: 1.2; stroke-linejoin: round; }
+.chart-radar__dot { fill: var(--ax-bg-accent-strong); }
+.chart-radar__label { font-size: 6px; fill: var(--ax-text-neutral-subtle); }
+.chart-radar__label.is-top { fill: var(--ax-text-neutral); font-weight: 700; }
+.vp-rank { list-style: none; margin: 0; padding: 0; }
+.vp-rank li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--ax-space-8); }
+.vp-rank__num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ax-bg-neutral-moderate); font-size: var(--ax-font-size-small); font-weight: 700; }
+.vp-rank li.is-top .vp-rank__num { background: var(--ax-bg-accent-strong); color: var(--ax-text-contrast, #fff); }
+.vp-rank__score { font-variant-numeric: tabular-nums; }

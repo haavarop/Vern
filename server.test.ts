@@ -239,3 +239,61 @@ test('match API returns sorted matches and validates requests', async () => {
     server.close()
   }
 })
+
+/** Builds a minimal one-page PDF with the given lines of text (Helvetica, no compression). */
+function makePdf(lines: string[]): Uint8Array {
+  const content = `BT /F1 10 Tf 40 800 Td 12 TL ${lines.map((line) => `(${line.replace(/[()\\]/g, '')}) '`).join(' ')} ET`
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ]
+  let pdf = '%PDF-1.4\n'
+  const offsets = objects.map((object, index) => {
+    const offset = pdf.length
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`
+    return offset
+  })
+  const xref = pdf.length
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('')}`
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`
+  return new TextEncoder().encode(pdf)
+}
+
+test('document API extracts PDF text, sends it to the model and returns validated policies', async () => {
+  let seenText = ''
+  const extract = async (_instructions: string, documentText: string) => {
+    seenText = documentText
+    return JSON.stringify({ insurer: 'Gjensidige Forsikring ASA', policies: [{ product: 'Innbo Ung', category: 'skade', annualPremium: 1980, deductible: 3000 }] })
+  }
+  const server = createAppServer(undefined, undefined, undefined, undefined, extract)
+  server.listen(0, '127.0.0.1')
+  await once(server, 'listening')
+  const address = server.address()
+  assert.ok(address && typeof address !== 'string')
+  const url = `http://127.0.0.1:${address.port}/api/documents/analyze?filnavn=${encodeURIComponent('Mitt dokument.pdf')}`
+  const lines = ['FORSIKRINGSOVERSIKT Forsikringsnummer 93291509', 'Innbo Ung - Hele landet Pris 1 980', ...Array.from({ length: 12 }, (_, i) => `Forsikringen dekker linje ${i} Egenandel 3 000 Forsikringssum 500 000`)]
+  try {
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/pdf' }, body: makePdf(lines) })
+    assert.equal(response.status, 200)
+    const body = await response.json() as { policies: Array<Record<string, unknown>>; warnings: string[] }
+    assert.match(seenText, /Innbo Ung - Hele landet Pris 1 980/)
+    assert.equal(body.policies.length, 1)
+    assert.equal(body.policies[0].insurerId, 'gjensidige')
+    assert.equal(body.policies[0].premium, 165)
+    assert.equal(body.policies[0].deductible, 3000)
+    assert.deepEqual((body.policies[0].source as Record<string, unknown>).fileName, 'Mitt dokument.pdf')
+
+    const notPdf = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/pdf' }, body: 'hei' })
+    assert.equal(notPdf.status, 415)
+    const wrongType = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: 'hei' })
+    assert.equal(wrongType.status, 415)
+    const empty = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/pdf' }, body: makePdf(['Hei']) })
+    assert.equal(empty.status, 422)
+    assert.match((await empty.json() as { error: string }).error, /lesbar tekst/)
+  } finally {
+    server.close()
+  }
+})

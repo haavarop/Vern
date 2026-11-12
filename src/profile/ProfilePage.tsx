@@ -1,8 +1,11 @@
-import { BodyLong, BodyShort, Box, Button, Detail, Heading, HStack, Tag, VStack } from '@navikt/ds-react'
-import { Buildings2Icon, PencilIcon, PersonCircleIcon, PlusIcon, ShieldCheckmarkIcon, StarIcon } from '@navikt/aksel-icons'
+import { BodyShort, Box, Button, Heading, HStack, Tag, VStack } from '@navikt/ds-react'
+import { Buildings2Icon, PencilIcon, PersonCircleIcon, ShieldCheckmarkIcon, StarIcon, UploadIcon } from '@navikt/aksel-icons'
 import PolicySummary from '../onboarding/PolicySummary.tsx'
 import type { ConnectionState } from '../onboarding/types.ts'
-import { DIMENSIONS, rankDimensions, scoreProfile, type UserProfile } from './types.ts'
+import { RadarChart } from '../onboarding/charts.tsx'
+import { DIMENSION_ORDER, DIMENSIONS, rankDimensions, scoreProfile, type Dimension, type UserProfile } from './types.ts'
+
+const SHORT_LABELS: Record<Dimension, string> = { pris: 'Pris', dekning: 'Dekning', hjelp: 'Hjelp', enkelhet: 'Enkelhet' }
 import '../onboarding/onboarding.css'
 import './profile.css'
 
@@ -25,9 +28,7 @@ function ValueProfile({ profile, onEdit }: { profile: UserProfile; onEdit: () =>
       <VStack gap="space-12">
         <HStack gap="space-12" align="center" wrap={false} className="connected-empty">
           <PersonCircleIcon aria-hidden fontSize="2rem" />
-          <BodyShort textColor="subtle">
-            Svar på fire korte spørsmål, så fremhever vi forskjellene som betyr mest for deg.
-          </BodyShort>
+          <BodyShort textColor="subtle">Fire korte spørsmål om hva du bryr deg om.</BodyShort>
         </HStack>
         <Button variant="primary" onClick={onEdit} className="onboarding__add">Lag verdiprofil</Button>
       </VStack>
@@ -40,33 +41,24 @@ function ValueProfile({ profile, onEdit }: { profile: UserProfile; onEdit: () =>
   const segments = [...new Set(top.flatMap((d) => DIMENSIONS[d].segments))]
 
   return (
-    <VStack gap="space-12">
-      <BodyLong>
-        Du vektlegger mest <strong>{DIMENSIONS[top[0]].label.toLowerCase()}</strong> og{' '}
-        <strong>{DIMENSIONS[top[1]].label.toLowerCase()}</strong>.
-      </BodyLong>
-      <HStack gap="space-8" wrap>
-        {segments.map((s) => <Tag key={s} size="small" variant="info">{s}</Tag>)}
-      </HStack>
-      <ul className="vp-dims">
-        {ranked.map((dim) => (
-          <li key={dim} className={`vp-dim${top.includes(dim) ? ' vp-dim--top' : ''}`}>
-            <HStack justify="space-between" align="baseline" gap="space-8" wrap={false}>
-              <div>
-                <BodyShort weight="semibold">{DIMENSIONS[dim].label}</BodyShort>
-                <Detail textColor="subtle">{DIMENSIONS[dim].description}</Detail>
-              </div>
-              <BodyShort weight="semibold" className="vp-dim__score">{scores[dim]}</BodyShort>
-            </HStack>
-            <div className="vp-dim__bar" role="meter" aria-label={DIMENSIONS[dim].label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={scores[dim]}>
-              <span style={{ width: `${scores[dim]}%` }} />
-            </div>
-          </li>
-        ))}
-      </ul>
-      <Detail textColor="subtle">Profilen plasserer deg ikke i én fast type – den hjelper oss å vise det som er relevant for deg.</Detail>
-      <Button variant="secondary" icon={<PencilIcon aria-hidden />} onClick={onEdit} className="onboarding__add">Endre svar</Button>
-    </VStack>
+    <HStack gap="space-24" align="center" wrap className="vp-summary">
+      <RadarChart axes={DIMENSION_ORDER.map((dim) => ({ label: SHORT_LABELS[dim], value: scores[dim], highlight: top.includes(dim) }))} />
+      <VStack gap="space-12" className="vp-summary__side">
+        <VStack as="ol" gap="space-4" className="vp-rank" aria-label="Det som er viktigst for deg">
+          {ranked.map((dim, index) => (
+            <li key={dim} className={top.includes(dim) ? 'is-top' : undefined}>
+              <span className="vp-rank__num" aria-hidden>{index + 1}</span>
+              <BodyShort size="small" weight={top.includes(dim) ? 'semibold' : 'regular'}>{DIMENSIONS[dim].label}</BodyShort>
+              <BodyShort size="small" textColor="subtle" className="vp-rank__score">{scores[dim]}</BodyShort>
+            </li>
+          ))}
+        </VStack>
+        <HStack gap="space-4" wrap>
+          {segments.map((s) => <Tag key={s} size="small" variant="info-moderate">{s}</Tag>)}
+        </HStack>
+        <Button variant="tertiary" size="small" icon={<PencilIcon aria-hidden />} onClick={onEdit}>Endre svar</Button>
+      </VStack>
+    </HStack>
   )
 }
 
@@ -81,10 +73,7 @@ export default function ProfilePage({ connections, profile, onAddInsurers, onEdi
           <Heading level="2" size="small">Vern</Heading>
         </HStack>
 
-        <VStack gap="space-8">
-          <Heading level="1" size="large">Din profil</Heading>
-          <BodyLong>Oversikt over forsikringene dine og hva som er viktigst for deg.</BodyLong>
-        </VStack>
+        <Heading level="1" size="large">Din profil</Heading>
 
         <Box as="section" aria-labelledby="values-heading" background="raised" borderRadius="12" padding="space-16" borderWidth="1" borderColor="neutral-subtle">
           <VStack gap="space-12">
@@ -104,12 +93,12 @@ export default function ProfilePage({ connections, profile, onAddInsurers, onEdi
             <Box background="raised" borderRadius="12" padding="space-16" borderWidth="1" borderColor="neutral-subtle">
               <HStack gap="space-12" align="center" wrap={false} className="connected-empty">
                 <Buildings2Icon aria-hidden fontSize="2rem" />
-                <BodyShort textColor="subtle">Ingen forsikringer hentet ennå.</BodyShort>
+                <BodyShort textColor="subtle">Ingen forsikringer lastet opp ennå.</BodyShort>
               </HStack>
             </Box>
           )}
-          <Button variant="secondary" icon={<PlusIcon aria-hidden />} onClick={onAddInsurers} className="onboarding__add">
-            Legg til forsikringsselskap
+          <Button variant="secondary" icon={<UploadIcon aria-hidden />} onClick={onAddInsurers} className="onboarding__add">
+            Last opp forsikringsdokument
           </Button>
         </VStack>
       </VStack>

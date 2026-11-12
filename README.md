@@ -17,6 +17,16 @@ Run `npm test` for the tests and `npm run build` to type-check and build the fro
 
 When the user enters Vern, recommendations are generated automatically using the saved profile and insurance data. While that page is open, it checks the profile approximately every two seconds and regenerates results when the profile changes. Prices, policies, and match scores are simulated; if the model cannot make a selection, the current demo policy is shown as an explicitly labeled fallback.
 
+## Forsikringsdokumenter
+
+I onboardingens steg 2 laster kunden opp forsikringsdokumentet sitt (PDF). `POST /api/documents/analyze?filnavn=…` med PDF-en som body (`Content-Type: application/pdf`, maks 15 MB):
+
+1. henter ut teksten med `unpdf` (skannede PDF-er uten tekstlag avvises med 422),
+2. sender de kundespesifikke sidene (oversikt, forsikringsbevis, priser, egenandeler) til `gpt-6-luna`,
+3. validerer svaret i `document-analysis.ts` og returnerer `{ policies, warnings }` i samme format som `insurances` i profilen.
+
+PDF-en lagres ikke, og navn/adresse tas ikke med. Kunden ser resultatet og bekrefter før det lagres i `data/profile.json`. Priser hos andre selskaper er fortsatt simulerte (`mockPolicies.ts`).
+
 ## Forsikringsdata
 
 Hent rådataene som JSON fra `/api/insurance-data`, eller skriv dem til `insurance-data-fetched.json` med:

@@ -62,7 +62,7 @@ function randomInt(rng: () => number, min: number, max: number): number {
 
 /**
  * Deterministic demo policies per insurer. Demo quirk: `jbf` always returns no
- * policies, to show the empty state. (The fetch error demo for `nemi` lives in MockBankIdFlow.)
+ * policies, to show the empty state.
  */
 export function generatePolicies(insurerId: string): Policy[] {
   const insurer = getInsurer(insurerId)
