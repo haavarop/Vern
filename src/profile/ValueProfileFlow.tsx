@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { BodyLong, Box, Button, Detail, Heading, HelpText, HStack, Radio, RadioGroup, VStack } from '@navikt/ds-react'
+import { BodyLong, Box, Button, Checkbox, CheckboxGroup, Detail, Heading, Radio, RadioGroup, VStack } from '@navikt/ds-react'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import { VernLockup } from '../brand/VernLogo.tsx'
 import VernHeader from '../onboarding/VernHeader.tsx'
-import { QUESTIONS, emptyAnswers, type Answers } from './types.ts'
+import { QUESTIONS, chosenOptions, emptyAnswers, isComplete, type Answers } from './types.ts'
 import { firstUnansweredBefore, loadDraft, saveDraft } from './draft.ts'
 import '../onboarding/onboarding.css'
 import './profile.css'
@@ -44,7 +44,15 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
     saveDraft(updated)
   }
 
+  function answerMany(options: string[]) {
+    const updated = { ...answers, [question.id]: options.length ? options.map(Number) : null }
+    setAnswers(updated)
+    saveDraft(updated)
+  }
+
   if (firstGap !== null) return null
+
+  const picked = chosenOptions(value)
 
   return (
     <Box as="main" className="onboarding" paddingInline={{ xs: 'space-16', md: 'space-32' }} paddingBlock="space-24 space-0">
@@ -52,9 +60,7 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
         {step === 0 ? (
           <VStack gap="space-16">
             <VernLockup size={80} />
-            <BodyLong>
-              Hei! Fire korte spørsmål, så finner vi ut hva som betyr mest for deg. Det finnes ingen feil svar.
-            </BodyLong>
+
           </VStack>
         ) : (
           <VernHeader><Detail textColor="subtle">Del 1 av 2</Detail></VernHeader>
@@ -70,27 +76,48 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
         </VStack>
 
         <VStack gap="space-16" key={question.id} className="vp-step">
-          <HStack gap="space-8" align="start" justify="space-between" wrap={false}>
-            <Heading ref={headingRef} tabIndex={-1} level="1" size="large" className="vp-step__title">{question.title}</Heading>
-            <HelpText title="Hvorfor spør vi om dette?" placement="left" className="vp-step__help">{question.help}</HelpText>
-          </HStack>
+          <Heading ref={headingRef} tabIndex={-1} level="1" size="large" className="vp-step__title">{question.title}</Heading>
+          {question.pick && <BodyLong textColor="subtle">Velg de {question.pick} viktigste</BodyLong>}
 
-          <RadioGroup
-            legend={question.title}
-            hideLegend
-            description="Velg ett svar. Du kan alltid endre det senere."
-            value={value === null ? '' : String(value)}
-            onChange={(next: string) => answer(Number(next))}
-          >
-            <div className="vp-q__options">
-              {question.options.map((option, i) => (
-                <Radio key={option.label} value={String(i)} className="vp-q__option vern-choice">
-                  <span className="vp-q__text">{option.label}</span>
-                  <Check aria-hidden size={24} className="vp-q__check" />
-                </Radio>
-              ))}
-            </div>
-          </RadioGroup>
+          {question.pick ? (
+            <CheckboxGroup
+              legend={question.title}
+              hideLegend
+              value={picked.map(String)}
+              onChange={(next: string[]) => answerMany(next)}
+            >
+              <div className="vp-q__options">
+                {question.options.map((option, i) => (
+                  <Checkbox
+                    key={option.label}
+                    value={String(i)}
+                    className="vp-q__option vern-choice"
+                    disabled={picked.length >= (question.pick ?? 1) && !picked.includes(i)}
+                  >
+                    <span className="vp-q__text">{option.label}</span>
+                    <Check aria-hidden size={24} className="vp-q__check" />
+                  </Checkbox>
+                ))}
+              </div>
+            </CheckboxGroup>
+          ) : (
+            <RadioGroup
+              legend={question.title}
+              hideLegend
+              description="Velg ett svar. Du kan alltid endre det senere."
+              value={typeof value === 'number' ? String(value) : ''}
+              onChange={(next: string) => answer(Number(next))}
+            >
+              <div className="vp-q__options">
+                {question.options.map((option, i) => (
+                  <Radio key={option.label} value={String(i)} className="vp-q__option vern-choice">
+                    <span className="vp-q__text">{option.label}</span>
+                    <Check aria-hidden size={24} className="vp-q__check" />
+                  </Radio>
+                ))}
+              </div>
+            </RadioGroup>
+          )}
         </VStack>
       </VStack>
 
@@ -99,7 +126,7 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
           {step === 0
             ? <Button variant="tertiary" onClick={onSkip}>Hopp over</Button>
             : <Button variant="tertiary" icon={<ArrowLeft size="1em" aria-hidden />} onClick={() => onStepChange(step - 1)}>Tilbake</Button>}
-          <Button icon={<ArrowRight size="1em" aria-hidden />} iconPosition="right" disabled={value === null} onClick={next}>
+          <Button icon={<ArrowRight size="1em" aria-hidden />} iconPosition="right" disabled={!isComplete(question, value)} onClick={next}>
             {isLast ? doneLabel : 'Neste'}
           </Button>
         </div>

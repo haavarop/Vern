@@ -32,58 +32,45 @@ export const DIMENSION_ORDER: Dimension[] = ['pris', 'dekning', 'hjelp', 'enkelh
 
 type Option = { label: string; weights: Partial<Record<Dimension, number>> }
 
-/** One question = one slider. The options are the stops along the same line. */
-export type Question = { id: string; title: string; help: string; options: Option[] }
+/** One question = one slider. The options are the stops along the same line. `pick` makes it multiple choice: the customer picks exactly that many. */
+export type Question = { id: string; title: string; options: Option[]; pick?: number }
 
 export const QUESTIONS: Question[] = [
   {
     id: 'viktigst',
-    title: 'Hva er viktigst for deg?',
-    help: 'Svaret hjelper oss å se hva du bryr deg mest om. Da kan vi vise deg det som passer.',
+    title: 'Hva er viktigst for deg når du velger forsikring?',
     options: [
-      { label: 'Lav pris', weights: { pris: 1 } },
-      { label: 'Bred dekning', weights: { dekning: 1 } },
-      { label: 'Rask hjelp ved skade', weights: { hjelp: 1 } },
-      { label: 'At alt er enkelt', weights: { enkelhet: 1 } },
+      { label: 'Lavest mulig pris, selv om jeg får færre dekninger', weights: { pris: 1 } },
+      { label: 'God balanse mellom pris og dekning', weights: { pris: 0.5, dekning: 0.5 } },
+      { label: 'Høy dekning, selv om det koster mer', weights: { dekning: 1 } },
     ],
   },
   {
-    id: 'utsagn',
-    title: 'Hva passer best for deg?',
-    help: 'Ofte må du velge mellom pris og hvor mye du får. Her ser vi hva du helst vil ha.',
+    id: 'forventning',
+    title: 'Hva er viktigst for deg når du velger forsikringsselskap?',
+    pick: 2,
     options: [
-      { label: 'Lavest mulig pris', weights: { pris: 1 } },
-      { label: 'Litt av begge: pris og dekning', weights: { pris: 0.5, dekning: 0.5 } },
-      { label: 'Gjerne litt dyrere, men bedre dekning', weights: { dekning: 1 } },
-      { label: 'Gjerne litt dyrere, men bedre service', weights: { hjelp: 1 } },
+      { label: 'Rask skadebehandling og god hjelp når jeg trenger det', weights: { hjelp: 1 } },
+      { label: 'En god pris, som passer budsjettet mitt', weights: { pris: 1 } },
+      { label: 'Enkel digital selvbetjening, slik at jeg kan ordne det meste selv', weights: { enkelhet: 1 } },
+      { label: 'God dekning, slik at jeg er godt sikret hvis noe skjer', weights: { dekning: 1 } },
     ],
   },
   {
     id: 'skade',
-    title: 'Hvis noe skjer, hva vil du helst ha?',
-    help: 'Det kan være en vannlekkasje eller en stjålet sykkel. Vi vil vite hva slags hjelp du liker.',
+    title: 'Hva ville bekymret deg mest hvis du får en skade?',
     options: [
-      { label: 'At det går raskt, også utbetalingen', weights: { hjelp: 0.5, enkelhet: 0.5 } },
-      { label: 'En person som hjelper meg hele veien', weights: { hjelp: 1 } },
-      { label: 'At alt kan ordnes på mobilen', weights: { enkelhet: 1 } },
-      { label: 'At jeg får riktig hjelp og riktig erstatning', weights: { dekning: 0.5, hjelp: 0.5 } },
+      { label: 'At jeg må betale en høy egenandel', weights: { dekning: 1 } },
+      { label: 'At forsikringen min ikke dekker skaden', weights: { dekning: 1 } },
+      { label: 'At jeg ikke får den hjelpen jeg trenger', weights: { hjelp: 1 } },
+      { label: 'At det tar lang tid å behandle skadesaken', weights: { hjelp: 0.5, enkelhet: 0.5 } },
     ],
-  },
-  {
-    id: 'handtere',
-    title: 'Hvordan vil du helst ordne forsikringene dine?',
-    help: 'Noen vil bare ha det ordnet, andre vil sammenligne selv. Begge deler er helt greit.',
-    options: [
-      { label: 'Det skal bare fungere', weights: { enkelhet: 1 } },
-      { label: 'Raskt og digitalt', weights: { enkelhet: 1 } },
-      { label: 'Sammenligne og tilpasse selv', weights: { enkelhet: 0.5, pris: 0.5 } },
-      { label: 'Få råd før jeg velger', weights: { hjelp: 1 } },
-    ],
-  },
+  }
 ]
 
-/** questionId → chosen option index, or null if not answered. */
-export type Answers = Record<string, number | null>
+/** questionId → chosen option index (or indexes, for multiple choice), or null if not answered. */
+export type Answer = number | number[]
+export type Answers = Record<string, Answer | null>
 
 export type UserProfile = { answers: Answers | null }
 
@@ -95,6 +82,16 @@ export function isAnswered(answers: Answers | null): answers is Answers {
   return !!answers && Object.values(answers).some((v) => v !== null)
 }
 
+export function chosenOptions(answer: Answer | null | undefined): number[] {
+  if (answer === null || answer === undefined) return []
+  return Array.isArray(answer) ? answer : [answer]
+}
+
+/** A single-choice question needs one answer; a multiple-choice question needs exactly `pick`. */
+export function isComplete(question: Question, answer: Answer | null | undefined): boolean {
+  return chosenOptions(answer).length === (question.pick ?? 1)
+}
+
 /**
  * Score per dimension, 0–100: the weight the chosen answers gave the dimension,
  * relative to the most it could have got from the answered questions.
@@ -103,11 +100,12 @@ export function scoreProfile(answers: Answers): Record<Dimension, number> {
   const got = { pris: 0, dekning: 0, hjelp: 0, enkelhet: 0 }
   const max = { pris: 0, dekning: 0, hjelp: 0, enkelhet: 0 }
   for (const q of QUESTIONS) {
-    const chosen = answers[q.id]
-    if (chosen === null || chosen === undefined) continue
+    const chosen = chosenOptions(answers[q.id])
+    if (chosen.length === 0) continue
     for (const dim of DIMENSION_ORDER) {
-      max[dim] += Math.max(...q.options.map((o) => o.weights[dim] ?? 0))
-      got[dim] += q.options[chosen]?.weights[dim] ?? 0
+      const best = q.options.map((o) => o.weights[dim] ?? 0).sort((a, b) => b - a)
+      max[dim] += best.slice(0, q.pick ?? 1).reduce((sum, w) => sum + w, 0)
+      got[dim] += chosen.reduce((sum, i) => sum + (q.options[i]?.weights[dim] ?? 0), 0)
     }
   }
   return Object.fromEntries(DIMENSION_ORDER.map((d) => [d, max[d] ? Math.round((got[d] / max[d]) * 100) : 0])) as Record<Dimension, number>

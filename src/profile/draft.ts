@@ -1,4 +1,4 @@
-import { QUESTIONS, emptyAnswers, type Answers } from './types.ts'
+import { QUESTIONS, emptyAnswers, isComplete, type Answers } from './types.ts'
 
 /** In-progress value-profile answers, kept in sessionStorage so a refresh mid-flow keeps them. */
 const KEY = 'vern.valueProfileDraft'
@@ -22,7 +22,11 @@ export function loadDraft(storage: Pick<Storage, 'getItem'> | undefined = sessio
       const question = QUESTIONS.find((q) => q.id === id)
       if (!question) return null
       if (value === null) continue
-      if (!Number.isInteger(value) || value < 0 || value >= question.options.length) return null
+      const picks = Array.isArray(value) ? value : [value]
+      const limit = question.pick ?? 1
+      const valid = picks.length >= 1 && picks.length <= limit && new Set(picks).size === picks.length &&
+        picks.every((pick) => Number.isInteger(pick) && pick >= 0 && pick < question.options.length)
+      if (!valid || (Array.isArray(value) && question.pick === undefined)) return null
       answers[id] = value
     }
     return answers
@@ -62,8 +66,7 @@ export function questionParam(index: number): string {
 /** First question before `step` without an answer, so deep links can't skip ahead. */
 export function firstUnansweredBefore(answers: Answers, step: number): number | null {
   for (let i = 0; i < step && i < QUESTIONS.length; i++) {
-    const value = answers[QUESTIONS[i].id]
-    if (value === null || value === undefined) return i
+    if (!isComplete(QUESTIONS[i], answers[QUESTIONS[i].id])) return i
   }
   return null
 }
