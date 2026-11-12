@@ -14,15 +14,15 @@ export async function analyzeDocument(file: File, fetcher: typeof fetch = fetch)
       body: file,
     })
   } catch {
-    throw new Error('Fikk ikke kontakt med tjenesten. Prøv igjen.')
+    throw new Error('Vi fikk ikke kontakt akkurat nå. Sjekk at du er på nett, og prøv igjen.')
   }
   const data: unknown = await response.json().catch(() => null)
   if (!response.ok) {
     throw new Error(data && typeof data === 'object' && 'error' in data && typeof data.error === 'string'
-      ? data.error : 'Kunne ikke analysere dokumentet. Prøv igjen.')
+      ? data.error : 'Vi fikk ikke lest dokumentet. Prøv igjen om litt.')
   }
   if (!data || typeof data !== 'object' || !('policies' in data) || !Array.isArray(data.policies)) {
-    throw new Error('Fikk et ugyldig svar fra analysen. Prøv igjen.')
+    throw new Error('Noe gikk galt da vi leste dokumentet. Prøv igjen.')
   }
   const warnings = 'warnings' in data && Array.isArray(data.warnings) ? data.warnings.filter((w): w is string => typeof w === 'string') : []
   return { policies: data.policies as Policy[], warnings }

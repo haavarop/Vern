@@ -1,0 +1,208 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "$description": "Vern brand identity v2. Based on the latest version of the Miro frame 'Vern - Visuel identitet'. Single source of truth for colors, typography, components, logo and tone of voice in the Vern app.",
+  "version": "2.0.0",
+
+  "brand": {
+    "name": "Vern",
+    "slogan": "Dit personlige forsikringsmatch",
+    "concept": "To former der finder sammen.",
+    "mission": "Vi hjælper kunden med at finde deres forsikringsmatch på en række personaliserede dimensioner, som går ud over pris. Vi gør det nemt for kunden at forstå deres match gennem en match-score.",
+    "valueProposition": "Vern er din personlige matchmaker for forsikringer. Vi gør forsikring nemmere ved at matche dig med det selskab, der passer bedst til dig - uanset om du er single eller i et",
+    "audience": "20-39 år. Ved ikke meget om forsikring, men vil gerne være sikre på at være godt dækket.",
+    "language": "da-DK"
+  },
+
+  "color": {
+    "primitive": {
+      "forest": { "$type": "color", "$value": "#0F3D33", "$description": "Skovgrøn. Tryghed." },
+      "apricot": { "$type": "color", "$value": "#FF8A5B", "$description": "Abrikos. Match-øjeblikke." },
+      "mint": { "$type": "color", "$value": "#BDE8D4", "$description": "Mint. Du er dækket." },
+      "cream": { "$type": "color", "$value": "#FAF5EE", "$description": "Creme. Baggrund, luft." },
+      "charcoal": { "$type": "color", "$value": "#1C1C1C", "$description": "Kul. Tekst." },
+      "grey": { "$type": "color", "$value": "#595959", "$description": "Sekundær tekst." },
+      "white": { "$type": "color", "$value": "#FFFFFF" }
+    },
+    "semantic": {
+      "background": { "$type": "color", "$value": "{color.primitive.cream}" },
+      "surface": { "$type": "color", "$value": "{color.primitive.white}" },
+      "surfaceInverse": { "$type": "color", "$value": "{color.primitive.forest}" },
+      "textPrimary": { "$type": "color", "$value": "{color.primitive.charcoal}" },
+      "textSecondary": { "$type": "color", "$value": "{color.primitive.grey}" },
+      "textBrand": { "$type": "color", "$value": "{color.primitive.forest}" },
+      "textOnInverse": { "$type": "color", "$value": "{color.primitive.cream}" },
+      "actionPrimary": { "$type": "color", "$value": "{color.primitive.forest}" },
+      "accentMatch": { "$type": "color", "$value": "{color.primitive.apricot}", "$description": "Kun til match og vigtige handlinger." },
+      "success": { "$type": "color", "$value": "{color.primitive.mint}" },
+      "border": { "$type": "color", "$value": "{color.primitive.forest}" }
+    },
+    "usageRatio": {
+      "cream": "60%",
+      "forest": "25%",
+      "mint": "10%",
+      "apricot": "5%",
+      "$description": "Abrikos bruges sparsomt, kun til match og vigtige handlinger."
+    }
+  },
+
+  "typography": {
+    "fontFamily": {
+      "heading": { "$type": "fontFamily", "$value": ["General Sans", "Satoshi", "system-ui", "sans-serif"], "$description": "Venlig, geometrisk. Bold." },
+      "body": { "$type": "fontFamily", "$value": ["Inter", "system-ui", "sans-serif"], "$description": "Regular. Høj læsbarhed på mobil." }
+    },
+    "scale": {
+      "display": { "fontFamily": "{typography.fontFamily.heading}", "fontSize": "40px", "lineHeight": 1.1, "fontWeight": 700 },
+      "h1": { "fontFamily": "{typography.fontFamily.heading}", "fontSize": "32px", "lineHeight": 1.15, "fontWeight": 700 },
+      "h2": { "fontFamily": "{typography.fontFamily.heading}", "fontSize": "24px", "lineHeight": 1.2, "fontWeight": 700 },
+      "body": { "fontFamily": "{typography.fontFamily.body}", "fontSize": "16px", "lineHeight": 1.5, "fontWeight": 400 },
+      "bodySmall": { "fontFamily": "{typography.fontFamily.body}", "fontSize": "14px", "lineHeight": 1.45, "fontWeight": 400 },
+      "button": { "fontFamily": "{typography.fontFamily.body}", "fontSize": "16px", "lineHeight": 1, "fontWeight": 700 }
+    },
+    "rules": [
+      "Små bogstaver i overskrifter.",
+      "Ingen versaler.",
+      "Korte sætninger."
+    ],
+    "example": {
+      "heading": "Dit match er klar",
+      "body": "Vi har sammenlignet 12 selskaber ud fra det, der betyder noget for dig."
+    }
+  },
+
+  "spacing": {
+    "$type": "dimension",
+    "xs": { "$value": "4px" },
+    "sm": { "$value": "8px" },
+    "md": { "$value": "16px" },
+    "lg": { "$value": "24px" },
+    "xl": { "$value": "32px" },
+    "2xl": { "$value": "48px" }
+  },
+
+  "radius": {
+    "$type": "dimension",
+    "md": { "$value": "20px", "$description": "Valgmuligheder, listekort." },
+    "lg": { "$value": "32px", "$description": "Bløde kort." },
+    "pill": { "$value": "999px", "$description": "Knapper." }
+  },
+
+  "effects": {
+    "$description": "Ingen skygger og ingen gradienter. Gennemsigtighed bruges kun i logoets cirkler og overlappende former."
+  },
+
+  "logo": {
+    "wordmark": {
+      "text": "vern",
+      "case": "lowercase",
+      "fontFamily": "{typography.fontFamily.heading}",
+      "fontWeight": 700,
+      "color": "{color.primitive.cream}",
+      "description": "Små bogstaver med runde former. V'et kan senere stiliseres som flueben."
+    },
+    "tagline": {
+      "text": "Dit personlige forsikringsmatch",
+      "emphasis": "'personlige' sættes i kursiv",
+      "placement": "Under wordmark, venstrestillet",
+      "color": "{color.primitive.cream}"
+    },
+    "symbol": {
+      "description": "To cirkler med kraftigt overlap: dig (abrikos) og dit selskab (mint). Overlappet er matchet.",
+      "circles": [
+        { "color": "{color.primitive.apricot}", "opacity": 0.8, "cx": 130, "cy": 130, "r": 130 },
+        { "color": "{color.primitive.mint}", "opacity": 0.7, "cx": 160, "cy": 130, "r": 130 }
+      ],
+      "overlap": "Centrene ligger ca. 23 % af radius fra hinanden, så cirklerne næsten dækker hinanden.",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 290 260\"><circle cx=\"130\" cy=\"130\" r=\"130\" fill=\"#FF8A5B\" fill-opacity=\"0.8\"/><circle cx=\"160\" cy=\"130\" r=\"130\" fill=\"#BDE8D4\" fill-opacity=\"0.7\"/></svg>"
+    },
+    "lockup": "Wordmark og tagline til venstre, symbol til højre, på skovgrøn baggrund (#0F3D33)."
+  },
+
+  "graphicElements": {
+    "matchRing": {
+      "description": "Cirkulær ring med match-score i midten, fx '87 %'.",
+      "ringColor": "{color.primitive.apricot}",
+      "fill": "{color.semantic.surface}",
+      "labelColor": "{color.primitive.forest}",
+      "labelWeight": 700,
+      "strokeWidth": "16px"
+    },
+    "softCards": { "radius": "{radius.lg}", "description": "Bløde kort med 32 px radius." },
+    "overlappingShapes": { "description": "Overlappende former = match. Mint og abrikos med let gennemsigtighed." }
+  },
+
+  "components": {
+    "buttonPrimary": {
+      "background": "{color.semantic.actionPrimary}",
+      "text": "{color.semantic.textOnInverse}",
+      "radius": "{radius.pill}",
+      "height": "56px",
+      "typography": "{typography.scale.button}"
+    },
+    "card": {
+      "background": "{color.semantic.surface}",
+      "radius": "{radius.lg}",
+      "padding": "{spacing.lg}"
+    },
+    "cardBestMatch": {
+      "background": "{color.semantic.surfaceInverse}",
+      "text": "{color.semantic.textOnInverse}",
+      "radius": "{radius.md}"
+    },
+    "choiceOption": {
+      "default": { "background": "{color.semantic.surface}", "text": "{color.semantic.textPrimary}" },
+      "selected": { "background": "{color.semantic.accentMatch}", "text": "{color.semantic.textPrimary}", "fontWeight": 700 },
+      "radius": "{radius.md}"
+    },
+    "statusPositive": {
+      "background": "{color.semantic.success}",
+      "text": "{color.semantic.textBrand}",
+      "radius": "{radius.md}"
+    },
+    "icon": {
+      "style": "Afrundet linjestil",
+      "strokeWidth": "2px",
+      "color": "{color.primitive.forest}",
+      "activeColor": "{color.primitive.apricot}",
+      "description": "Abrikos kun ved aktiv tilstand."
+    }
+  },
+
+  "screens": {
+    "match": { "greeting": "Hej {name}", "title": "Dit match", "score": "87 %", "status": "Du er godt dækket på indbo og rejse", "cta": "Se hvorfor" },
+    "onboarding": { "progress": "Spørgsmål 2 af 6", "question": "Hvad er vigtigst for dig?", "options": ["Lav pris", "Hurtig hjælp ved skade", "Bred dækning"], "cta": "Næste" },
+    "comparison": {
+      "label": "Dine bedste matches",
+      "title": "Top 3",
+      "items": [
+        { "name": "Selskab A", "score": "92 %", "reason": "Bedst til hurtig hjælp", "highlight": true },
+        { "name": "Selskab B", "score": "85 %", "reason": "Lavest pris" },
+        { "name": "Selskab C", "score": "78 %", "reason": "Bredest dækning" }
+      ],
+      "footer": "Vern er uvildig"
+    }
+  },
+
+  "imagery": {
+    "do": ["Ægte hverdag: første lejlighed, cykel, kæledyr, rejser", "Varmt dagslys"],
+    "dont": ["Stock-smil", "Ulykker", "Brand", "Skræmmescenarier", "Jakkesæt"]
+  },
+
+  "toneOfVoice": {
+    "personality": "Den kloge ven, der ved noget om forsikring, men aldrig får dig til at føle dig dum.",
+    "principles": [
+      { "name": "Klar, ikke klog", "rule": "Hverdagsord frem for fagsprog." },
+      { "name": "Tryg, ikke trist", "rule": "Vi skaber ro uden at skræmme." },
+      { "name": "Personlig, ikke påtrængende", "rule": "Vi taler med dig og sælger ikke." },
+      { "name": "Venlig", "rule": "Venlig og let tone, føles som en ven." }
+    ]
+  },
+
+  "accessibility": {
+    "minContrast": "WCAG AA",
+    "notes": [
+      "Tekst på abrikos er kul (#1C1C1C).",
+      "Tekst på skovgrøn er creme (#FAF5EE).",
+      "Mint bruges som baggrund, ikke som tekstfarve."
+    ]
+  }
+}

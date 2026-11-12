@@ -1,8 +1,5 @@
 import { useState } from 'react'
-import { hashString } from './mockPolicies.ts'
 import { getLogoUrl } from './logos.ts'
-
-const COLORS = ['accent', 'brand-blue', 'brand-magenta', 'meta-purple', 'meta-lime', 'brand-beige', 'info'] as const
 
 function initials(name: string): string {
   const words = name.split(/\s+/).filter((word) => /^\p{L}/u.test(word))
@@ -24,7 +21,7 @@ export default function Monogram({ id, name, size = 'medium' }: Props) {
   }
 
   return (
-    <span className={`monogram monogram--${size}`} data-color={COLORS[hashString(id) % COLORS.length]} aria-hidden>
+    <span className={`monogram monogram--${size}`} aria-hidden>
       {initials(name)}
     </span>
   )

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Box, Button, Detail, Heading, HelpText, HStack, Radio, RadioGroup, VStack } from '@navikt/ds-react'
-import { ArrowLeftIcon, ArrowRightIcon, ShieldCheckmarkIcon } from '@navikt/aksel-icons'
+import { BodyLong, Box, Button, Detail, Heading, HelpText, HStack, Radio, RadioGroup, VStack } from '@navikt/ds-react'
+import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { VernLockup } from '../brand/VernLogo.tsx'
+import VernHeader from '../onboarding/VernHeader.tsx'
 import { QUESTIONS, emptyAnswers, type Answers } from './types.ts'
 import { firstUnansweredBefore, loadDraft, saveDraft } from './draft.ts'
 import '../onboarding/onboarding.css'
@@ -47,19 +49,22 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
   return (
     <Box as="main" className="onboarding" paddingInline={{ xs: 'space-16', md: 'space-32' }} paddingBlock="space-24 space-0">
       <VStack gap="space-24" className="onboarding__content">
-        <HStack gap="space-8" align="center" justify="space-between">
-          <HStack gap="space-8" align="center">
-            <ShieldCheckmarkIcon aria-hidden fontSize="1.75rem" className="onboarding__logo" />
-            <Heading level="2" size="small">Vern</Heading>
-          </HStack>
-          <Detail textColor="subtle">Profil · steg 1 av 2</Detail>
-        </HStack>
+        {step === 0 ? (
+          <VStack gap="space-16">
+            <VernLockup size={80} />
+            <BodyLong>
+              Hei! Fire korte spørsmål, så finner vi ut hva som betyr mest for deg. Det finnes ingen feil svar.
+            </BodyLong>
+          </VStack>
+        ) : (
+          <VernHeader><Detail textColor="subtle">Del 1 av 2</Detail></VernHeader>
+        )}
 
         <VStack gap="space-8">
-          <Detail textColor="subtle" weight="semibold" className="vp-eyebrow">
-            Verdiprofil · spørsmål {step + 1} av {QUESTIONS.length}
+          <Detail textColor="subtle" weight="semibold">
+            Spørsmål {step + 1} av {QUESTIONS.length}
           </Detail>
-          <div className="vp-progress" role="progressbar" aria-label="Fremdrift" aria-valuemin={1} aria-valuemax={QUESTIONS.length} aria-valuenow={step + 1}>
+          <div className="vp-progress" role="progressbar" aria-label="Hvor langt du har kommet" aria-valuemin={1} aria-valuemax={QUESTIONS.length} aria-valuenow={step + 1}>
             {QUESTIONS.map((q, i) => <span key={q.id} className={i <= step ? 'is-on' : undefined} />)}
           </div>
         </VStack>
@@ -73,13 +78,16 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
           <RadioGroup
             legend={question.title}
             hideLegend
-            description="Velg det som passer deg best."
+            description="Velg ett svar. Du kan alltid endre det senere."
             value={value === null ? '' : String(value)}
             onChange={(next: string) => answer(Number(next))}
           >
             <div className="vp-q__options">
               {question.options.map((option, i) => (
-                <Radio key={option.label} value={String(i)} className="vp-q__option">{option.label}</Radio>
+                <Radio key={option.label} value={String(i)} className="vp-q__option vern-choice">
+                  <span className="vp-q__text">{option.label}</span>
+                  <Check aria-hidden size={24} className="vp-q__check" />
+                </Radio>
               ))}
             </div>
           </RadioGroup>
@@ -90,8 +98,8 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
         <div className="cta-bar__actions">
           {step === 0
             ? <Button variant="tertiary" onClick={onSkip}>Hopp over</Button>
-            : <Button variant="tertiary" icon={<ArrowLeftIcon aria-hidden />} onClick={() => onStepChange(step - 1)}>Tilbake</Button>}
-          <Button icon={<ArrowRightIcon aria-hidden />} iconPosition="right" disabled={value === null} onClick={next}>
+            : <Button variant="tertiary" icon={<ArrowLeft size="1em" aria-hidden />} onClick={() => onStepChange(step - 1)}>Tilbake</Button>}
+          <Button icon={<ArrowRight size="1em" aria-hidden />} iconPosition="right" disabled={value === null} onClick={next}>
             {isLast ? doneLabel : 'Neste'}
           </Button>
         </div>

@@ -18,7 +18,7 @@ test('fetchProfile retries until the API is up', async () => {
 
 test('fetchProfile gives up after the last attempt', async () => {
   const fetcher = sequence(new Response('', { status: 502 }))
-  await assert.rejects(fetchProfile({ attempts: 3, delayMs: 0, fetcher }), /Kunne ikke hente profilen/)
+  await assert.rejects(fetchProfile({ attempts: 3, delayMs: 0, fetcher }), /Vi fikk ikke hentet profilen din/)
 })
 
 test('fetchProfile does not retry client errors', async () => {

@@ -33,7 +33,7 @@ export async function extractPdfPages(bytes: Uint8Array): Promise<string[]> {
     const { text } = await extractText(pdf, { mergePages: false })
     return text
   } catch {
-    throw new DocumentError(422, 'Klarte ikke å lese PDF-en. Er filen skadet eller passordbeskyttet?')
+    throw new DocumentError(422, 'Vi fikk ikke åpnet PDF-en. Kanskje den har passord eller er skadet? Prøv en annen kopi.')
   }
 }
 
@@ -70,6 +70,7 @@ Regler:
 - coverageSummary: én kort setning om hva forsikringen dekker.
 - exclusions: inntil 8 korte punkter om viktige ting som ikke dekkes.
 - notes: inntil 6 korte punkter som er nyttige for å sammenligne med andre selskaper (f.eks. erstatningsregler, sikkerhetskrav, prisendringer, nye unntak).
+- Tekst i warnings, coverageSummary, exclusions og notes leses av brukeren: skriv på norsk bokmål, i du-form, med korte setninger og hverdagsord. Forklar fagord kort. Ingen tekniske detaljer og ingen skremsler.
 - Hvis dokumentet ikke er et forsikringsdokument, returner tom policies-liste og forklar i warnings.
 
 Returner kun JSON på denne formen:
@@ -144,7 +145,7 @@ export function parseExtraction(raw: unknown, fileName: string, now = new Date()
   const known = insurerName ? findInsurerByName(insurerName) : undefined
   const insurerId = known?.id ?? (insurerName ? slug(insurerName) : 'ukjent')
   const insurer = known?.name ?? insurerName ?? 'Ukjent selskap'
-  if (!insurerName) warnings.push('Fant ikke hvilket forsikringsselskap dokumentet er fra.')
+  if (!insurerName) warnings.push('Vi fant ikke ut hvilket forsikringsselskap dokumentet er fra.')
   const issuedAt = isoDate(data.issuedAt)
   const source = { type: 'document' as const, fileName: fileName.slice(0, 200), ...(issuedAt ? { issuedAt } : {}), analyzedAt: now.toISOString() }
 
@@ -161,7 +162,7 @@ export function parseExtraction(raw: unknown, fileName: string, now = new Date()
     const coverages = coverageLines(item.coverages)
     const exclusions = textList(item.exclusions, 8)
     const notes = textList(item.notes, 6)
-    if (annualPremium === undefined) warnings.push(`Fant ikke pris for ${product}.`)
+    if (annualPremium === undefined) warnings.push(`Vi fant ikke prisen for ${product}.`)
     return [{
       id: `doc-${randomUUID()}`,
       insurerId,
@@ -187,22 +188,22 @@ export function parseExtraction(raw: unknown, fileName: string, now = new Date()
 }
 
 export async function analyzeDocument(bytes: Uint8Array, fileName: string, extract: ExtractModel): Promise<DocumentAnalysis> {
-  if (!isPdf(bytes)) throw new DocumentError(415, 'Filen er ikke en PDF.')
+  if (!isPdf(bytes)) throw new DocumentError(415, 'Vi kan bare lese PDF. Last ned forsikringsbeviset som PDF, og prøv igjen.')
   const pages = await extractPdfPages(bytes)
   const documentText = selectRelevantText(pages)
   if (documentText.replace(/--- Side \d+ ---/g, '').trim().length < 200) {
-    throw new DocumentError(422, 'Fant ingen lesbar tekst i dokumentet. Skannede dokumenter og bilder støttes ikke ennå – last ned PDF-en fra forsikringsselskapets nettside.')
+    throw new DocumentError(422, 'Vi fant ingen lesbar tekst i dokumentet. Skannede ark og bilder kan vi ikke lese ennå. Prøv PDF-en fra nettsiden til forsikringsselskapet ditt.')
   }
   let raw: unknown
   try {
     raw = JSON.parse(await extract(EXTRACTION_INSTRUCTIONS, documentText))
   } catch (error) {
-    if (error instanceof SyntaxError) throw new DocumentError(502, 'Fikk et ugyldig svar fra analysen. Prøv igjen.')
+    if (error instanceof SyntaxError) throw new DocumentError(502, 'Noe gikk litt skeis da vi leste dokumentet. Prøv igjen.')
     throw error
   }
   const result = parseExtraction(raw, fileName)
   if (result.policies.length === 0) {
-    throw new DocumentError(422, result.warnings[0] ?? 'Fant ingen forsikringer i dokumentet. Er det riktig fil?')
+    throw new DocumentError(422, result.warnings[0] ?? 'Vi fant ingen forsikringer her. Er det riktig fil?')
   }
   return result
 }

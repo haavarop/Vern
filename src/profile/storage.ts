@@ -50,7 +50,7 @@ export async function fetchProfile(
       if (attempt >= attempts) throw error
     }
     if (response?.ok) return await response.json() as Partial<StoredProfile>
-    if (response && (response.status < 500 || attempt >= attempts)) throw new Error('Kunne ikke hente profilen.')
+    if (response && (response.status < 500 || attempt >= attempts)) throw new Error('Vi fikk ikke hentet profilen din. Prøv igjen om litt.')
     await new Promise((resolve) => setTimeout(resolve, delayMs * attempt))
   }
 }
@@ -61,10 +61,10 @@ export async function saveProfile(profile: StoredProfile): Promise<void> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(profile),
   })
-  if (!response.ok) throw new Error('Kunne ikke lagre profilen.')
+  if (!response.ok) throw new Error('Vi fikk ikke lagret profilen din. Prøv igjen om litt.')
 }
 
 export async function deleteProfile(): Promise<void> {
   const response = await fetch('/api/profile', { method: 'DELETE' })
-  if (!response.ok) throw new Error('Kunne ikke slette profilen.')
+  if (!response.ok) throw new Error('Vi fikk ikke slettet profilen din. Prøv igjen om litt.')
 }

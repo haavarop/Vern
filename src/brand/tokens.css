@@ -1,0 +1,65 @@
+/* Vern brand tokens. Mirrors vern-brand-v2.json (single source of truth) – change the spec first, then this file. */
+:root {
+  /* Primitive colors */
+  --vern-forest: #0F3D33;
+  --vern-apricot: #FF8A5B;
+  --vern-mint: #BDE8D4;
+  --vern-cream: #FAF5EE;
+  --vern-charcoal: #1C1C1C;
+  --vern-grey: #595959;
+  --vern-white: #FFFFFF;
+
+  /* Semantic colors */
+  --vern-background: var(--vern-cream);
+  --vern-surface: var(--vern-white);
+  --vern-surface-inverse: var(--vern-forest);
+  --vern-text-primary: var(--vern-charcoal);
+  --vern-text-secondary: var(--vern-grey);
+  --vern-text-brand: var(--vern-forest);
+  --vern-text-on-inverse: var(--vern-cream);
+  --vern-action-primary: var(--vern-forest);
+  --vern-accent-match: var(--vern-apricot);
+  --vern-success: var(--vern-mint);
+  --vern-border: var(--vern-forest);
+
+  /* Font families */
+  --vern-font-heading: "General Sans", "Satoshi", system-ui, sans-serif;
+  --vern-font-body: "Inter", system-ui, sans-serif;
+
+  /* Type scale */
+  --vern-font-size-display: 40px;
+  --vern-line-height-display: 1.1;
+  --vern-font-weight-display: 700;
+  --vern-font-size-h1: 32px;
+  --vern-line-height-h1: 1.15;
+  --vern-font-weight-h1: 700;
+  --vern-font-size-h2: 24px;
+  --vern-line-height-h2: 1.2;
+  --vern-font-weight-h2: 700;
+  --vern-font-size-body: 16px;
+  --vern-line-height-body: 1.5;
+  --vern-font-weight-body: 400;
+  --vern-font-size-body-small: 14px;
+  --vern-line-height-body-small: 1.45;
+  --vern-font-weight-body-small: 400;
+  --vern-font-size-button: 16px;
+  --vern-line-height-button: 1;
+  --vern-font-weight-button: 700;
+
+  /* Spacing */
+  --vern-space-xs: 4px;
+  --vern-space-sm: 8px;
+  --vern-space-md: 16px;
+  --vern-space-lg: 24px;
+  --vern-space-xl: 32px;
+  --vern-space-2xl: 48px;
+
+  /* Radius */
+  --vern-radius-md: 20px;
+  --vern-radius-lg: 32px;
+  --vern-radius-pill: 999px;
+
+  /* Components */
+  --vern-button-height: 56px;
+  --vern-match-ring-stroke: 16px;
+}
