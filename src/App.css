@@ -71,6 +71,20 @@
 .recommendation-intro .aksel-body-long { color: var(--vern-text-primary); }
 .recommendation-body { display: grid; gap: var(--vern-space-md); }
 .recommendations { display: grid; gap: var(--vern-space-md); }
+.recommendation-groups { display: grid; gap: var(--vern-space-xl); }
+.recommendation-group { display: grid; gap: var(--vern-space-md); min-width: 0; }
+.recommendation-group__title { padding-inline-start: var(--vern-space-sm); border-inline-start: 4px solid var(--vern-accent-match); color: var(--vern-text-primary); font-size: var(--vern-font-size-h1); line-height: var(--vern-line-height-h1); }
+.recommendation-list { display: grid; gap: var(--vern-space-lg); margin: 0; padding: 0; list-style: none; }
+.recommendation-pair { display: grid; gap: var(--vern-space-sm); min-width: 0; }
+.recommendation-pair__title { color: var(--vern-text-brand); }
+.recommendation-pair__companies { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--vern-space-sm); }
+.recommendation-company { display: grid; align-content: start; justify-items: center; gap: var(--vern-space-sm); min-width: 0; padding: var(--vern-space-md); text-align: center; }
+.recommendation-company--suggested { background: var(--vern-mint); }
+.recommendation-company--unchanged { width: 100%; }
+.recommendation-company__label { justify-self: stretch; color: var(--vern-text-secondary); text-align: left; }
+.recommendation-company__identity { display: grid; justify-items: center; align-content: start; gap: var(--vern-space-xs); width: 100%; min-width: 0; min-height: 4.5rem; }
+.recommendation-company__name { overflow-wrap: anywhere; }
+.recommendation-company__price { min-height: 2.5rem; overflow-wrap: anywhere; }
 .recommendation-loading { display: grid; gap: var(--vern-space-md); }
 .recommendation-loading__status { display: flex; align-items: center; gap: var(--vern-space-sm); color: var(--vern-text-brand); }
 .app-skeleton.aksel-skeleton { border-radius: var(--vern-radius-lg); }

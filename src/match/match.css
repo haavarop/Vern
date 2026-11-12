@@ -113,6 +113,7 @@
   flex-shrink: 0;
 }
 
+.match-ring--compact { width: 96px; height: 96px; }
 .match-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .match-ring__fill { fill: var(--vern-surface); }
 
@@ -144,6 +145,9 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+.match-ring__label--compact { font-size: 1.125rem; }
+.match-ring__caption { font-family: var(--vern-font-body); font-size: var(--vern-font-size-body-small); line-height: 1.1; }
 
 @keyframes match-ring-fill {
   from { stroke-dashoffset: 100; }

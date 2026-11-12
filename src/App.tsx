@@ -5,12 +5,14 @@ import { ArrowLeft, CircleAlert, Info, RefreshCw, X } from 'lucide-react'
 import { VernSymbol } from './brand/VernLogo.tsx'
 import Onboarding from './onboarding/Onboarding.tsx'
 import { INSURERS, normalize } from './onboarding/insurers.ts'
+import Monogram from './onboarding/Monogram.tsx'
+import type { Policy } from './onboarding/types.ts'
 import ProfilePage from './profile/ProfilePage.tsx'
 import ValueProfileFlow from './profile/ValueProfileFlow.tsx'
 import { QUESTIONS, type Answers, type UserProfile } from './profile/types.ts'
 import { buildStoredProfile, deleteProfile, fetchProfile, isNewCustomer, saveProfile, type StoredProfile } from './profile/storage.ts'
 import { clearDraft, loadDraft, parseQuestionParam, questionParam } from './profile/draft.ts'
-import MatchPage, { MatchHero } from './match/MatchPage.tsx'
+import MatchPage, { ScoreRing } from './match/MatchPage.tsx'
 import VernHeader from './onboarding/VernHeader.tsx'
 import { buildMatchRequest, fetchMatches, friendlyError } from './match/api.ts'
 import type { InsurerMatch } from './match/types.ts'
@@ -223,6 +225,7 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
   const [syncError, setSyncError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null)
+  const [currentPolicies, setCurrentPolicies] = useState<Policy[]>([])
   const [matches, setMatches] = useState<InsurerMatch[] | null>(null)
 
   useEffect(() => {
@@ -235,6 +238,7 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
       setLoading(true)
       setError('')
       setRecommendations(null)
+      setCurrentPolicies([])
       setMatches(null)
       try {
         const connections = stored.insurances ?? {}
@@ -263,6 +267,7 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
         }
         if (stopped || signal.aborted) return
         setRecommendations(data.recommendations as Recommendation[])
+        setCurrentPolicies(policies)
         setMatches(matchResults)
       } catch (caught) {
         if (!stopped && !signal.aborted) setError(friendlyError(caught, 'Vi fikk ikke hentet forslagene dine. Prøv igjen om litt.'))
@@ -302,6 +307,70 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
     }
   }, [attempt, onProfileChange])
 
+  const rankedRecommendations = (recommendations ?? []).map((recommendation, index) => {
+    const currentPolicy = currentPolicies[index]
+    const normalizedCompany = normalize(recommendation.company)
+    const suggestedInsurer = INSURERS.find((item) => normalize(item.name) === normalizedCompany || item.aliases?.some((alias) => normalize(alias) === normalizedCompany))
+    const suggestedMatch = matches?.find((item) => item.insurerId === suggestedInsurer?.id)
+    const currentMatch = currentPolicy && matches?.find((item) => item.insurerId === currentPolicy.insurerId)
+    const sameCompany = !!currentPolicy && (currentPolicy.insurerId === suggestedInsurer?.id || normalize(currentPolicy.insurer) === normalizedCompany)
+    return { recommendation, index, currentPolicy, suggestedInsurer, suggestedMatch, currentMatch, sameCompany }
+  }).sort((left, right) => (right.suggestedMatch?.score ?? -1) - (left.suggestedMatch?.score ?? -1) || left.index - right.index)
+  const recommendedChanges = rankedRecommendations.filter((item) => !item.sameCompany)
+  const unchangedRecommendations = rankedRecommendations.filter((item) => item.sameCompany)
+
+  const renderRecommendationGroup = (title: string, items: typeof rankedRecommendations, unchanged: boolean) => (
+    <section className="recommendation-group" aria-labelledby={unchanged ? 'recommendation-unchanged-title' : 'recommendation-changes-title'}>
+      <Heading id={unchanged ? 'recommendation-unchanged-title' : 'recommendation-changes-title'} level="2" size="large" className="recommendation-group__title">{title}</Heading>
+      {items.length === 0 ? (
+        <BodyShort className="vern-card">{unchanged ? 'Ingen forslag uten endring akkurat nå.' : 'Ingen anbefalte endringer akkurat nå.'}</BodyShort>
+      ) : (
+        <ol className="recommendation-list" aria-label={`${title} sortert etter match`}>
+          {items.map(({ recommendation, currentPolicy, suggestedInsurer, currentMatch, suggestedMatch, index }) => (
+            <li className="recommendation-pair" key={currentPolicy?.id ?? `${recommendation.insurance}-${index}`}>
+              <Heading level="3" size="small" className="recommendation-pair__title">{recommendation.insurance}</Heading>
+              {unchanged ? (
+                <article className="recommendation-company recommendation-company--unchanged vern-card">
+                  <BodyShort size="small" weight="semibold" className="recommendation-company__label">Selskapet du har i dag</BodyShort>
+                  <div className="recommendation-company__identity">
+                    {currentPolicy && <Monogram id={currentPolicy.insurerId} name={currentPolicy.insurer} size="small" />}
+                    <BodyShort weight="semibold" className="recommendation-company__name">{currentPolicy?.insurer ?? recommendation.company}</BodyShort>
+                  </div>
+                  <ScoreRing score={suggestedMatch?.score ?? currentMatch?.score} compact showMatchLabel />
+                  <BodyShort size="small" className="match-muted">Selskapet ditt er fortsatt anbefalt</BodyShort>
+                </article>
+              ) : (
+                <div className="recommendation-pair__companies">
+                  <article className="recommendation-company vern-card">
+                    <BodyShort size="small" weight="semibold" className="recommendation-company__label">Forsikringen din</BodyShort>
+                    <div className="recommendation-company__identity">
+                      {currentPolicy && <Monogram id={currentPolicy.insurerId} name={currentPolicy.insurer} size="small" />}
+                      <BodyShort weight="semibold" className="recommendation-company__name">{currentPolicy?.insurer ?? 'Nåværende selskap'}</BodyShort>
+                    </div>
+                    <ScoreRing score={currentMatch?.score} compact showMatchLabel />
+                    {currentMatch === undefined && <BodyShort size="small" className="match-muted">Match ikke tilgjengelig</BodyShort>}
+                  </article>
+                  <article className="recommendation-company recommendation-company--suggested vern-card">
+                    <BodyShort size="small" weight="semibold" className="recommendation-company__label">Verns forslag</BodyShort>
+                    <div className="recommendation-company__identity">
+                      <Monogram id={suggestedInsurer?.id ?? recommendation.company} name={recommendation.company} size="small" />
+                      <BodyShort weight="semibold" className="recommendation-company__name">{recommendation.company}</BodyShort>
+                    </div>
+                    <ScoreRing score={suggestedMatch?.score} compact showMatchLabel />
+                    {suggestedMatch === undefined
+                      ? <BodyShort size="small" className="match-muted">Match ikke tilgjengelig</BodyShort>
+                      : <BodyShort size="small" className="recommendation-company__price">Demopris {new Intl.NumberFormat('nb-NO').format(recommendation.price)}&nbsp;kr per måned</BodyShort>}
+                    {recommendation.fallback && <BodyShort size="small" className="match-muted">Viser selskapet du har i dag</BodyShort>}
+                  </article>
+                </div>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  )
+
   return (
     <main className="recommendation-page">
       <VernHeader>
@@ -325,12 +394,10 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
               <BodyShort size="small" className="app-notice__text">Dette er en demo med simulerte priser. Matchen gjelder selskapet, ikke hver enkelt forsikring.</BodyShort>
             </div>
             {recommendations.length === 0 && <BodyShort className="vern-card">Du har ikke lagt til noen forsikringer ennå. Legg dem til i profilen din, så ser vi på dem sammen.</BodyShort>}
-            {recommendations.map((recommendation, index) => {
-              const company = normalize(recommendation.company)
-              const insurer = INSURERS.find((item) => normalize(item.name) === company || item.aliases?.some((alias) => normalize(alias) === company))
-              const match = matches?.find((item) => item.insurerId === insurer?.id)
-              return <MatchHero key={index} match={match} recommendation={{ ...recommendation, insurerId: insurer?.id }} compact={index > 0} />
-            })}
+            {recommendations.length > 0 && <div className="recommendation-groups">
+              {renderRecommendationGroup('Anbefalte endringer', recommendedChanges, false)}
+              {renderRecommendationGroup('Krever ikke endring', unchangedRecommendations, true)}
+            </div>}
           </section>
         )}
         {loading && (

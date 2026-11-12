@@ -95,24 +95,27 @@ function useRevealedUpTo(): [(node: HTMLOListElement | null) => (() => void) | u
 const insurerName = (id: string) => getInsurer(id)?.name ?? id
 
 /** Brand match ring: apricot ring on a light track, white fill, forest score in the middle. */
-function ScoreRing({ score }: { score: number }) {
-  const shown = useCountUp(score)
+export function ScoreRing({ score, compact = false, showMatchLabel = false }: { score?: number; compact?: boolean; showMatchLabel?: boolean }) {
+  const shown = useCountUp(score ?? 0)
   return (
     <div
-      className="match-ring"
-      role="meter"
-      aria-label="Hvor godt selskapet passer deg"
-      aria-valuemin={0}
-      aria-valuemax={100}
+      className={`match-ring${compact ? ' match-ring--compact' : ''}`}
+      role={score === undefined ? 'img' : 'meter'}
+      aria-label={score === undefined ? 'Match ikke tilgjengelig' : `Match ${score} prosent`}
+      aria-valuemin={score === undefined ? undefined : 0}
+      aria-valuemax={score === undefined ? undefined : 100}
       aria-valuenow={score}
-      aria-valuetext={`${score} prosent, ${scoreLabel(score).toLowerCase()}`}
+      aria-valuetext={score === undefined ? undefined : `${score} prosent, ${scoreLabel(score).toLowerCase()}`}
     >
       <svg viewBox="0 0 128 128" aria-hidden>
         <circle className="match-ring__fill" cx="64" cy="64" r="64" />
         <circle className="match-ring__track" cx="64" cy="64" r="56" pathLength={100} />
-        <circle className="match-ring__value" cx="64" cy="64" r="56" pathLength={100} style={{ strokeDashoffset: 100 - score }} />
+        <circle className="match-ring__value" cx="64" cy="64" r="56" pathLength={100} style={{ strokeDashoffset: 100 - (score ?? 0) }} />
       </svg>
-      <span className="match-ring__label" aria-hidden>{formatScore(shown)}</span>
+      <span className={`match-ring__label${compact ? ' match-ring__label--compact' : ''}`} aria-hidden>
+        {score === undefined ? '–' : formatScore(shown)}
+        {showMatchLabel && <span className="match-ring__caption">match</span>}
+      </span>
     </div>
   )
 }
