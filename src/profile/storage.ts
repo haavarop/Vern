@@ -1,3 +1,4 @@
+import { isAboutYouFilled, type AboutYou, type CallbackRequest, type Journey } from '../journey/types.ts'
 import type { ConnectionState } from '../onboarding/types.ts'
 import { isAnswered, rankDimensions, scoreProfile, type Answers, type Dimension } from './types.ts'
 
@@ -21,20 +22,43 @@ export type StoredProfile = {
   } | null
   /** Fetched insurances keyed by insurer id. */
   insurances: ConnectionState
+  /** «Om deg». Null if every question was skipped. Missing in profiles saved before the field existed. */
+  aboutYou?: AboutYou | null
+  /** Which branch the customer chose after the landing page. Missing in older profiles. */
+  journey?: Journey | null
+  /** Callback requests, newest last. */
+  callbacks?: CallbackRequest[]
+}
+
+export type ProfileInput = {
+  answers: Answers | null
+  insurances: ConnectionState
+  aboutYou?: AboutYou | null
+  journey?: Journey | null
+  callbacks?: CallbackRequest[]
 }
 
 export function isNewCustomer(stored: Partial<StoredProfile>): boolean {
   return !stored.onboarded
 }
 
-export function buildStoredProfile(answers: Answers | null, insurances: ConnectionState): StoredProfile {
+export function buildStoredProfile({ answers, insurances, aboutYou = null, journey = null, callbacks = [] }: ProfileInput): StoredProfile {
   const valueProfile = isAnswered(answers)
     ? (() => {
         const scores = scoreProfile(answers)
         return { answers, scores, ranked: rankDimensions(scores) }
       })()
     : null
-  return { version: 1, updatedAt: new Date().toISOString(), onboarded: true, valueProfile, insurances }
+  return {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    onboarded: true,
+    valueProfile,
+    insurances,
+    aboutYou: isAboutYouFilled(aboutYou) ? aboutYou : null,
+    journey,
+    callbacks,
+  }
 }
 
 // In dev the web server is often ready before the API, so network errors and 5xx (Vite proxy errors) are retried.

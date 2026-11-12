@@ -81,7 +81,7 @@ function App() {
   function persist(answers: Answers | null, insurances: ConnectionState) {
     setSaveError('')
     clearDraft()
-    saveProfile(buildStoredProfile(answers, insurances))
+    saveProfile(buildStoredProfile({ answers, insurances }))
       .catch((error: unknown) => setSaveError(friendlyError(error, 'Vi fikk ikke lagret profilen din. Prøv igjen om litt.')))
   }
 
