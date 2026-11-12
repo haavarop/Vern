@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { BodyLong, Box, Button, Checkbox, CheckboxGroup, Detail, Heading, Radio, RadioGroup, VStack } from '@navikt/ds-react'
+import { useEffect, useId, useRef, useState } from 'react'
+import { BodyLong, Box, Button, Detail, Heading, Radio, RadioGroup, VStack } from '@navikt/ds-react'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import { VernLockup } from '../brand/VernLogo.tsx'
 import VernHeader from '../onboarding/VernHeader.tsx'
@@ -25,6 +25,7 @@ type Props = {
 export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', step, onStepChange, onDone, stepLabel, onBack }: Props) {
   const [answers, setAnswers] = useState<Answers>(() => loadDraft() ?? initialAnswers ?? emptyAnswers())
   const headingRef = useRef<HTMLHeadingElement>(null)
+  const headingId = useId()
   const question = QUESTIONS[step]
   const value = answers[question.id] ?? null
   const isLast = step === QUESTIONS.length - 1
@@ -47,8 +48,11 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
     saveDraft(updated)
   }
 
-  function answerMany(options: string[]) {
-    const updated = { ...answers, [question.id]: options.length ? options.map(Number) : null }
+  function toggleOption(option: number, limit: number) {
+    const next = picked.includes(option)
+      ? picked.filter((i) => i !== option)
+      : [...picked, option].slice(-limit)
+    const updated = { ...answers, [question.id]: next.length ? next : null }
     setAnswers(updated)
     saveDraft(updated)
   }
@@ -79,30 +83,24 @@ export default function ValueProfileFlow({ initialAnswers, doneLabel = 'Lagre', 
         </VStack>
 
         <VStack gap="space-16" key={question.id} className="vp-step">
-          <Heading ref={headingRef} tabIndex={-1} level="1" size="large" className="vp-step__title">{question.title}</Heading>
+          <Heading id={headingId} ref={headingRef} tabIndex={-1} level="1" size="large" className="vp-step__title">{question.title}</Heading>
           {question.pick && <BodyLong textColor="subtle">Velg de {question.pick} viktigste</BodyLong>}
 
           {question.pick ? (
-            <CheckboxGroup
-              legend={question.title}
-              hideLegend
-              value={picked.map(String)}
-              onChange={(next: string[]) => answerMany(next)}
-            >
-              <div className="vp-q__options">
-                {question.options.map((option, i) => (
-                  <Checkbox
-                    key={option.label}
-                    value={String(i)}
-                    className="vp-q__option vern-choice"
-                    disabled={picked.length >= (question.pick ?? 1) && !picked.includes(i)}
-                  >
-                    <span className="vp-q__text">{option.label}</span>
-                    <Check aria-hidden size={24} className="vp-q__check" />
-                  </Checkbox>
-                ))}
-              </div>
-            </CheckboxGroup>
+            <div role="group" aria-labelledby={headingId} className="vp-q__options">
+              {question.options.map((option, i) => (
+                <label key={option.label} className="vp-q__option vp-q__option--multi vern-choice">
+                  <input
+                    type="checkbox"
+                    className="vp-q__input"
+                    checked={picked.includes(i)}
+                    onChange={() => toggleOption(i, question.pick ?? 1)}
+                  />
+                  <span className="vp-q__text">{option.label}</span>
+                  <Check aria-hidden size={24} className="vp-q__check" />
+                </label>
+              ))}
+            </div>
           ) : (
             <RadioGroup
               legend={question.title}
