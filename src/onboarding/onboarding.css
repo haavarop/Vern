@@ -113,3 +113,28 @@
 }
 
 .touch-target { min-height: 44px; min-width: 44px; }
+
+/* Stats, policy cards and charts */
+.stat__icon { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: var(--ax-bg-accent-soft); color: var(--ax-text-accent-subtle); font-size: 1.25rem; }
+.insurer-label { text-transform: uppercase; letter-spacing: 0.06em; }
+.policy-card {
+  display: grid;
+  gap: var(--ax-space-12);
+  padding: var(--ax-space-16);
+  border: 1px solid var(--ax-border-neutral-subtle);
+  border-left: 4px solid var(--policy-color);
+  border-radius: var(--ax-radius-12);
+  background: var(--ax-bg-raised);
+}
+.key-figure { padding: var(--ax-space-8) var(--ax-space-12); border-radius: var(--ax-radius-8); background: var(--ax-bg-sunken); min-width: 0; }
+.key-figure p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Coverage lines: name | covered up to | deductible */
+.coverage-list { list-style: none; margin: 0; padding: 0; }
+.coverage-list li { display: flex; justify-content: space-between; align-items: baseline; gap: var(--ax-space-12); padding-block: var(--ax-space-8); border-top: 1px solid var(--ax-border-neutral-subtle); }
+.coverage-list__col { width: 7.5rem; text-align: right; font-variant-numeric: tabular-nums; }
+.chart-donut { flex-shrink: 0; }
+.chart-donut__value { font-size: 11px; font-weight: 700; fill: var(--ax-text-neutral); }
+.chart-donut__label { font-size: 7px; fill: var(--ax-text-neutral-subtle); }
+.chart-legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 180px; }
+.chart-legend li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--ax-space-8); }
+.chart-legend__dot { width: 10px; height: 10px; border-radius: 50%; }

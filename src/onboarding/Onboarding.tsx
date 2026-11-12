@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Alert, BodyLong, Box, Button, Detail, FileUpload, Heading, HStack, List, ReadMore, VStack } from '@navikt/ds-react'
-import { ArrowLeftIcon, ShieldCheckmarkIcon } from '@navikt/aksel-icons'
+import { Alert, BodyLong, Box, Button, Detail, FileUpload, Heading, HStack, List, ReadMore, Tag, VStack } from '@navikt/ds-react'
+import { ArrowLeftIcon, PadlockLockedIcon, ShieldCheckmarkIcon } from '@navikt/aksel-icons'
 import PolicySummary from './PolicySummary.tsx'
 import { analyzeDocument, MAX_DOCUMENT_BYTES } from './documentApi.ts'
 import { policyCountLabel } from './format.ts'
@@ -74,7 +74,7 @@ export default function Onboarding({ onDone, onSkip, onBack, initialConnections 
   }
 
   function describe(upload: Upload): string | undefined {
-    if (upload.status === 'analyzing') return 'Leser dokumentet … dette kan ta opptil et minutt'
+    if (upload.status === 'analyzing') return 'Leser dokumentet …'
     if (upload.status === 'done') return `Fant ${policyCountLabel(upload.policyIds.length)}`
     return undefined
   }
@@ -92,17 +92,14 @@ export default function Onboarding({ onDone, onSkip, onBack, initialConnections 
 
         <VStack gap="space-8">
           <Heading level="1" size="large">Last opp forsikringene dine</Heading>
-          <BodyLong>
-            Last opp forsikringsdokumentet fra selskapet ditt. Vi leser ut pris, dekninger og egenandeler, så vi kan sammenligne med andre selskaper.
-          </BodyLong>
+          <BodyLong textColor="subtle">Vi leser ut pris, dekning og egenandel automatisk.</BodyLong>
         </VStack>
 
-        <Box as="section" aria-labelledby="documents-heading" background="raised" borderRadius="12" padding="space-16" borderWidth="1" borderColor="neutral-subtle">
+        <Box as="section" aria-label="Forsikringsdokumenter" background="raised" borderRadius="12" padding="space-16" borderWidth="1" borderColor="neutral-subtle">
           <VStack gap="space-16">
-            <Heading id="documents-heading" level="2" size="xsmall">Forsikringsdokumenter</Heading>
             <FileUpload.Dropzone
               label="Last opp forsikringsdokument"
-              description="PDF, maks 15 MB. Du kan laste opp flere dokumenter."
+              description="PDF · maks 15 MB"
               accept="application/pdf,.pdf"
               maxSizeInBytes={MAX_DOCUMENT_BYTES}
               multiple
@@ -136,13 +133,12 @@ export default function Onboarding({ onDone, onSkip, onBack, initialConnections 
               </VStack>
             )}
 
-            <ReadMore header="Hvor finner jeg forsikringsdokumentet?" size="small">
-              Logg inn på «Min side» hos forsikringsselskapet ditt og last ned forsikringsbeviset eller forsikringsoversikten som PDF.
-              Du får det også tilsendt på e-post eller i digital postkasse når forsikringen fornyes.
-            </ReadMore>
-            <Detail textColor="subtle">
-              Dokumentet analyseres med Gjensidiges KI-tjeneste og lagres ikke. Vi tar bare vare på forsikringsopplysningene, ikke navn eller adresse.
-            </Detail>
+            <HStack gap="space-8" justify="space-between" align="center" wrap>
+              <ReadMore header="Hvor finner jeg dokumentet?" size="small">
+                Last ned forsikringsbeviset som PDF fra «Min side» hos selskapet ditt.
+              </ReadMore>
+              <Tag size="small" variant="neutral" icon={<PadlockLockedIcon aria-hidden />}>Dokumentet lagres ikke</Tag>
+            </HStack>
           </VStack>
         </Box>
 
@@ -150,7 +146,7 @@ export default function Onboarding({ onDone, onSkip, onBack, initialConnections 
           <VStack gap="space-12">
             <Alert variant="info" size="small">
               <VStack gap="space-4">
-                <span>Sjekk at opplysningene stemmer. Dokumentet er lest automatisk og kan inneholde feil.</span>
+                <span>Sjekk at tallene stemmer.</span>
                 {warnings.length > 0 && (
                   <List as="ul" size="small">
                     {warnings.map((warning, index) => <List.Item key={index}>{warning}</List.Item>)}
