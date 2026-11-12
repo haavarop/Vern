@@ -28,9 +28,9 @@
  * covers the whole tile, so the tile is the click target.
  */
 .vp-q__option.aksel-radio,
-.vp-q__option.aksel-checkbox { position: relative; margin: 0; }
+.vp-q__option--multi { position: relative; margin: 0; }
 .vp-q__option .aksel-radio__input,
-.vp-q__option .aksel-checkbox__input {
+.vp-q__input {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -39,8 +39,7 @@
   opacity: 0;
   cursor: pointer;
 }
-.vp-q__option .aksel-radio__label,
-.vp-q__option .aksel-checkbox__label {
+.vp-q__option .aksel-radio__label {
   display: flex;
   align-items: center;
   flex: 1;
@@ -50,13 +49,10 @@
   color: inherit;
   cursor: pointer;
 }
-.vp-q__option .aksel-checkbox__icon { display: none; }
-.vp-q__option .aksel-checkbox__input:disabled { cursor: not-allowed; }
-.vp-q__option:has(input:disabled:not(:checked)) { opacity: var(--ax-opacity-disabled, .45); cursor: not-allowed; }
+.vp-q__option--multi { cursor: pointer; }
 .vp-q__check { flex-shrink: 0; margin-left: auto; visibility: hidden; }
 .vp-q__option:has(input:checked) .vp-q__check { visibility: visible; }
-.vp-q__option.aksel-radio:focus-within::after,
-.vp-q__option.aksel-checkbox:focus-within::after { display: none; }
+.vp-q__option.aksel-radio:focus-within::after { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .vp-step { animation: none; }
