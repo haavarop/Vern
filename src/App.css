@@ -79,7 +79,12 @@
 .change-summary--action { border-inline-start: 6px solid var(--vern-accent-match); }
 .change-summary--action .change-summary__icon { color: var(--vern-accent-match); }
 .change-summary__list { display: grid; gap: var(--vern-space-xs); margin: 0; padding-inline-start: var(--vern-space-lg); }
-.recommendation-matches { display: grid; gap: var(--vern-space-xl); margin-block-start: var(--vern-space-xl); }
+/* The page has two parts: what the customer has today, and companies to consider for a new insurance. */
+.recommendation-part-label { display: inline-flex; align-items: center; gap: var(--vern-space-xs); justify-self: start; min-height: 28px; padding: 0 var(--vern-space-sm); border-radius: var(--vern-radius-pill); background: var(--vern-mint); color: var(--vern-forest); font-size: var(--vern-font-size-body-small); font-weight: 700; }
+.recommendation-part-label--new { background: var(--vern-apricot); color: var(--vern-forest); }
+.recommendation-new { display: grid; gap: var(--vern-space-xl); margin-block-start: var(--vern-space-xl); padding-block-start: var(--vern-space-xl); border-block-start: 2px solid color-mix(in srgb, var(--vern-forest) 15%, transparent); }
+.recommendation-new__intro { display: grid; gap: var(--vern-space-sm); color: var(--vern-text-brand); }
+.recommendation-new__intro .aksel-body-long { color: var(--vern-text-primary); }
 .recommendation-groups { display: grid; gap: var(--vern-space-xl); }
 .recommendation-group { display: grid; gap: var(--vern-space-md); min-width: 0; }
 .recommendation-group__title { padding-inline-start: var(--vern-space-sm); border-inline-start: 4px solid var(--vern-accent-match); color: var(--vern-text-primary); font-size: var(--vern-font-size-h1); line-height: var(--vern-line-height-h1); }

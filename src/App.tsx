@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ComponentProps, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { BodyLong, BodyShort, Button, Heading, Loader, Skeleton, Theme } from '@navikt/ds-react'
-import { ArrowLeft, ArrowLeftRight, CircleAlert, CircleCheck, Info, RefreshCw, X } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, CircleAlert, CircleCheck, Info, RefreshCw, ShoppingBag, X } from 'lucide-react'
 import { VernSymbol } from './brand/VernLogo.tsx'
 import Onboarding from './onboarding/Onboarding.tsx'
 import { getInsurer, INSURERS, normalize } from './onboarding/insurers.ts'
@@ -565,7 +565,7 @@ function Recommendations({ onBack, onProfileChange, onRequestCallback, callbackR
                     <ScoreRing score={suggestedMatch?.score} compact showMatchLabel />
                     {suggestedMatch === undefined
                       ? <BodyShort size="small" className="match-muted">Match ikke tilgjengelig</BodyShort>
-                      : <BodyShort size="small" className="recommendation-company__price">Demopris {new Intl.NumberFormat('nb-NO').format(recommendation.price)}&nbsp;kr per måned</BodyShort>}
+                      : <BodyShort size="small" className="recommendation-company__price">{new Intl.NumberFormat('nb-NO').format(recommendation.price)}&nbsp;kr per måned</BodyShort>}
                     {recommendation.fallback && <BodyShort size="small" className="match-muted">Viser selskapet du har i dag</BodyShort>}
                   </article>
                 </div>
@@ -595,30 +595,38 @@ function Recommendations({ onBack, onProfileChange, onRequestCallback, callbackR
         {recommendations !== null && (
           <section className="recommendations">
             {recommendations.length === 0 && <BodyShort className="vern-card">Du har ikke lagt til noen forsikringer ennå. Legg dem til i profilen din, så ser vi på dem sammen.</BodyShort>}
+            {recommendations.length > 0 && <span className="recommendation-part-label">Forsikringene du har i dag</span>}
             {recommendations.length > 0 && <ChangeSummary changes={recommendedChanges.map(({ recommendation, currentPolicy }) => ({
               insurance: recommendation.insurance,
               from: currentPolicy?.insurer ?? 'selskapet du har i dag',
               to: recommendation.company,
             }))} />}
-            <div className="app-notice">
-              <Info aria-hidden size={24} strokeWidth={2} />
-              <BodyShort size="small" className="app-notice__text">Dette er en demo med simulerte priser. Matchen gjelder selskapet, ikke hver enkelt forsikring.</BodyShort>
-            </div>
             {recommendations.length > 0 && <div className="recommendation-groups">
               {renderRecommendationGroup('Anbefalte endringer', recommendedChanges, false)}
               {renderRecommendationGroup('Krever ikke endring', unchangedRecommendations, true)}
             </div>}
-            {matches && matches.length > 0
-              ? <div className="recommendation-matches">
-                <MatchResults
+            <section className="recommendation-new" aria-labelledby="recommendation-new-title">
+              <div className="recommendation-new__intro">
+                <span className="recommendation-part-label recommendation-part-label--new">
+                  <ShoppingBag aria-hidden size={16} strokeWidth={2} />
+                  Ny forsikring
+                </span>
+                <Heading id="recommendation-new-title" level="2" size="large">Skal du kjøpe en ny forsikring?</Heading>
+                <BodyLong>
+                  Forslagene over gjelder forsikringene du har i dag. Her ser du hvilke selskaper som passer deg best
+                  hvis du vil kjøpe en forsikring du ikke har ennå, eller samle forsikringene dine et nytt sted.
+                </BodyLong>
+              </div>
+              {matches && matches.length > 0
+                ? <MatchResults
                   matches={matches}
-                  eyebrow="Alle selskapene"
-                  title="Slik matcher selskapene deg"
+                  eyebrow="Dine beste matcher for ny forsikring"
+                  headingLevel="3"
                   onRequestCallback={onRequestCallback}
                   callbackRequestedFor={callbackRequestedFor}
                 />
-              </div>
-              : <BodyShort className="vern-card">Vi fikk ikke hentet matchene med selskapene akkurat nå.</BodyShort>}
+                : <BodyShort className="vern-card">Vi fikk ikke hentet matchene med selskapene akkurat nå.</BodyShort>}
+            </section>
           </section>
         )}
         {loading && (

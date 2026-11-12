@@ -18,6 +18,8 @@ const MIN_LOADING_MS = 900
 const COUNT_UP_MS = 1200
 const TOP = 3
 
+type HeadingLevel = '2' | '3' | '4'
+
 type Props = {
   connections: ConnectionState
   profile: UserProfile
@@ -191,13 +193,14 @@ function CallbackAction({ insurerId, requested, onRequest }: { insurerId: string
   )
 }
 
-export function MatchHero({ match, recommendation, highlight, compact = false, action }: {
+export function MatchHero({ match, recommendation, highlight, compact = false, action, level = '2' }: {
   match?: InsurerMatch
   recommendation?: { insurance: string; company: string; price: number; insurerId?: string; fallback?: boolean }
   highlight?: string
   /** Shows the score as a small pill instead of the ring, so only the first card gets the apricot ring. */
   compact?: boolean
   action?: ReactNode
+  level?: HeadingLevel
 }) {
   const headingId = useId()
   const name = recommendation?.company ?? (match ? insurerName(match.insurerId) : '')
@@ -219,10 +222,10 @@ export function MatchHero({ match, recommendation, highlight, compact = false, a
         {match && (compact ? <ScorePill score={match.score} /> : <ScoreRing score={match.score} />)}
         <div className="match-hero__name">
           {insurerId && <Monogram id={insurerId} name={name} />}
-          <Heading id={headingId} level="2" size="medium">{recommendation?.insurance ?? name}</Heading>
+          <Heading id={headingId} level={level} size="medium">{recommendation?.insurance ?? name}</Heading>
           {recommendation && <BodyShort weight="semibold">{name}</BodyShort>}
           {highlight && <BodyShort weight="semibold">{highlight}</BodyShort>}
-          {recommendation && <BodyShort size="small">{`Demopris ${new Intl.NumberFormat('nb-NO').format(recommendation.price)}\u00a0kr per måned`}</BodyShort>}
+          {recommendation && <BodyShort size="small">{`${new Intl.NumberFormat('nb-NO').format(recommendation.price)}\u00a0kr per måned`}</BodyShort>}
           {!match && <BodyShort size="small" className="match-muted">Matchen er ikke klar ennå.</BodyShort>}
         </div>
       </div>
@@ -233,7 +236,7 @@ export function MatchHero({ match, recommendation, highlight, compact = false, a
   )
 }
 
-function MatchCard({ match, highlight, action }: { match: InsurerMatch; highlight: string; action?: ReactNode }) {
+function MatchCard({ match, highlight, action, level = '3' }: { match: InsurerMatch; highlight: string; action?: ReactNode; level?: HeadingLevel }) {
   const headingId = useId()
   const name = insurerName(match.insurerId)
   return (
@@ -241,7 +244,7 @@ function MatchCard({ match, highlight, action }: { match: InsurerMatch; highligh
       <div className="match-card__top">
         <Monogram id={match.insurerId} name={name} />
         <div className="match-card__text">
-          <Heading id={headingId} level="3" size="small">{name}</Heading>
+          <Heading id={headingId} level={level} size="small">{name}</Heading>
           <BodyShort size="small">{highlight}</BodyShort>
           {match.isCurrent && <CurrentBadge />}
         </div>
@@ -342,13 +345,15 @@ type MatchResultsProps = {
   matches: InsurerMatch[]
   eyebrow?: string
   title?: string
+  /** Heading level for «Topp 3» and «Flere selskaper», so the list can sit under another section heading. */
+  headingLevel?: '2' | '3'
   /** Shows «Ring meg» on each of the top matches, except the customer's current insurers. */
   onRequestCallback?: (insurerId: string) => void
   callbackRequestedFor?: string[]
 }
 
 /** Top 3 as cards, the rest as a compact list. */
-export function MatchResults({ matches, eyebrow = 'Dine beste matcher', title, onRequestCallback, callbackRequestedFor }: MatchResultsProps) {
+export function MatchResults({ matches, eyebrow = 'Dine beste matcher', title, headingLevel = '2', onRequestCallback, callbackRequestedFor }: MatchResultsProps) {
   const topId = useId()
   const othersId = useId()
   const [best, ...others] = matches
@@ -356,6 +361,7 @@ export function MatchResults({ matches, eyebrow = 'Dine beste matcher', title, o
   const top = others.slice(0, TOP - 1)
   const rest = others.slice(TOP - 1)
   const highlights = highlightLines(matches.slice(0, TOP), matches)
+  const itemLevel = headingLevel === '2' ? '3' : '4'
   const action = (match: InsurerMatch) => onRequestCallback && !match.isCurrent ? (
     <CallbackAction
       insurerId={match.insurerId}
@@ -369,20 +375,20 @@ export function MatchResults({ matches, eyebrow = 'Dine beste matcher', title, o
       <section className="match-stack" aria-labelledby={topId}>
         <div className="match-section-head">
           <BodyShort size="small" className="match-muted">{eyebrow}</BodyShort>
-          <Heading id={topId} level="2" size="medium">{title ?? `Topp ${Math.min(TOP, matches.length)}`}</Heading>
+          <Heading id={topId} level={headingLevel} size="medium">{title ?? `Topp ${Math.min(TOP, matches.length)}`}</Heading>
           {onRequestCallback && <BodyShort size="small">Vil du snakke med et av selskapene? Trykk «Ring meg». Helt uforpliktende, og Vern selger ingenting.</BodyShort>}
         </div>
-        <MatchHero match={best} highlight={highlights[0]} action={action(best)} />
+        <MatchHero match={best} highlight={highlights[0]} action={action(best)} level={itemLevel} />
         {top.length > 0 && (
           <ol className="match-stack match-cards" start={2}>
-            {top.map((match, index) => <MatchCard key={match.insurerId} match={match} highlight={highlights[index + 1]} action={action(match)} />)}
+            {top.map((match, index) => <MatchCard key={match.insurerId} match={match} highlight={highlights[index + 1]} action={action(match)} level={itemLevel} />)}
           </ol>
         )}
       </section>
 
       {rest.length > 0 && (
         <section className="match-stack" aria-labelledby={othersId}>
-          <Heading id={othersId} level="2" size="small">Flere selskaper</Heading>
+          <Heading id={othersId} level={headingLevel} size="small">Flere selskaper</Heading>
           <MatchList matches={rest} startRank={TOP + 1} />
         </section>
       )}
