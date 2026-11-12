@@ -78,3 +78,21 @@ export function searchInsurers(query: string): Insurer[] {
     return haystack.some((value) => normalize(value).includes(needle))
   })
 }
+
+const LEGAL_SUFFIXES = /\b(asa|as|ab|nuf|skadeforsikring|forsikring|forsikringsselskap|norge|norway)\b/g
+
+function companyKey(value: string): string {
+  return normalize(value).replace(/[.,]/g, ' ').replace(LEGAL_SUFFIXES, ' ').replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Finds a known insurer from a company name as written in a document, e.g. "Gjensidige Forsikring ASA" → Gjensidige.
+ * Legal suffixes like "Forsikring ASA" are ignored.
+ */
+export function findInsurerByName(name: string): Insurer | undefined {
+  const key = companyKey(name)
+  if (!key) return undefined
+  const names = (insurer: Insurer) => [insurer.name, insurer.legalName ?? '', ...(insurer.aliases ?? [])].map(companyKey).filter(Boolean)
+  return INSURERS.find((insurer) => names(insurer).includes(key)) ??
+    INSURERS.find((insurer) => names(insurer).some((candidate) => key.startsWith(`${candidate} `)))
+}

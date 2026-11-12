@@ -1,5 +1,5 @@
 import { BodyLong, BodyShort, Box, Button, Detail, Heading, HStack, Tag, VStack } from '@navikt/ds-react'
-import { Buildings2Icon, PencilIcon, PersonCircleIcon, PlusIcon, ShieldCheckmarkIcon, StarIcon } from '@navikt/aksel-icons'
+import { Buildings2Icon, PencilIcon, PersonCircleIcon, ShieldCheckmarkIcon, StarIcon, UploadIcon } from '@navikt/aksel-icons'
 import PolicySummary from '../onboarding/PolicySummary.tsx'
 import type { ConnectionState } from '../onboarding/types.ts'
 import { DIMENSIONS, rankDimensions, scoreProfile, type UserProfile } from './types.ts'
@@ -104,12 +104,12 @@ export default function ProfilePage({ connections, profile, onAddInsurers, onEdi
             <Box background="raised" borderRadius="12" padding="space-16" borderWidth="1" borderColor="neutral-subtle">
               <HStack gap="space-12" align="center" wrap={false} className="connected-empty">
                 <Buildings2Icon aria-hidden fontSize="2rem" />
-                <BodyShort textColor="subtle">Ingen forsikringer hentet ennå.</BodyShort>
+                <BodyShort textColor="subtle">Ingen forsikringer lastet opp ennå.</BodyShort>
               </HStack>
             </Box>
           )}
-          <Button variant="secondary" icon={<PlusIcon aria-hidden />} onClick={onAddInsurers} className="onboarding__add">
-            Legg til forsikringsselskap
+          <Button variant="secondary" icon={<UploadIcon aria-hidden />} onClick={onAddInsurers} className="onboarding__add">
+            Last opp forsikringsdokument
           </Button>
         </VStack>
       </VStack>

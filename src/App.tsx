@@ -138,7 +138,7 @@ function App() {
             <ValuesRoute
               basePath={ONBOARDING_VALUES_PATH}
               initialAnswers={profile.answers}
-              doneLabel="Neste: hent forsikringer"
+              doneLabel="Neste: last opp forsikringer"
               onDone={finishOnboardingValues}
               onSkip={() => finishOnboardingValues(null)}
             />
