@@ -1,4 +1,5 @@
 html { -webkit-text-size-adjust: 100%; }
 * { box-sizing: border-box; }
-body { margin: 0; }
+body { margin: 0; background: var(--vern-background); color: var(--vern-text-primary); }
 button, textarea { font: inherit; }
+::selection { background: var(--vern-mint); color: var(--vern-forest); }

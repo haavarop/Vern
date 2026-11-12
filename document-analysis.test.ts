@@ -84,7 +84,7 @@ test('handles unknown insurers, invalid categories and missing prices', () => {
   assert.equal(policies[0].premium, 0)
   assert.equal(policies[0].policyNumber, '')
   assert.equal(policies[0].renewalDate, '')
-  assert.deepEqual(warnings, ['Fant ikke pris for Hus.'])
+  assert.deepEqual(warnings, ['Vi fant ikke prisen for Hus.'])
   assert.deepEqual(parseExtraction('ikke json', 'x.pdf').policies, [])
 })
 

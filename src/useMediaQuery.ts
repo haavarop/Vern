@@ -10,5 +10,4 @@ export function useMediaQuery(query: string): boolean {
   return useSyncExternalStore(subscribe, getSnapshot, () => false)
 }
 
-export const usePrefersDark = () => useMediaQuery('(prefers-color-scheme: dark)')
 export const usePrefersReducedMotion = () => useMediaQuery('(prefers-reduced-motion: reduce)')

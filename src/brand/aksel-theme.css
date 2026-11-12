@@ -1,0 +1,304 @@
+/*
+ * Aksel theme override: maps Aksel's --ax-* tokens and core components onto the Vern brand.
+ * Everything lives in the `vern` cascade layer, which comes after Aksel's `aksel.*` layers
+ * (ds-css is imported first), so it always beats Aksel regardless of specificity, while
+ * unlayered app/screen CSS can still override it.
+ * Scoped to the same roots Aksel declares its tokens on (:root, :host, .light) plus the
+ * <Theme> element (.aksel-theme), so the tokens also re-resolve inside the theme wrapper.
+ */
+@layer vern {
+  :root, :host, .light, .aksel-theme {
+    /*
+     * Every colour derives from a brand primitive: either the primitive itself or a transparent
+     * forest/charcoal/mint/cream over whatever surface it sits on. No interpolated tints.
+     */
+    /* Neutral scale: transparent charcoal on the light end, grey and charcoal on the dark end. */
+    --ax-neutral-000: var(--vern-white);
+    --ax-neutral-100: color-mix(in srgb, var(--vern-charcoal) 4%, transparent);
+    --ax-neutral-200: color-mix(in srgb, var(--vern-charcoal) 7%, transparent);
+    --ax-neutral-300: color-mix(in srgb, var(--vern-charcoal) 12%, transparent);
+    --ax-neutral-400: color-mix(in srgb, var(--vern-charcoal) 20%, transparent);
+    --ax-neutral-500: var(--vern-grey);
+    --ax-neutral-600: var(--vern-grey);
+    --ax-neutral-700: var(--vern-grey);
+    --ax-neutral-800: var(--vern-grey);
+    --ax-neutral-900: var(--vern-grey);
+    --ax-neutral-1000: var(--vern-charcoal);
+    --ax-neutral-100A: color-mix(in srgb, var(--vern-charcoal) 4%, transparent);
+    --ax-neutral-200A: color-mix(in srgb, var(--vern-charcoal) 7%, transparent);
+    --ax-neutral-300A: color-mix(in srgb, var(--vern-charcoal) 11%, transparent);
+    --ax-neutral-400A: color-mix(in srgb, var(--vern-charcoal) 18%, transparent);
+
+    /* Accent scale: forest, lighter steps as transparent forest. Hover/pressed are forest at 88/80 %. */
+    --ax-accent-100: color-mix(in srgb, var(--vern-forest) 6%, transparent);
+    --ax-accent-200: color-mix(in srgb, var(--vern-forest) 10%, transparent);
+    --ax-accent-300: color-mix(in srgb, var(--vern-forest) 16%, transparent);
+    --ax-accent-400: color-mix(in srgb, var(--vern-forest) 28%, transparent);
+    --ax-accent-500: color-mix(in srgb, var(--vern-forest) 70%, transparent);
+    --ax-accent-600: var(--vern-forest);
+    --ax-accent-700: color-mix(in srgb, var(--vern-forest) 88%, transparent);
+    --ax-accent-800: color-mix(in srgb, var(--vern-forest) 80%, transparent);
+    --ax-accent-900: var(--vern-forest);
+    --ax-accent-1000: var(--vern-forest);
+    --ax-accent-100A: color-mix(in srgb, var(--vern-forest) 6%, transparent);
+    --ax-accent-200A: color-mix(in srgb, var(--vern-forest) 10%, transparent);
+    --ax-accent-300A: color-mix(in srgb, var(--vern-forest) 16%, transparent);
+    --ax-accent-400A: color-mix(in srgb, var(--vern-forest) 28%, transparent);
+
+    /* Success scale: mint backgrounds, forest text and borders (mint is never a text color). */
+    --ax-success-100: var(--vern-mint);
+    --ax-success-200: var(--vern-mint);
+    --ax-success-300: color-mix(in srgb, var(--vern-forest) 28%, transparent);
+    --ax-success-400: color-mix(in srgb, var(--vern-forest) 40%, transparent);
+    --ax-success-500: var(--vern-forest);
+    --ax-success-600: var(--vern-forest);
+    --ax-success-700: var(--vern-forest);
+    --ax-success-800: var(--vern-forest);
+    --ax-success-900: var(--vern-forest);
+    --ax-success-1000: var(--vern-forest);
+    --ax-success-100A: color-mix(in srgb, var(--vern-mint) 35%, transparent);
+    --ax-success-200A: color-mix(in srgb, var(--vern-mint) 70%, transparent);
+    --ax-success-300A: color-mix(in srgb, var(--vern-forest) 16%, transparent);
+    --ax-success-400A: color-mix(in srgb, var(--vern-forest) 28%, transparent);
+
+    /* Info follows the forest accent so InfoCard/Alert info stay on-brand. */
+    --ax-info-100: var(--ax-accent-100);
+    --ax-info-200: var(--ax-accent-200);
+    --ax-info-300: var(--ax-accent-300);
+    --ax-info-400: var(--ax-accent-400);
+    --ax-info-500: var(--ax-accent-500);
+    --ax-info-600: var(--ax-accent-600);
+    --ax-info-700: var(--ax-accent-700);
+    --ax-info-800: var(--ax-accent-800);
+    --ax-info-900: var(--ax-accent-900);
+    --ax-info-1000: var(--ax-accent-1000);
+    --ax-info-100A: var(--ax-accent-100A);
+    --ax-info-200A: var(--ax-accent-200A);
+    --ax-info-300A: var(--ax-accent-300A);
+    --ax-info-400A: var(--ax-accent-400A);
+
+    /* Semantic tokens */
+    --ax-bg-default: var(--vern-background);
+    --ax-bg-raised: var(--vern-surface);
+    --ax-bg-input: var(--vern-surface);
+    --ax-bg-sunken: var(--ax-neutral-200);
+    --ax-bg-overlay: color-mix(in srgb, var(--vern-forest) 60%, transparent);
+    --ax-text-neutral: var(--vern-text-primary);
+    --ax-text-neutral-subtle: var(--vern-text-secondary);
+    --ax-text-accent: var(--vern-text-brand);
+    --ax-text-accent-subtle: var(--vern-text-brand);
+    --ax-text-accent-contrast: var(--vern-text-on-inverse);
+    --ax-text-info-contrast: var(--vern-text-on-inverse);
+    --ax-text-logo: var(--vern-forest);
+    --ax-border-accent: var(--vern-border);
+    --ax-border-focus: var(--vern-forest);
+    --ax-shadow-dialog: none;
+
+    /* Typography */
+    --ax-font-family: var(--vern-font-body);
+    --ax-font-weight-bold: 700;
+  }
+
+  html, body {
+    background-color: var(--vern-background);
+  }
+
+  body, :host {
+    font-family: var(--vern-font-body);
+    font-size: var(--vern-font-size-body);
+    line-height: var(--vern-line-height-body);
+    color: var(--vern-text-primary);
+  }
+
+  h1, h2, h3, .aksel-heading {
+    font-family: var(--vern-font-heading);
+    font-weight: 700;
+  }
+
+  .aksel-heading--xlarge {
+    font-size: var(--vern-font-size-display);
+    line-height: var(--vern-line-height-display);
+    font-weight: var(--vern-font-weight-display);
+  }
+
+  .aksel-heading--large {
+    font-size: var(--vern-font-size-h1);
+    line-height: var(--vern-line-height-h1);
+    font-weight: var(--vern-font-weight-h1);
+  }
+
+  .aksel-heading--medium {
+    font-size: var(--vern-font-size-h2);
+    line-height: var(--vern-line-height-h2);
+    font-weight: var(--vern-font-weight-h2);
+  }
+
+  /* Off-scale Aksel sizes snap to the brand scale: small headings = h2, xsmall = bold body. */
+  .aksel-heading--small {
+    font-size: var(--vern-font-size-h2);
+    line-height: var(--vern-line-height-h2);
+    font-weight: var(--vern-font-weight-h2);
+  }
+
+  .aksel-heading--xsmall {
+    font-family: var(--vern-font-body);
+    font-size: var(--vern-font-size-body);
+    line-height: var(--vern-line-height-body);
+    font-weight: 700;
+  }
+
+  h1, h1.aksel-heading {
+    color: var(--vern-text-brand);
+  }
+
+  .aksel-label {
+    font-size: var(--vern-font-size-body);
+    line-height: var(--vern-line-height-body);
+  }
+
+  .aksel-body-short, .aksel-body-long, .aksel-ingress, .aksel-body-short--large, .aksel-body-long--large {
+    font-size: var(--vern-font-size-body);
+    line-height: var(--vern-line-height-body);
+  }
+
+  .aksel-body-short--small, .aksel-body-long--small, .aksel-detail {
+    font-size: var(--vern-font-size-body-small);
+    line-height: var(--vern-line-height-body-small);
+  }
+
+  /* The brand has no capitals-only text. */
+  .aksel-detail.aksel-typo--uppercase {
+    text-transform: none;
+  }
+
+  /* Buttons: pill, 56px, bold 16px. Primary = forest/cream, secondary/tertiary = forest via accent tokens. */
+  .aksel-button {
+    border-radius: var(--vern-radius-pill);
+    font-family: var(--vern-font-body);
+  }
+
+  .aksel-button--medium {
+    padding-inline: var(--vern-space-lg);
+  }
+
+  .aksel-button--medium:not(.aksel-button--icon-only) {
+    min-height: var(--vern-button-height);
+  }
+
+  .aksel-button .aksel-label {
+    font-size: var(--vern-font-size-button);
+    line-height: var(--vern-line-height-button);
+    font-weight: var(--vern-font-weight-button);
+    white-space: nowrap;
+  }
+
+  .aksel-button--small .aksel-label, .aksel-button--xsmall .aksel-label {
+    font-size: var(--vern-font-size-body-small);
+  }
+
+  .aksel-button[data-variant="primary"] .aksel-loader .aksel-loader__background {
+    stroke: color-mix(in srgb, var(--vern-cream) 30%, transparent);
+  }
+
+  /* Visible focus ring for non-Aksel elements; Aksel components draw their own with --ax-border-focus. */
+  :focus-visible:not([class*="aksel-"]) {
+    outline: 3px solid var(--ax-border-focus);
+    outline-offset: 2px;
+  }
+
+  /* Aksel parts that don't draw a focus ring of their own (audited against ds-css v8). */
+  .aksel-help-text__button:focus-visible {
+    outline: 3px solid var(--ax-border-focus);
+    outline-offset: 2px;
+  }
+
+  /* Loader: forest on a light forest track; inside buttons it follows the button text colour. */
+  .aksel-loader__foreground {
+    stroke: var(--vern-forest);
+  }
+
+  .aksel-loader__background {
+    stroke: color-mix(in srgb, var(--vern-forest) 15%, transparent);
+  }
+
+  .aksel-button .aksel-loader .aksel-loader__foreground {
+    stroke: currentColor;
+  }
+
+  /*
+   * Line icons: Aksel's built-in HelpText "?" and dropzone cloud are filled, so they are hidden
+   * and replaced with Lucide's circle-help and cloud-upload (2px stroke) drawn as a forest mask.
+   */
+  :root {
+    --vern-icon-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
+    --vern-icon-upload: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 13v8'/%3E%3Cpath d='M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242'/%3E%3Cpath d='m8 17 4-4 4 4'/%3E%3C/svg%3E");
+  }
+
+  .aksel-help-text__button > svg,
+  .aksel-dropzone__area-release__icon > svg {
+    display: none;
+  }
+
+  .aksel-help-text__button::before,
+  .aksel-dropzone__area-release__icon::before {
+    content: "";
+    display: block;
+    width: 1em;
+    height: 1em;
+    background-color: var(--vern-forest);
+    mask: var(--vern-icon-help) center / contain no-repeat;
+  }
+
+  .aksel-help-text__button[aria-expanded="true"] {
+    background-color: var(--vern-mint);
+  }
+
+  .aksel-dropzone__area-release__icon {
+    background-color: var(--vern-mint);
+  }
+
+  .aksel-dropzone--dragging .aksel-dropzone__area-release > .aksel-dropzone__area-release__icon {
+    background-color: transparent;
+  }
+
+  .aksel-dropzone__area-release__icon::before {
+    mask-image: var(--vern-icon-upload);
+  }
+
+  /* Cards and surfaces: soft radii, no shadows. */
+  .aksel-modal {
+    border-radius: var(--vern-radius-lg);
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  .aksel-base-alert[data-variant="moderate"], .aksel-expansioncard {
+    border-radius: var(--vern-radius-lg);
+    --__axc-expansioncard-border-radius: calc(var(--vern-radius-lg) - 1px);
+  }
+
+  .aksel-base-alert[data-variant="strong"], .aksel-alert {
+    border-radius: var(--vern-radius-md);
+  }
+
+  .aksel-base-alert[data-global="true"], .aksel-alert--full-width {
+    border-radius: 0;
+  }
+
+  .aksel-tag {
+    border-radius: var(--vern-radius-pill);
+  }
+
+  /* Neutral tags (e.g. "Fornyes …"): white chip, thin border, readable 14px. */
+  .aksel-tag[data-color="neutral"] {
+    min-height: 28px;
+    padding: var(--vern-space-xs) 12px;
+    gap: var(--vern-space-xs);
+    background-color: var(--vern-white);
+    border: 1px solid var(--ax-neutral-300);
+    box-shadow: none;
+    color: var(--vern-text-primary);
+    font-size: var(--vern-font-size-body-small);
+    line-height: var(--vern-line-height-body-small);
+  }
+}

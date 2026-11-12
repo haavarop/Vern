@@ -1,0 +1,138 @@
+/*
+ * Shared Vern utility classes for screens. Unlayered on purpose so they beat element
+ * resets such as `button { font: inherit }`; screen CSS imported later can still override.
+ */
+
+/* Text styles */
+.vern-display,
+.vern-h1,
+.vern-h2 {
+  margin: 0;
+  font-family: var(--vern-font-heading);
+}
+
+.vern-display {
+  font-size: var(--vern-font-size-display);
+  line-height: var(--vern-line-height-display);
+  font-weight: var(--vern-font-weight-display);
+}
+
+.vern-h1 {
+  font-size: var(--vern-font-size-h1);
+  line-height: var(--vern-line-height-h1);
+  font-weight: var(--vern-font-weight-h1);
+}
+
+.vern-h2 {
+  font-size: var(--vern-font-size-h2);
+  line-height: var(--vern-line-height-h2);
+  font-weight: var(--vern-font-weight-h2);
+}
+
+.vern-body {
+  font-family: var(--vern-font-body);
+  font-size: var(--vern-font-size-body);
+  line-height: var(--vern-line-height-body);
+  font-weight: var(--vern-font-weight-body);
+}
+
+.vern-body-small {
+  font-family: var(--vern-font-body);
+  font-size: var(--vern-font-size-body-small);
+  line-height: var(--vern-line-height-body-small);
+  font-weight: var(--vern-font-weight-body-small);
+}
+
+/* Soft card: white, 32px radius, no shadow. */
+.vern-card {
+  background: var(--vern-surface);
+  color: var(--vern-text-primary);
+  border-radius: var(--vern-radius-lg);
+  padding: var(--vern-space-lg);
+  box-shadow: none;
+}
+
+/* Best match / inverse card: forest with cream text. Cream focus ring stays visible on forest. */
+.vern-card--inverse {
+  --ax-border-focus: var(--vern-cream);
+  background: var(--vern-surface-inverse);
+  color: var(--vern-text-on-inverse);
+  border-radius: var(--vern-radius-md);
+}
+
+/* "You are covered" status: mint background, forest text. */
+.vern-status-positive {
+  background: var(--vern-success);
+  color: var(--vern-text-brand);
+  border-radius: var(--vern-radius-md);
+  padding: var(--vern-space-md);
+}
+
+/* Choice option: white by default, apricot with bold charcoal text when selected. */
+.vern-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--vern-space-sm);
+  width: 100%;
+  min-height: var(--vern-button-height);
+  padding: var(--vern-space-md) var(--vern-space-lg);
+  background: var(--vern-surface);
+  color: var(--vern-text-primary);
+  font-family: var(--vern-font-body);
+  font-size: var(--vern-font-size-body);
+  line-height: var(--vern-line-height-body);
+  font-weight: var(--vern-font-weight-body);
+  text-align: start;
+  border: 0;
+  border-radius: var(--vern-radius-md);
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.vern-choice:hover:not([aria-checked="true"], [aria-pressed="true"], .is-selected, :has(input:checked)) {
+  background: var(--ax-neutral-100);
+}
+
+/* Also works as a wrapper around a native radio/checkbox (e.g. Aksel Radio). */
+.vern-choice[aria-checked="true"],
+.vern-choice[aria-pressed="true"],
+.vern-choice.is-selected,
+.vern-choice:has(input:checked) {
+  background: var(--vern-accent-match);
+  color: var(--vern-text-primary);
+  font-weight: 700;
+}
+
+.vern-choice:focus-visible,
+.vern-choice:has(input:focus-visible) {
+  outline: 3px solid var(--vern-forest);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vern-choice { transition: none; }
+}
+
+.vern-choice:disabled,
+.vern-choice[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: var(--ax-opacity-disabled, .45);
+}
+
+/* Logo */
+.vern-wordmark {
+  margin: 0;
+  font-family: var(--vern-font-heading);
+  font-weight: 700;
+  line-height: 1;
+  text-transform: none;
+  color: currentColor;
+}
+
+/* Lockup SVG scales down to fit narrow containers, keeping the official proportions. */
+.vern-lockup {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}

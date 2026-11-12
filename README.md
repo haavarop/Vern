@@ -40,3 +40,18 @@ Filen `insurance-data.json` inneholder separate kategorier med dokumenterte sels
 `registry` inneholder søketreff fra Finanstilsynets API, hentetidspunkt, totalt antall treff og eventuelle feil per søk. Av de første 50 treffene vises bare selskaper med både selskapsnavnet og «forsikring» i foretaksnavnet. `total` gjelder alle ufiltrerte treff, og `truncated` viser om flere treff finnes. Treffene kan omfatte flere foretak og er ikke automatisk bekreftede selskapskoblinger. Finanstilsynet kan mellomlagre API-svar i opptil én time. Tallene er merket med kilde, periode og omfang. Finansklagenemndas bransjetall gjelder ikke enkeltselskaper.
 
 Datasettet inneholder BI-tall for kundetilfredshet og lojalitet for Gjensidige, If, Tryg og Fremtind, EPSI Rating-scorer for 2026, utvalgte klage- og utfallstall fra Finansklagenemnda samt finansielle nøkkeltall fra Fremtind. EPSI-scorene er hentet fra den offisielle rapporten for privat- og bedriftsmarkedet; de to markedene må ikke blandes, og merkevarer knyttet til Fremtind beholdes som egne resultater. Anbefalingsmodellen er instruert til å tolke høyere EPSI-score som høyere målt kundetilfredshet og bruke den som et signal om kundeopplevelse når data finnes. EPSI, Finansklagenemnda, Finansportalen og andre årsrapporter er dokumentert som kilder, men ikke integrert som automatiske datafeeds. Pris, individuelle kundebehov, klageårsaker og øvrige manglende opplysninger er ikke estimert. Kontroller kildene manuelt før tallene brukes som beslutningsgrunnlag.
+
+## Merkevare
+
+`vern-brand-v2.json` er fasiten for farger, typografi, komponenter, logo og tone. Endre spesifikasjonen først, og oppdater deretter koden. Teksten i spesifikasjonen er på dansk, men all tekst i appen skrives på norsk bokmål.
+
+Merkevaren ligger i `src/brand/`: `tokens.css` har CSS-variablene (`--vern-*`), `aksel-theme.css` overstyrer Aksel-tokenene (`--ax-*`) slik at Aksel-komponentene får Vern-uttrykket, `brand.css` har felles klasser (`.vern-card`, `.vern-choice` osv.), og `VernLogo.tsx` har symbol, ordmerke og logo med slagord. Appen har bare lyst tema.
+
+De offisielle logofilene ligger i `public/brand/`:
+
+- `vern-logo.svg`: symbolet, to sirkler i aprikos og mint. `public/favicon.svg` er det samme symbolet.
+- `vern-logo-tagline-baggrund.svg`: navn og slagord med symbolet til høyre, kremhvit tekst på skoggrønn bakgrunn.
+- `vern-logo-tagline-transparent.svg`: samme logo uten bakgrunn, med skoggrønn tekst for lyse flater.
+- `apple-touch-icon.png`: symbolet på kremhvit bakgrunn, 180 × 180 piksler.
+
+Komponentene i `src/brand/VernLogo.tsx` speiler disse filene med samme geometri, farger og skriftstørrelser: `VernSymbol` tilsvarer `vern-logo.svg`, og `VernLockup` tilsvarer logoen med slagord (`variant="onDark"` med bakgrunn eller `variant="onLight"` uten). Komponentene tegner SVG direkte i siden, slik at nettskriften General Sans brukes. En `<img>` av en SVG med tekst kan ikke bruke sidens nettskrifter. Endrer designerne logoen, oppdaterer du både filene og komponentene.

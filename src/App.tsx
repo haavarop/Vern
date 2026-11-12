@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type ComponentProps, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
-import { Alert, BodyShort, Button, Heading, HStack, Loader, Skeleton, Theme, VStack } from '@navikt/ds-react'
-import { ArrowLeftIcon } from '@navikt/aksel-icons'
+import { BodyLong, BodyShort, Button, Heading, Loader, Skeleton, Theme } from '@navikt/ds-react'
+import { ArrowLeft, CircleAlert, Info, RefreshCw, X } from 'lucide-react'
+import { VernSymbol } from './brand/VernLogo.tsx'
 import Onboarding from './onboarding/Onboarding.tsx'
 import { INSURERS, normalize } from './onboarding/insurers.ts'
 import ProfilePage from './profile/ProfilePage.tsx'
@@ -10,10 +11,10 @@ import { QUESTIONS, type Answers, type UserProfile } from './profile/types.ts'
 import { buildStoredProfile, deleteProfile, fetchProfile, isNewCustomer, saveProfile, type StoredProfile } from './profile/storage.ts'
 import { clearDraft, loadDraft, parseQuestionParam, questionParam } from './profile/draft.ts'
 import MatchPage, { MatchHero } from './match/MatchPage.tsx'
-import { buildMatchRequest, fetchMatches } from './match/api.ts'
+import VernHeader from './onboarding/VernHeader.tsx'
+import { buildMatchRequest, fetchMatches, friendlyError } from './match/api.ts'
 import type { InsurerMatch } from './match/types.ts'
 import type { ConnectionState } from './onboarding/types.ts'
-import { usePrefersDark } from './useMediaQuery.ts'
 import './App.css'
 
 type Recommendation = { insurance: string; company: string; price: number; fallback?: boolean }
@@ -37,7 +38,6 @@ function App() {
   const [connections, setConnections] = useState<ConnectionState>({})
   const [profile, setProfile] = useState<UserProfile>({ answers: null })
   const [saveError, setSaveError] = useState('')
-  const prefersDark = usePrefersDark()
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [searchParams] = useSearchParams()
@@ -79,7 +79,7 @@ function App() {
     setSaveError('')
     clearDraft()
     saveProfile(buildStoredProfile(answers, insurances))
-      .catch((error: unknown) => setSaveError(error instanceof Error ? error.message : 'Kunne ikke lagre profilen.'))
+      .catch((error: unknown) => setSaveError(friendlyError(error, 'Vi fikk ikke lagret profilen din. Prøv igjen om litt.')))
   }
 
   // During first-time onboarding, step 1 continues to step 2. The answers are saved together with the insurers.
@@ -113,7 +113,7 @@ function App() {
     try {
       await deleteProfile()
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Kunne ikke slette profilen.')
+      setSaveError(friendlyError(error, 'Vi fikk ikke slettet profilen din. Prøv igjen om litt.'))
       return
     }
     clearDraft()
@@ -128,14 +128,19 @@ function App() {
     onboarded ? element : <Navigate to={`${ONBOARDING_VALUES_PATH}/1`} replace />
 
   return (
-    <Theme theme={prefersDark ? 'dark' : 'light'} hasBackground className="app-theme">
+    <Theme theme="light" hasBackground className="app-theme">
       {saveError && (
-        <Alert variant="error" size="small" closeButton onClose={() => setSaveError('')} className="app-alert">{saveError}</Alert>
+        <div className="app-notice app-notice--error app-toast" role="alert">
+          <CircleAlert aria-hidden size={24} strokeWidth={2} />
+          <BodyShort className="app-notice__text">{saveError}</BodyShort>
+          <button type="button" className="app-notice__close" onClick={() => setSaveError('')} aria-label="Lukk meldingen"><X aria-hidden size={20} strokeWidth={2} /></button>
+        </div>
       )}
       {!loaded ? (
-        <HStack justify="center" align="center" className="app-loading">
-          <Loader size="xlarge" title="Henter profilen din…" />
-        </HStack>
+        <div className="app-loading" role="status">
+          <VernSymbol size={72} className="app-loading__symbol" />
+          <BodyShort>{'Et øyeblikk, vi henter profilen din\u00a0…'}</BodyShort>
+        </div>
       ) : (
         <Routes>
           <Route path="/" element={<Navigate to={onboarded ? '/profil' : `${ONBOARDING_VALUES_PATH}/1`} replace />} />
@@ -143,7 +148,7 @@ function App() {
             <ValuesRoute
               basePath={ONBOARDING_VALUES_PATH}
               initialAnswers={profile.answers}
-              doneLabel="Neste: last opp forsikringer"
+              doneLabel="Neste"
               onDone={finishOnboardingValues}
               onSkip={() => finishOnboardingValues(null)}
             />
@@ -164,7 +169,7 @@ function App() {
               onEditProfile={() => editValues()}
               onReset={() => void reset()}
               onContinue={() => navigate(seenMatches ? '/vern' : '/matcher')}
-              continueLabel={seenMatches ? 'Gå til Vern' : 'Se hvem som passer deg'}
+              continueLabel={seenMatches ? 'Se forslagene dine' : 'Finn matchen din'}
               onShowMatches={seenMatches ? () => navigate('/matcher') : undefined}
             />
           )} />
@@ -238,10 +243,11 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
           fetch('/api/recommendations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}', signal }),
           fetchMatches(buildMatchRequest(profile, connections), signal).catch(() => null),
         ])
-        const data: unknown = await response.json()
+        const data: unknown = await response.json().catch(() => null)
+        if (!response.ok && !(data && typeof data === 'object' && 'error' in data)) throw new TypeError('Unreadable response')
         if (!response.ok) {
           throw new Error(data && typeof data === 'object' && 'error' in data && typeof data.error === 'string'
-            ? data.error : 'Kunne ikke hente forslagene. Prøv igjen.')
+            ? data.error : 'Vi fikk ikke hentet forslagene dine. Prøv igjen om litt.')
         }
         if (!data || typeof data !== 'object' || !('recommendations' in data) || !Array.isArray(data.recommendations) ||
           !data.recommendations.every((item: unknown) => item && typeof item === 'object' &&
@@ -249,17 +255,17 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
             'company' in item && typeof item.company === 'string' && item.company.trim() &&
             'price' in item && typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0 &&
             (!('fallback' in item) || typeof item.fallback === 'boolean'))) {
-          throw new Error('Fikk et ugyldig svar. Prøv igjen.')
+          throw new Error('Svaret vi fikk så ikke helt riktig ut. Prøv igjen.')
         }
         const policies = Object.values(connections).flat()
         if (data.recommendations.length !== policies.length || data.recommendations.some((item: Recommendation, index: number) => item.insurance !== policies[index].product)) {
-          throw new Error('Forslagene samsvarer ikke med profilen. Kontroller at profilen er lagret og prøv igjen.')
+          throw new Error('Forslagene passer ikke helt med profilen din. Sjekk at den er lagret, og prøv igjen.')
         }
         if (stopped || signal.aborted) return
         setRecommendations(data.recommendations as Recommendation[])
         setMatches(matchResults)
       } catch (caught) {
-        if (!stopped && !signal.aborted) setError(caught instanceof Error ? caught.message : 'Kunne ikke hente forslagene. Prøv igjen.')
+        if (!stopped && !signal.aborted) setError(friendlyError(caught, 'Vi fikk ikke hentet forslagene dine. Prøv igjen om litt.'))
       } finally {
         if (!stopped && !signal.aborted) setLoading(false)
       }
@@ -280,7 +286,7 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
         }
       } catch {
         if (!stopped) {
-          setSyncError('Kunne ikke kontrollere profilen. Prøver igjen automatisk.')
+          setSyncError('Vi får ikke sjekket profilen din akkurat nå. Vi prøver igjen selv.')
           if (lastProfile === undefined) setLoading(false)
         }
       } finally {
@@ -298,33 +304,55 @@ function Recommendations({ onBack, onProfileChange }: { onBack: () => void; onPr
 
   return (
     <main className="recommendation-page">
-      <Button type="button" variant="tertiary" icon={<ArrowLeftIcon aria-hidden />} onClick={onBack}>Tilbake til profil</Button>
-      <div aria-live="polite">
-        {syncError && <Alert variant="warning" size="small">{syncError}</Alert>}
+      <VernHeader>
+        <Button type="button" variant="tertiary" size="small" icon={<ArrowLeft aria-hidden size={20} strokeWidth={2} />} onClick={onBack}>Profilen din</Button>
+      </VernHeader>
+      <div className="recommendation-intro">
+        <Heading level="1" size="large">Forslagene dine</Heading>
+        <BodyLong>Vi har sett på forsikringene dine, én og én, ut fra det som betyr noe for deg.</BodyLong>
+      </div>
+      <div className="recommendation-body" aria-live="polite">
+        {syncError && (
+          <div className="app-notice" role="status">
+            <Info aria-hidden size={24} strokeWidth={2} />
+            <BodyShort size="small" className="app-notice__text">{syncError}</BodyShort>
+          </div>
+        )}
         {recommendations !== null && (
-          <section className="recommendations" aria-label="Forsikringsforslag">
-            <Alert variant="info" size="small">Simulerte forslag, priser og matchscorer. Matchscoren gjelder selskapet, ikke den enkelte forsikringen.</Alert>
-            {recommendations.length === 0 && <BodyShort>Ingen forsikringer er registrert i profilen.</BodyShort>}
+          <section className="recommendations">
+            <div className="app-notice">
+              <Info aria-hidden size={24} strokeWidth={2} />
+              <BodyShort size="small" className="app-notice__text">Dette er en demo med simulerte priser. Matchen gjelder selskapet, ikke hver enkelt forsikring.</BodyShort>
+            </div>
+            {recommendations.length === 0 && <BodyShort className="vern-card">Du har ikke lagt til noen forsikringer ennå. Legg dem til i profilen din, så ser vi på dem sammen.</BodyShort>}
             {recommendations.map((recommendation, index) => {
               const company = normalize(recommendation.company)
               const insurer = INSURERS.find((item) => normalize(item.name) === company || item.aliases?.some((alias) => normalize(alias) === company))
               const match = matches?.find((item) => item.insurerId === insurer?.id)
-              return <MatchHero key={index} match={match} recommendation={{ ...recommendation, insurerId: insurer?.id }} />
+              return <MatchHero key={index} match={match} recommendation={{ ...recommendation, insurerId: insurer?.id }} compact={index > 0} />
             })}
           </section>
         )}
         {loading && (
-          <VStack gap="space-16" className="recommendation-loading" aria-busy="true">
-            <Heading level="1" size="medium">Dine forsikringsforslag</Heading>
-            <HStack gap="space-12" align="center" role="status">
-              <Loader size="small" title="Laster" />
-              <BodyShort>Vi finner forslag til forsikringene dine…</BodyShort>
-            </HStack>
-            <Skeleton variant="rounded" height={220} />
-            <Skeleton variant="rounded" height={220} />
-          </VStack>
+          <div className="recommendation-loading" aria-busy="true">
+            <div className="recommendation-loading__status" role="status">
+              <Loader size="small" title="Vent litt" />
+              <BodyShort>{'Vi ser på forsikringene dine\u00a0…'}</BodyShort>
+            </div>
+            <Skeleton variant="rounded" height={220} className="app-skeleton" />
+            <Skeleton variant="rounded" height={220} className="app-skeleton" />
+          </div>
         )}
-        {error && <Alert variant="error" size="small">{error} <Button type="button" variant="secondary" size="small" onClick={() => setAttempt((value) => value + 1)}>Prøv igjen</Button></Alert>}
+        {error && (
+          <div className="app-notice app-notice--error" role="alert">
+            <CircleAlert aria-hidden size={24} strokeWidth={2} />
+            <div className="app-notice__text">
+              <BodyShort weight="semibold">Det gikk ikke helt etter planen</BodyShort>
+              <BodyShort size="small">{error}</BodyShort>
+              <Button type="button" variant="secondary" size="small" icon={<RefreshCw aria-hidden size={18} strokeWidth={2} />} onClick={() => setAttempt((value) => value + 1)}>Prøv igjen</Button>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   )

@@ -38,7 +38,7 @@ test('weights change the ranking and zero weights behave as equal', () => {
   const byPrice = mockMatches(request({ weights: { pris: 100, dekning: 0, hjelp: 0, enkelhet: 0 } }))
   const byCover = mockMatches(request({ weights: { pris: 0, dekning: 100, hjelp: 0, enkelhet: 0 } }))
   assert.notDeepEqual(byPrice.map((m) => m.insurerId), byCover.map((m) => m.insurerId))
-  assert.match(byPrice.find((m) => m.insurerId === 'klp')!.reason, /pris og verdi, som du vektlegger mest/)
+  assert.match(byPrice.find((m) => m.insurerId === 'klp')!.reason, /pris og verdi\. Det er det du bryr deg mest om/)
   const zero = mockMatches(request({ weights: { pris: 0, dekning: 0, hjelp: 0, enkelhet: 0 } }))
   assert.deepEqual(zero.map((m) => m.score), mockMatches(request()).map((m) => m.score))
 })

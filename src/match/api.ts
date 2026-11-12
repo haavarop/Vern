@@ -2,7 +2,14 @@ import { DIMENSION_ORDER, scoreProfile, type Dimension, type UserProfile } from 
 import type { ConnectionState, Segment } from '../onboarding/types.ts'
 import type { InsurerMatch, MatchRequest } from './types.ts'
 
-const FALLBACK_ERROR = 'Vi klarte ikke å hente matchene dine. Prøv igjen.'
+const FALLBACK_ERROR = 'Vi fikk ikke hentet matchene dine. Prøv igjen om litt.'
+export const NETWORK_ERROR = 'Vi får ikke kontakt akkurat nå. Sjekk nettet og prøv igjen.'
+
+/** User-facing message: network failures and unreadable responses never leak technical text. */
+export function friendlyError(error: unknown, fallback: string): string {
+  if (error instanceof TypeError || error instanceof SyntaxError) return NETWORK_ERROR
+  return error instanceof Error && error.message ? error.message : fallback
+}
 
 export function buildMatchRequest(profile: UserProfile, connections: ConnectionState): MatchRequest {
   const weights = profile.answers

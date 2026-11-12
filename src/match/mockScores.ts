@@ -37,9 +37,9 @@ function reasonFor(dimensions: Profile, weights: Profile, equal: boolean): strin
   const strongest = [...DIMENSION_ORDER].sort((a, b) => dimensions[b] - dimensions[a])[0]
   if (equal) return `Sterkest på ${label(strongest)}.`
   const top = [...DIMENSION_ORDER].sort((a, b) => weights[b] - weights[a])[0]
-  if (strongest === top) return `Sterk på ${label(top)}, som du vektlegger mest.`
-  if (dimensions[top] < 60) return `Svakere på ${label(top)}, som er viktig for deg.`
-  return `Sterkest på ${label(strongest)}, og solid på ${label(top)}.`
+  if (strongest === top) return `Sterk på ${label(top)}. Det er det du bryr deg mest om.`
+  if (dimensions[top] < 60) return `Litt svakere på ${label(top)}, som betyr noe for deg.`
+  return `Sterkest på ${label(strongest)}, og god på ${label(top)}.`
 }
 
 /**

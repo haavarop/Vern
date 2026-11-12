@@ -1,23 +1,84 @@
+.app-theme { min-height: 100dvh; background: var(--vern-background); }
+
+/* Loading: the Vern symbol, gently breathing, on cream. */
+.app-loading {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--vern-space-md);
+  color: var(--vern-text-brand);
+}
+
+.app-loading__symbol { animation: app-breathe 1.6s ease-in-out infinite alternate; }
+
+@keyframes app-breathe {
+  from { opacity: .55; transform: scale(.94); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Notices replace Aksel alerts: calm white cards, forest icon, no red. */
+.app-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vern-space-sm);
+  padding: var(--vern-space-md);
+  background: var(--vern-surface);
+  color: var(--vern-text-primary);
+  border-radius: var(--vern-radius-md);
+}
+
+.app-notice > svg { flex-shrink: 0; color: var(--vern-forest); }
+.app-notice__text { flex: 1; min-width: 0; display: grid; gap: var(--vern-space-sm); justify-items: start; }
+.app-notice--error { border: 2px solid var(--vern-forest); }
+
+.app-notice__close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--vern-radius-pill);
+  background: none;
+  color: var(--vern-forest);
+  cursor: pointer;
+}
+
+.app-notice__close:hover { background: var(--vern-cream); }
+
+.app-toast {
+  position: fixed;
+  top: var(--vern-space-md);
+  left: 50%;
+  z-index: 10;
+  width: min(calc(100% - 2 * var(--vern-space-md)), 560px);
+  transform: translateX(-50%);
+}
+
+/* Recommendations page (/vern) */
 .recommendation-page {
   width: min(100%, 720px);
   min-height: 100dvh;
   margin: 0 auto;
-  padding: var(--ax-space-24);
-  padding-bottom: max(var(--ax-space-24), env(safe-area-inset-bottom));
+  padding: var(--vern-space-md) var(--vern-space-md) max(var(--vern-space-lg), env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: var(--ax-space-16);
-  align-items: stretch;
+  gap: var(--vern-space-lg);
 }
-.recommendations { display: grid; gap: var(--ax-space-12); margin-bottom: var(--ax-space-16); }
 
-.app-theme { min-height: 100dvh; }
-.app-loading { min-height: 100dvh; }
-.app-alert {
-  position: fixed;
-  top: var(--ax-space-12);
-  left: 50%;
-  z-index: 10;
-  width: min(calc(100% - 2 * var(--ax-space-16)), 560px);
-  transform: translateX(-50%);
+.recommendation-intro { display: grid; gap: var(--vern-space-sm); color: var(--vern-text-brand); }
+.recommendation-intro .aksel-body-long { color: var(--vern-text-primary); }
+.recommendation-body { display: grid; gap: var(--vern-space-md); }
+.recommendations { display: grid; gap: var(--vern-space-md); }
+.recommendation-loading { display: grid; gap: var(--vern-space-md); }
+.recommendation-loading__status { display: flex; align-items: center; gap: var(--vern-space-sm); color: var(--vern-text-brand); }
+.app-skeleton.aksel-skeleton { border-radius: var(--vern-radius-lg); }
+
+@media (min-width: 768px) {
+  .recommendation-page { padding-inline: var(--vern-space-xl); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-loading__symbol { animation: none; }
 }

@@ -1,19 +1,17 @@
-/* Verdiprofil – one question per page */
-.vp-eyebrow { text-transform: uppercase; letter-spacing: 0.06em; }
-
-.vp-progress { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--ax-space-4); }
+/* Verdiprofil: one question per page */
+.vp-progress { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--vern-space-xs); }
 .vp-progress span {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--ax-bg-neutral-moderate);
+  height: 6px;
+  border-radius: var(--vern-radius-pill);
+  background: var(--ax-neutral-300);
   transition: background-color 0.3s ease;
 }
-.vp-progress span.is-on { background: var(--ax-bg-accent-strong); }
+.vp-progress span.is-on { background: var(--vern-forest); }
 
 .vp-step { animation: vp-fade-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .vp-step__title:focus { outline: none; }
-.vp-step__title:focus-visible { outline: 2px solid var(--ax-border-focus); outline-offset: 2px; }
-.vp-step__help { margin-top: var(--ax-space-8); flex-shrink: 0; }
+.vp-step__title:focus-visible { outline: 3px solid var(--vern-forest); outline-offset: 2px; }
+.vp-step__help { margin-top: var(--vern-space-sm); flex-shrink: 0; }
 
 @keyframes vp-fade-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -22,67 +20,64 @@
 
 .vp-q__options {
   display: grid;
-  gap: var(--ax-space-8);
+  gap: var(--vern-space-sm);
 }
 
-/* Each answer as a full-width selectable tile; the label fills the tile so it is all clickable */
-.vp-q__option.aksel-radio {
+/*
+ * Each answer is a shared `.vern-choice` tile (see brand.css). Here we only undo Aksel's radio
+ * layout: the native radio stays in the DOM for keyboard and screen readers but is invisible and
+ * covers the whole tile, so the tile is the click target.
+ */
+.vp-q__option.aksel-radio { position: relative; margin: 0; }
+.vp-q__option .aksel-radio__input {
+  position: absolute;
+  inset: 0;
   width: 100%;
+  height: 100%;
   margin: 0;
-  padding: 0 0 0 var(--ax-space-20);
-  align-items: center;
-  border: 1px solid var(--ax-border-neutral-subtle);
-  border-radius: var(--ax-radius-12);
-  background: var(--ax-bg-raised);
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  opacity: 0;
+  cursor: pointer;
 }
-.vp-q__option .aksel-radio__input { align-self: center; }
 .vp-q__option .aksel-radio__label {
   display: flex;
   align-items: center;
-  min-height: 72px;
-  padding: var(--ax-space-16) var(--ax-space-20) var(--ax-space-16) var(--ax-space-12);
-  font-size: var(--ax-font-size-large);
-  line-height: 1.35;
+  flex: 1;
+  gap: var(--vern-space-sm);
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
 }
-.vp-q__option:hover { border-color: var(--ax-border-accent); }
-.vp-q__option:has(input:checked) {
-  border-color: var(--ax-border-accent);
-  background: var(--ax-bg-accent-soft);
-}
-.vp-q__option:has(input:checked) .aksel-radio__label { font-weight: var(--ax-font-weight-bold); }
-
-/* Profile result bars */
-.vp-dims { list-style: none; margin: 0; padding: 0; }
-.vp-dim { display: grid; gap: var(--ax-space-8); padding-block: var(--ax-space-12); }
-.vp-dim + .vp-dim { border-top: 1px solid var(--ax-border-neutral-subtle); }
-.vp-dim__bar { height: 8px; border-radius: 999px; background: var(--ax-bg-neutral-moderate); overflow: hidden; }
-.vp-dim__bar > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--ax-bg-neutral-strong);
-  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.vp-dim--top .vp-dim__bar > span { background: var(--ax-bg-accent-strong); }
-.vp-dim__score { font-variant-numeric: tabular-nums; }
+.vp-q__check { flex-shrink: 0; margin-left: auto; visibility: hidden; }
+.vp-q__option:has(input:checked) .vp-q__check { visibility: visible; }
+.vp-q__option.aksel-radio:focus-within::after { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .vp-step { animation: none; }
-  .vp-dim__bar > span, .vp-q__option, .vp-progress span { transition: none; }
+  .vp-progress span { transition: none; }
 }
 
 /* Value profile summary */
 .vp-summary { justify-content: center; }
 .vp-summary__side { flex: 1; min-width: 200px; }
 .chart-radar { flex-shrink: 0; max-width: 100%; height: auto; }
-.chart-radar__grid { fill: none; stroke: var(--ax-border-neutral-subtle); stroke-width: 0.4; }
-.chart-radar__area { fill: var(--ax-bg-accent-strong); fill-opacity: 0.2; stroke: var(--ax-bg-accent-strong); stroke-width: 1.2; stroke-linejoin: round; }
-.chart-radar__dot { fill: var(--ax-bg-accent-strong); }
-.chart-radar__label { font-size: 6px; fill: var(--ax-text-neutral-subtle); }
-.chart-radar__label.is-top { fill: var(--ax-text-neutral); font-weight: 700; }
+.chart-radar__grid { fill: none; stroke: var(--ax-neutral-300); stroke-width: 0.4; }
+.chart-radar__area { fill: var(--vern-mint); stroke: var(--vern-forest); stroke-width: 1.2; stroke-linejoin: round; }
+.chart-radar__dot { fill: var(--vern-forest); }
+.chart-radar__label { font-size: 9.5px; font-family: var(--vern-font-body); fill: var(--vern-text-secondary); }
+.chart-radar__label.is-top { fill: var(--vern-forest); font-weight: 700; }
 .vp-rank { list-style: none; margin: 0; padding: 0; }
-.vp-rank li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--ax-space-8); }
-.vp-rank__num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ax-bg-neutral-moderate); font-size: var(--ax-font-size-small); font-weight: 700; }
-.vp-rank li.is-top .vp-rank__num { background: var(--ax-bg-accent-strong); color: var(--ax-text-contrast, #fff); }
+.vp-rank li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--vern-space-sm); }
+.vp-rank__num {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--vern-cream);
+  color: var(--vern-text-secondary);
+  font-size: var(--vern-font-size-body-small);
+  font-weight: 700;
+}
+.vp-rank li.is-top .vp-rank__num { background: var(--vern-forest); color: var(--vern-text-on-inverse); }
 .vp-rank__score { font-variant-numeric: tabular-nums; }
