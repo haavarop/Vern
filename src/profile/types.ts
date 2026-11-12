@@ -5,25 +5,29 @@
  */
 export type Dimension = 'pris' | 'dekning' | 'hjelp' | 'enkelhet'
 
-export const DIMENSIONS: Record<Dimension, { label: string; description: string; segments: string[] }> = {
+export const DIMENSIONS: Record<Dimension, { label: string; title: string; description: string; segments: string[] }> = {
   pris: {
     label: 'Pris og verdi',
-    description: 'At du får mye for pengene.',
+    title: 'Hva du vil betale',
+    description: 'Hvor viktig pris er for deg, og hvor mye du er villig til å betale for ekstra verdi.',
     segments: ['Verdi for pengene', 'Selvstyrere'],
   },
   dekning: {
     label: 'Dekning og trygghet',
-    description: 'At forsikringen dekker mye, så du slipper overraskelser.',
+    title: 'Hva du vil være dekket for',
+    description: 'Hvor omfattende forsikring og vilkår du ønsker.',
     segments: ['Trygghetssøkende', 'Selvstyrere'],
   },
   hjelp: {
     label: 'Hjelp og tillit',
-    description: 'At du får god hjelp når du trenger det.',
+    title: 'God hjelp og service',
+    description: 'Hvor godt selskapet følger deg opp og hjelper deg når du trenger det.',
     segments: ['Tillitssøkende', 'Trygghetssøkende'],
   },
   enkelhet: {
     label: 'Enkelhet og kontroll',
-    description: 'At det er lett å ordne og ha oversikt.',
+    title: 'Hva du vil ordne digitalt',
+    description: 'Hvor viktig det er for deg å kunne finne informasjon, endre forsikringer og melde skade på nett.',
     segments: ['Ubekymrede', 'Enkelhetssøkende', 'Selvstyrere'],
   },
 }
