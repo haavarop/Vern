@@ -64,7 +64,7 @@
 }
 
 /* Value profile summary */
-.vp-summary { justify-content: center; }
+.vp-summary { justify-content: space-between; }
 .vp-summary__side { flex: 1; min-width: 200px; }
 .chart-radar { flex-shrink: 0; max-width: 100%; height: auto; }
 .chart-radar__grid { fill: none; stroke: var(--ax-neutral-300); stroke-width: 0.4; }
@@ -73,7 +73,7 @@
 .chart-radar__label { font-size: 9.5px; font-family: var(--vern-font-body); fill: var(--vern-text-secondary); }
 .chart-radar__label.is-top { fill: var(--vern-forest); font-weight: 700; }
 .vp-rank { list-style: none; margin: 0; padding: 0; }
-.vp-rank li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--vern-space-sm); }
+.vp-rank li { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: var(--vern-space-sm); }
 .vp-rank__num {
   display: inline-grid;
   place-items: center;
@@ -86,9 +86,23 @@
   font-weight: 700;
 }
 .vp-rank li.is-top .vp-rank__num { background: var(--vern-forest); color: var(--vern-text-on-inverse); }
-.vp-rank__score { font-variant-numeric: tabular-nums; }
+.vp-rank__help {
+  display: inline-grid;
+  place-items: center;
+  padding: 2px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--vern-forest);
+  cursor: help;
+}
+.vp-rank__help:hover,
+.vp-rank__help:focus-visible { background: var(--vern-mint); }
+
 
 /* «Om deg» summary on the profile page */
 .about-summary { display: grid; gap: var(--vern-space-sm); margin: 0; }
 .about-summary__row { display: grid; grid-template-columns: minmax(7rem, auto) 1fr; gap: var(--vern-space-md); }
 .about-summary dd { margin: 0; overflow-wrap: anywhere; }
+
+.profile-intro { flex: 1 1 20rem; }

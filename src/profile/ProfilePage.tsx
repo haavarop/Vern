@@ -1,5 +1,5 @@
-import { BodyShort, Box, Button, Detail, Heading, HStack, Tag, VStack } from '@navikt/ds-react'
-import { CircleUser, FileText, Pencil, Star, Upload, UserRound } from 'lucide-react'
+import { BodyShort, Box, Button, Detail, Heading, HStack, Tag, Tooltip, VStack } from '@navikt/ds-react'
+import { CircleHelp, CircleUser, FileText, Pencil, Star, Upload, UserRound } from 'lucide-react'
 import PolicySummary from '../onboarding/PolicySummary.tsx'
 import VernHeader from '../onboarding/VernHeader.tsx'
 import type { ConnectionState } from '../onboarding/types.ts'
@@ -82,19 +82,20 @@ function ValueProfile({ profile, onEdit }: { profile: UserProfile; onEdit: () =>
 
   return (
     <VStack gap="space-16">
-      <BodyShort>
-        Det viktigste for deg er <strong>{DIMENSIONS[top[0]].label.toLowerCase()}</strong>, og deretter{' '}
-        <strong>{DIMENSIONS[top[1]].label.toLowerCase()}</strong>.
-      </BodyShort>
       <HStack gap="space-24" align="center" wrap className="vp-summary">
-        <RadarChart axes={DIMENSION_ORDER.map((dim) => ({ label: SHORT_LABELS[dim], value: scores[dim], highlight: top.includes(dim) }))} />
         <VStack gap="space-12" className="vp-summary__side">
           <VStack as="ol" gap="space-8" className="vp-rank" aria-label="Det som er viktigst for deg, fra mest til minst">
             {ranked.map((dim, index) => (
               <li key={dim} className={top.includes(dim) ? 'is-top' : undefined}>
                 <span className="vp-rank__num" aria-hidden>{index + 1}</span>
-                <BodyShort size="small" weight={top.includes(dim) ? 'semibold' : 'regular'}>{DIMENSIONS[dim].label}</BodyShort>
-                <BodyShort size="small" textColor="subtle" className="vp-rank__score">{scores[dim]}</BodyShort>
+                <HStack gap="space-4" align="center" wrap={false}>
+                  <BodyShort size="small" weight={top.includes(dim) ? 'semibold' : 'regular'}>{DIMENSIONS[dim].title}</BodyShort>
+                  <Tooltip content={DIMENSIONS[dim].description}>
+                    <button type="button" className="vp-rank__help" aria-label={`Mer om «${DIMENSIONS[dim].title}»`}>
+                      <CircleHelp size="1em" aria-hidden />
+                    </button>
+                  </Tooltip>
+                </HStack>
               </li>
             ))}
           </VStack>
@@ -103,6 +104,7 @@ function ValueProfile({ profile, onEdit }: { profile: UserProfile; onEdit: () =>
             <Button variant="tertiary" size="small" icon={<Pencil size="1em" aria-hidden />} onClick={onEdit}>Endre svarene</Button>
           </div>
         </VStack>
+        <RadarChart axes={DIMENSION_ORDER.map((dim) => ({ label: SHORT_LABELS[dim], value: scores[dim], highlight: top.includes(dim) }))} />
       </HStack>
     </VStack>
   )
@@ -116,10 +118,23 @@ export default function ProfilePage({ connections, profile, aboutYou, onEditAbou
       <VStack gap="space-24" className="onboarding__content">
         <VernHeader />
 
-        <VStack gap="space-8">
-          <Heading level="1" size="large">Profilen din</Heading>
-          <BodyShort textColor="subtle">Her ser du det som betyr noe for deg, og forsikringene du har i dag.</BodyShort>
-        </VStack>
+        <HStack justify="space-between" align="end" gap="space-16" wrap>
+          <VStack gap="space-8" className="profile-intro">
+            <Heading level="1" size="large">Profilen din</Heading>
+            <BodyShort textColor="subtle">Her ser du det som betyr noe for deg, og forsikringene du har i dag.</BodyShort>
+          </VStack>
+          <Button size="small" onClick={onShowMatches ?? onContinue}>Se dine matches</Button>
+        </HStack>
+
+        <section aria-labelledby="values-heading" className="vern-card">
+          <VStack gap="space-16">
+            <HStack justify="space-between" align="center" gap="space-8">
+              <Heading id="values-heading" level="2" size="small">Det som betyr noe for deg</Heading>
+              {!profile.answers && <Tag size="small" variant="neutral">Ikke svart ennå</Tag>}
+            </HStack>
+            <ValueProfile profile={profile} onEdit={onEditProfile} />
+          </VStack>
+        </section>
 
         <section aria-labelledby="about-heading" className="vern-card">
           <VStack gap="space-16">
@@ -131,15 +146,6 @@ export default function ProfilePage({ connections, profile, aboutYou, onEditAbou
           </VStack>
         </section>
 
-        <section aria-labelledby="values-heading" className="vern-card">
-          <VStack gap="space-16">
-            <HStack justify="space-between" align="center" gap="space-8">
-              <Heading id="values-heading" level="2" size="small">Det som betyr noe for deg</Heading>
-              {!profile.answers && <Tag size="small" variant="neutral">Ikke svart ennå</Tag>}
-            </HStack>
-            <ValueProfile profile={profile} onEdit={onEditProfile} />
-          </VStack>
-        </section>
 
         <VStack gap="space-16" as="section" aria-labelledby="policies-heading">
           <Heading id="policies-heading" level="2" size="small">Forsikringene dine</Heading>
@@ -162,7 +168,7 @@ export default function ProfilePage({ connections, profile, aboutYou, onEditAbou
       <div className="cta-bar cta-bar--static">
         <div className="cta-bar__actions cta-bar__actions--stack">
           <Button variant="tertiary" onClick={() => { if (window.confirm('Vil du begynne på nytt? Svarene og forsikringene du har lagt til, blir slettet.')) onReset() }}>Begynn på nytt</Button>
-          {onShowMatches && <Button variant="secondary" icon={<Star size="1em" aria-hidden />} onClick={onShowMatches}>Se matchene dine</Button>}
+          {onShowMatches && <Button variant="secondary" icon={<Star size="1em" aria-hidden />} onClick={onShowMatches}>Se dine matches</Button>}
           <Button onClick={onContinue}>{continueLabel}</Button>
         </div>
       </div>
